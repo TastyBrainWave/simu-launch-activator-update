@@ -1,3 +1,6 @@
+import re
+import socket
+
 from fastapi import FastAPI
 from ppadb import InstallError
 from starlette.requests import Request
@@ -89,7 +92,34 @@ async def stop(request: Request):
             command = "am force-stop " + app_name
             print(command)
             device.shell(command)
+            client.remote_disconnect(device)
     except InstallError as e:
         return {"success": False, "error": e.__str__()}
 
     return {"success": True, "stopped_app": app_name}
+
+BASE_PORT = 5555
+
+@app.get("/connect")
+async def connect(request: Request):
+    """
+        Connects a device wirelessly to the server
+
+    :param request: The Request parameter
+    :return: a dictionary containing the success flag of the operation and any errors
+    """
+
+    devices = client.devices()
+
+    device_ip = devices[0].shell("ip addr show wlan0")
+
+    device_ip = device_ip[device_ip.find("inet "):]
+
+    device_ip = device_ip[:device_ip.find("/24")]
+
+    device_ip = device_ip[device_ip.find(" ")+1:]
+
+    working = client.remote_connect(device_ip, port=BASE_PORT)
+
+    return {"success": working}
+

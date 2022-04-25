@@ -31,6 +31,11 @@
         <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopExperience()">STOP</a>
       </div>
     </div>
+    <div class="row justify-content-center mb-2" id="connectButtonDiv">
+      <div class="col align-self-center text-center">
+        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="connectDevice()">CONNECT DEVICE</a>
+      </div>
+    </div>
   </div>
 
 {% endblock %}
@@ -52,6 +57,11 @@
     }
     function stopExperience() {
         $.get("/stop", function (data, status) {
+            alert(JSON.stringify(data));
+        });
+    }
+    function connectDevice() {
+        $.get("/connect", function (data, status) {
             alert(JSON.stringify(data));
         });
     }
