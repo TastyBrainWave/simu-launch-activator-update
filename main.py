@@ -1,7 +1,8 @@
 import datetime
 import os
+from functools import partial
 from hashlib import sha256
-from multiprocessing import Process
+from multiprocessing import Process, Pool, cpu_count
 
 from fastapi import FastAPI
 from ppadb import InstallError
@@ -27,6 +28,10 @@ def check_adb_running():
             print("ADB Server not running, starting it now!")
             command = os.system("adb start-server")
             print(command)
+
+
+def launch_app(device, app_name):
+    device.shell("monkey -p" + app_name + " -v 1")
 
 @app.get("/")
 async def home(request: Request):
@@ -55,13 +60,13 @@ async def start(request: Request):
     android_app_name = "com.amazon.calculator"
 
     try:
-        for device in client_list:
-            android_command = "monkey -p" + android_app_name + " -v 1"
-            vr_command = "am start -n" + vr_app_name
-            p = Process(target=device.shell, args=(android_command,))
-            p.start()
-            # device.shell("monkey -p" + app_name + " -v 1")
-            # device.shell("am start -n" + "calculator")
+        pool = Pool(cpu_count())
+        launch_func = partial(launch_app, app_name=android_app_name)
+        results = pool.map(launch_func, client_list)
+        pool.close()
+        pool.join()
+        # android_command = "monkey -p" + android_app_name + " -v 1"
+        # vr_command = "am start -n" + vr_app_name
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
@@ -79,14 +84,16 @@ async def load(request: Request):
     check_adb_running()
     client_list = client.devices()
 
-    apk_path = "apks/bendingoaks.apk"
+    apk_path = "apks/calculator.apk"
 
     apk_name = apk_path[4:]
     apk_name = apk_name[:4]
 
     try:
         for device in client_list:
-            device.install(apk_path)
+            print("Installing " + apk_path + " on " + device.serial)
+            p = Process(target=device.install, args=(apk_path,))
+            p.start()
     except InstallError as e:
         return {"success": False, "error": e.__str__()}
 
