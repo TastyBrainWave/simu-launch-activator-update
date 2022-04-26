@@ -36,6 +36,16 @@
         <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="connectDevice()">CONNECT DEVICE</a>
       </div>
     </div>
+    <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
+      <div class="col align-self-center text-center">
+        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopServer()">STOP SERVER</a>
+      </div>
+    </div>
+    <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
+      <div class="col text-center">
+        <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="getScreenshots()">SCREENSHOT</a>
+      </div>
+    </div>
   </div>
 
 {% endblock %}
@@ -62,6 +72,16 @@
     }
     function connectDevice() {
         $.get("/connect", function (data, status) {
+            alert(JSON.stringify(data));
+        });
+    }
+    function stopServer() {
+        $.get("/exit-server", function (data, status) {
+            alert(JSON.stringify(data));
+        });
+    }
+    function getScreenshots() {
+        $.get("/screen-grab", function (data, status) {
             alert(JSON.stringify(data));
         });
     }
