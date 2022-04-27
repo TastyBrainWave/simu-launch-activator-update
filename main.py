@@ -7,10 +7,12 @@ from multiprocessing import Process, Pool, cpu_count
 from fastapi import FastAPI
 from ppadb import InstallError
 from starlette.requests import Request
+from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from ppadb.client import Client as AdbClient
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates("templates")
 
@@ -23,6 +25,7 @@ client = AdbClient(host="127.0.0.1", port=5037)
 def check_adb_running():
     try:
         devices = client.devices()
+
     except RuntimeError as e:
         if e.__str__().find("Is adb running on your computer?"):
             print("ADB Server not running, starting it now!")
