@@ -14,7 +14,7 @@ from ppadb.client import Client as AdbClient
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-templates = Jinja2Templates("templates")
+templates = Jinja2Templates(directory="templates")
 
 # Have some global variables to set app to run, devices, adb stuff etc.
 
