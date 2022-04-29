@@ -1,95 +1,153 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <style>
-    .no-js #loader { display: none;  }
-    .js #loader { display: block; position: absolute; left: 100px; top: 0; }
-    .se-pre-con {
-      position: fixed;
-      left: 0px;
-      top: 0px;
-      width: 100%;
-      height: 100%;
-      z-index: 9999;
-    }
-  </style>
+<style>
+  .no-js #loader {
+    display: none;
+  }
 
-  <div class="container align-self-center">
-    <div class="loader se-pre-con mx-auto">Loading..</div>
-    <div class="row justify-content-center mb-2 mt-5" id="startButtonDiv">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-success btn-lg" onclick="startExperience()">START</a>
-      </div>
+  .js #loader {
+    display: block;
+    position: absolute;
+    left: 100px;
+    top: 0;
+  }
+
+  .se-pre-con {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+  }
+</style>
+
+<div class="container align-self-center">
+  <div class="loader se-pre-con mx-auto">Loading..</div>
+  <div class="row justify-content-center mb-2 mt-5" id="startButtonDiv">
+    <div class="col text-center">
+      <a style="min-width: 10rem;" class="btn btn-success btn-lg" onclick="startExperience()" id="startButton">START</a>
     </div>
-    <div class="row justify-content-center mb-2" id="loadButtonDiv">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="loadExperience()">LOAD</a>
-      </div>
+  </div>
+  <div class="row justify-content-center mb-2" id="loadButtonDiv">
+    <div class="col text-center">
+      <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="loadExperience()" id="loadButton">LOAD</a>
     </div>
-    <div class="row justify-content-center mb-2" id="stopButtonDiv">
-      <div class="col align-self-center text-center">
-        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopExperience()">STOP</a>
-      </div>
+  </div>
+  <div class="row justify-content-center mb-2" id="stopButtonDiv">
+    <div class="col align-self-center text-center">
+      <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopExperience()" id="stopButton">STOP</a>
     </div>
-    <div class="row justify-content-center mb-2" id="connectButtonDiv">
-      <div class="col align-self-center text-center">
-        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="connectDevice()">CONNECT DEVICE</a>
-      </div>
+  </div>
+  <div class="row justify-content-center mb-2" id="connectButtonDiv">
+    <div class="col align-self-center text-center">
+      <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="connectDevice()" id="connectButton">CONNECT DEVICE</a>
     </div>
-    <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
-      <div class="col align-self-center text-center">
-        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopServer()">STOP SERVER</a>
-      </div>
+  </div>
+  <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
+    <div class="col align-self-center text-center">
+      <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopServer()" id="stopServerButton">STOP SERVER</a>
     </div>
-    <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="getScreenshots()">SCREENSHOT</a>
-      </div>
+  </div>
+  <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
+    <div class="col text-center">
+      <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="getScreenshots()" id="screenshotButton">SCREENSHOT</a>
     </div>
+  </div>
 
   <div class="row">
 
 
   </div>
-  </div>
+</div>
 
 
 {% endblock %}
 
 {% block javascript %}
-  <script>
-    $(".loader").hide();
-    function startExperience() {
-        $(".loader").show();
-        $.get("/start", function (data, status) {
-            $(".loader").hide();
-            alert("Devices: " + JSON.stringify(data));
-        });
-    }
-    function loadExperience() {
-        $.get("/load", function (data, status) {
-            alert(JSON.stringify(data));
-        });
-    }
-    function stopExperience() {
-        $.get("/stop", function (data, status) {
-            alert(JSON.stringify(data));
-        });
-    }
-    function connectDevice() {
-        $.get("/connect", function (data, status) {
-            alert(JSON.stringify(data));
-        });
-    }
-    function stopServer() {
-        $.get("/exit-server", function (data, status) {
-            alert(JSON.stringify(data));
-        });
-    }
-    function getScreenshots() {
-        $.get("/screen-grab", function (data, status) {
-            alert(JSON.stringify(data));
-        });
-    }
-  </script>
+<script>
+  document.getElementsByClassName("loader")[0].style.display = "none";
+  function startExperience() {
+    document.getElementById("startButton").classList.add("disabled");
+    fetch('/start', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      return response.json()
+    }).then(function (data) {
+      alert(JSON.stringify(data));
+      document.getElementById("startButton").classList.remove("disabled");
+    });
+  }
+
+  function loadExperience() {
+    fetch('/load', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      return response.json()
+    }).then(function (data) {
+      alert(JSON.stringify(data));
+    });
+  }
+  function stopExperience() {
+    fetch('/stop', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      return response.json()
+    }).then(function (data) {
+      alert(JSON.stringify(data));
+    });
+  }
+  function connectDevice() {
+    fetch('/connect', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      return response.json()
+    }).then(function (data) {
+      alert(JSON.stringify(data));
+    });
+  }
+  function stopServer() {
+    fetch('/stopServer', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      return response.json()
+    }).then(function (data) {
+      alert(JSON.stringify(data));
+    });
+  }
+  function getScreenshots() {
+    fetch('/screenshot', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(function (response) {
+      return response.json()
+    }).then(function (data) {
+      alert(JSON.stringify(data));
+    });
+  }
+</script>
 {% endblock %}
