@@ -2,57 +2,40 @@
 
 {% block content %}
   <style>
-    .no-js #loader { display: none;  }
-    .js #loader { display: block; position: absolute; left: 100px; top: 0; }
-    .se-pre-con {
-      position: fixed;
-      left: 0px;
-      top: 0px;
-      width: 100%;
-      height: 100%;
-      z-index: 9999;
+    .btn-custom {
+        text-align: center !important;
+        line-height: 0 !important;
+        min-width: 10rem;
+        min-height: 10rem;
+        font-size: 5rem;
+        box-sizing: content-box;
     }
   </style>
 
   <div class="container align-self-center">
-    <div class="loader se-pre-con mx-auto">Loading..</div>
-    <div class="row justify-content-center mb-2 mt-5" id="startButtonDiv">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-success btn-lg" onclick="startExperience()">START</a>
-      </div>
+    <div id="status" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert"></div>
+    <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
+        <a class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
     </div>
     <div class="row justify-content-center mb-2" id="loadButtonDiv">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="loadExperience()">LOAD</a>
-      </div>
+        <a class="btn btn-info btn-custom d-flex align-items-center justify-content-center" onclick="loadExperience()">LOAD</a>
     </div>
     <div class="row justify-content-center mb-2" id="stopButtonDiv">
-      <div class="col align-self-center text-center">
-        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopExperience()">STOP</a>
-      </div>
+        <a class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>
     </div>
     <div class="row justify-content-center mb-2" id="connectButtonDiv">
-      <div class="col align-self-center text-center">
-        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="connectDevice()">CONNECT DEVICE</a>
-      </div>
+        <a class="btn btn-warning btn-custom d-flex align-items-center justify-content-center" onclick="connectDevice()">CONNECT DEVICE</a>
     </div>
     <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
-      <div class="col align-self-center text-center">
-        <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopServer()">STOP SERVER</a>
-      </div>
+        <a class="btn btn-danger btn-custom d-flex align-items-center justify-content-center" onclick="stopServer()">STOP SERVER</a>
     </div>
     <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="getScreenshots()">SCREENSHOT</a>
-      </div>
+        <a class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
     </div>
-
-  <div class="row mt-4">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-secondary btn-lg" hx-get="/linkup" hx-swap="outerHTML"
+    <div class="row justify-content-center mb-2" id="htmxGrabDiv">
+        <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML"
        hx-trigger="click" >LINKUP (polling screenshots of all devices via htmx)</a>
-      </div>
-  </div>
+    </div>
   </div>
 
 
@@ -60,38 +43,85 @@
 
 {% block javascript %}
   <script>
-    $(".loader").hide();
+    function remove_class(element) {
+        var lastClass = element.attr('class').split(' ').pop();
+        if (lastClass.includes("alert-")) {
+            element.removeClass(lastClass)
+        }
+    }
+
     function startExperience() {
-        $(".loader").show();
         $.get("/start", function (data, status) {
-            $(".loader").hide();
-            alert("Devices: " + JSON.stringify(data));
-        });
+            remove_class($("#status"));
+            $("#status").addClass("alert-success");
+            $("#status").html("Experience has started on " + data["device_count"] + " devices!")
+        }).fail(
+            function (data, status) {
+              $("#status").html("Failed to start experience. I got the following error: " + data["error"])
+            }
+        );
     }
     function loadExperience() {
         $.get("/load", function (data, status) {
-            alert(JSON.stringify(data));
-        });
+            remove_class($("#status"));
+            $("#status").addClass("alert-info");
+            $("#status").html("Experience has been loaded on " + data["device_count"] + " devices!")
+        }).fail(
+            function (data, status) {
+              $("#status").html("Failed to load experience. I got the following error: " + data["error"])
+            }
+        );
     }
     function stopExperience() {
         $.get("/stop", function (data, status) {
-            alert(JSON.stringify(data));
-        });
+            remove_class($("#status"));
+            $("#status").addClass("alert-secondary");
+            $("#status").html("Experience has been stopped on all devices!")
+        }).fail(
+            function (data, status) {
+              $("#status").html("Failed to stop experience. I got the following error: " + data["error"])
+            }
+        );
     }
     function connectDevice() {
         $.get("/connect", function (data, status) {
-            alert(JSON.stringify(data));
-        });
+            if (data["success"]) {
+                remove_class($("#status"));
+                $("#status").addClass("alert-warning");
+                $("#status").html("Connected device with serial ID " + data["serial"] + "!");
+            }
+            else {
+                remove_class($("#status"));
+                $("#status").addClass("alert-danger");
+                $("#status").html("Could not connect device! Are you sure it's connected with the USB cable?");
+            }
+        }).fail(
+            function (data, status) {
+              $("#status").html("Failed to connect device. I got the following error: " + data["error"]);
+            }
+        );
     }
     function stopServer() {
         $.get("/exit-server", function (data, status) {
-            alert(JSON.stringify(data));
-        });
+            remove_class($("#status"));
+            $("#status").addClass("alert-danger");
+            $("#status").html("The ADB server has been stopped and all devices are now disconnected!");
+        }).fail(
+            function (data, status) {
+              $("#status").html("Failed to stop server. I got the following error: " + data["error"]);
+            }
+        );
     }
     function getScreenshots() {
         $.get("/screen-grab", function (data, status) {
-            alert(JSON.stringify(data));
-        });
+            remove_class($("#status"));
+            $("#status").addClass("alert-secondary");
+            $("#status").html("Took a screenshot of all devices!");
+        }).fail(
+            function (data, status) {
+              $("#status").html("Failed to take screenshots. I got the following error: " + data["error"]);
+            }
+        );
     }
   </script>
 {% endblock %}

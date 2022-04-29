@@ -5,10 +5,7 @@ from functools import partial
 from hashlib import sha256
 from multiprocessing import Process, Pool, cpu_count
 
-import cv2
-import jinja2
 from fastapi import FastAPI
-from fastapi.openapi.models import Response
 from ppadb import InstallError
 from starlette.requests import Request
 from starlette.responses import StreamingResponse, FileResponse
@@ -39,6 +36,7 @@ def check_adb_running():
 
 
 def launch_app(device, app_name):
+    # command = am start -n com.package.name/com.package.name.MainActivity or UnityPlayerActivity
     device.shell("monkey -p" + app_name + " -v 1")
 
 @app.get("/")
@@ -67,18 +65,16 @@ async def start(request: Request):
     vr_app_name = "com.alturgames.BendingOaksVR/com.unity3d.player.UnityPlayerActivity"
     android_app_name = "com.amazon.calculator"
 
-    try:
-        pool = Pool(cpu_count())
-        launch_func = partial(launch_app, app_name=android_app_name)
-        results = pool.map(launch_func, client_list)
-        pool.close()
-        pool.join()
-        # android_command = "monkey -p" + android_app_name + " -v 1"
-        # vr_command = "am start -n" + vr_app_name
-    except RuntimeError as e:
-        return {"success": False, "error": e.__str__()}
+    # try:
+    #     pool = Pool(cpu_count())
+    #     launch_func = partial(launch_app, app_name=android_app_name)
+    #     results = pool.map(launch_func, client_list)
+    #     pool.close()
+    #     pool.join()
+    # except RuntimeError as e:
+    #     return {"success": False, "error": e.__str__()}
 
-    return {"success": True}
+    return {"success": True, "device_count": len(client_list)}
 
 @app.get("/load")
 async def load(request: Request):
@@ -105,7 +101,7 @@ async def load(request: Request):
     except InstallError as e:
         return {"success": False, "error": e.__str__()}
 
-    return {"success": True, "loaded_app": apk_name}
+    return {"success": True, "device_count": len(client_list)}
 
 @app.get("/stop")
 async def stop(request: Request):
@@ -164,7 +160,7 @@ async def connect(request: Request):
         if working:
             print("Established connection with client " + device_ip + ":" + str(BASE_PORT))
 
-            return {"success": True}
+            return {"success": True, "serial": devices[0].serial}
 
         return {"success": False}
     except RuntimeError as e:
@@ -216,7 +212,7 @@ async def screen_grab(request: Request):
 
 
 @app.get("/screen/{device_serial}.png")
-async def screen(request: Request, device_serial:str):
+async def screen(request: Request, device_serial: str):
     im = my_devices[device_serial].screencap()
 
     with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
@@ -226,7 +222,7 @@ async def screen(request: Request, device_serial:str):
 my_devices = None
 
 @app.get("/linkup")
-async def load(request: Request):
+async def linkup(request: Request):
     check_adb_running()
     global my_devices
     my_devices = {device.serial: device for device in client.devices()}
