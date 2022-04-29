@@ -1,16 +1,21 @@
 import datetime
+import io
 import os
 from functools import partial
 from hashlib import sha256
 from multiprocessing import Process, Pool, cpu_count
 
+import cv2
+import jinja2
 from fastapi import FastAPI
+from fastapi.openapi.models import Response
 from ppadb import InstallError
 from starlette.requests import Request
+from starlette.responses import StreamingResponse, FileResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
+import tempfile
 from ppadb.client import Client as AdbClient
-
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -208,4 +213,23 @@ async def screen_grab(request: Request):
         return {"success": False, "errors": e.__str__()}
 
     return {"success": True}
+
+
+@app.get("/screen/{device_serial}.png")
+async def screen(request: Request, device_serial:str):
+    im = my_devices[device_serial].screencap()
+
+    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
+        FOUT.write(im)
+        return FileResponse(FOUT.name, media_type="image/png")
+
+my_devices = None
+
+@app.get("/linkup")
+async def load(request: Request):
+    check_adb_running()
+    global my_devices
+    my_devices = {device.serial: device for device in client.devices()}
+    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
+
 
