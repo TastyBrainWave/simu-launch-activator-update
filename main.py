@@ -1,12 +1,9 @@
 import datetime
-import io
 import os
 from functools import partial
 from hashlib import sha256
 from multiprocessing import Process, Pool, cpu_count
 
-import cv2
-import jinja2
 from fastapi import FastAPI
 from fastapi.openapi.models import Response
 from ppadb import InstallError
