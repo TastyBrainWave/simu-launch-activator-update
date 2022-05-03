@@ -2,65 +2,38 @@
 
 {% block content %}
 <style>
-  .no-js #loader {
-    display: none;
-  }
-
-  .js #loader {
-    display: block;
-    position: absolute;
-    left: 100px;
-    top: 0;
-  }
-
-  .se-pre-con {
-    position: fixed;
-    left: 0px;
-    top: 0px;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
+  .btn-custom {
+    text-align: center !important;
+    line-height: 0 !important;
+    min-width: 10rem;
+    min-height: 10rem;
+    font-size: 5rem;
+    box-sizing: content-box;
   }
 </style>
 
 <div class="container align-self-center">
-  <div class="loader se-pre-con mx-auto">Loading..</div>
-  <div class="row justify-content-center mb-2 mt-5" id="startButtonDiv">
-    <div class="col text-center">
-      <a style="min-width: 10rem;" class="btn btn-success btn-lg" onclick="startExperience()" id="startButton">START</a>
-    </div>
+  <div id="status" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert"></div>
+  <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
+    <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
   </div>
   <div class="row justify-content-center mb-2" id="loadButtonDiv">
-    <div class="col text-center">
-      <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="loadExperience()" id="loadButton">LOAD</a>
-    </div>
+    <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" onclick="loadExperience()">LOAD</a>
   </div>
   <div class="row justify-content-center mb-2" id="stopButtonDiv">
-    <div class="col align-self-center text-center">
-      <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopExperience()" id="stopButton">STOP</a>
-    </div>
+    <a id="stopButton" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>
   </div>
   <div class="row justify-content-center mb-2" id="connectButtonDiv">
-    <div class="col align-self-center text-center">
-      <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="connectDevice()" id="connectButton">CONNECT DEVICE</a>
-    </div>
+    <a id="connectButton" class="btn btn-warning btn-custom d-flex align-items-center justify-content-center" onclick="connectDevice()">CONNECT DEVICE</a>
   </div>
   <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
-    <div class="col align-self-center text-center">
-      <a style="min-width: 10rem;" class="btn btn-danger btn-lg" onclick="stopServer()" id="stopServerButton">STOP SERVER</a>
-    </div>
+    <a id="stopServerButton" class="btn btn-danger btn-custom d-flex align-items-center justify-content-center" onclick="stopServer()">STOP SERVER</a>
   </div>
   <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
-    <div class="col text-center">
-      <a style="min-width: 10rem;" class="btn btn-primary btn-lg" onclick="getScreenshots()" id="screenshotButton">SCREENSHOT</a>
-    </div>
+    <a id="screenshotButton"" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
   </div>
-
-  <div class="row mt-4">
-      <div class="col text-center">
-        <a style="min-width: 10rem;" class="btn btn-secondary btn-lg" hx-get="/linkup" hx-swap="outerHTML"
-       hx-trigger="click" >LINKUP (polling screenshots of all devices via htmx)</a>
-      </div>
+  <div class="row justify-content-center mb-2" id="htmxGrabDiv">
+    <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
   </div>
 </div>
 
@@ -69,7 +42,13 @@
 
 {% block javascript %}
 <script>
-  document.getElementsByClassName("loader")[0].style.display = "none";
+  status_global = document.getElementById("status");
+  function remove_class(element) {
+    var lastClass = element.attr('class').split(' ').pop();
+    if (lastClass.includes("alert-")) {
+      element.removeClass(lastClass)
+    }
+  }
   function startExperience() {
     document.getElementById("startButton").classList.add("disabled");
     fetch('/start', {
@@ -79,14 +58,23 @@
         'Content-Type': 'application/json'
       }
     }).then(function (response) {
-      return response.json()
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
     }).then(function (data) {
-      alert(JSON.stringify(data));
+      status_global.classList.add("alert-success");
+      status_global.innerHTML = "Experience has started on " + data["device_count"] + " devices!";
+      document.getElementById("startButton").classList.remove("disabled");
+    }).catch(function (error) {
+      status_global.classList.add("alert-danger");
+      status_global.innerHTML = "Error starting experience: " + error;
       document.getElementById("startButton").classList.remove("disabled");
     });
   }
 
   function loadExperience() {
+    document.getElementById("loadButton").classList.add("disabled");
     fetch('/load', {
       method: 'GET',
       headers: {
@@ -94,12 +82,22 @@
         'Content-Type': 'application/json'
       }
     }).then(function (response) {
-      return response.json()
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
     }).then(function (data) {
-      alert(JSON.stringify(data));
+      status_global.classList.add("alert-success");
+      status_global.innerHTML = "Experience has loaded on " + data["device_count"] + " devices!";
+      document.getElementById("loadButton").classList.remove("disabled");
+    }).catch(function (error) {
+      status_global.classList.add("alert-danger");
+      status_global.innerHTML = "Error loading experience: " + error;
+      document.getElementById("loadButton").classList.remove("disabled");
     });
   }
   function stopExperience() {
+    document.getElementById("stopButton").classList.add("disabled");
     fetch('/stop', {
       method: 'GET',
       headers: {
@@ -107,12 +105,22 @@
         'Content-Type': 'application/json'
       }
     }).then(function (response) {
-      return response.json()
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
     }).then(function (data) {
-      alert(JSON.stringify(data));
+      status_global.classList.add("alert-success");
+      status_global.innerHTML = "Experience has stopped on all decives!";
+      document.getElementById("stopButton").classList.remove("disabled");
+    }).catch(function (error) {
+      status_global.classList.add("alert-danger");
+      status_global.innerHTML = "Error stopping experience: " + error;
+      document.getElementById("stopButton").classList.remove("disabled");
     });
   }
   function connectDevice() {
+    document.getElementById("connectButton").classList.add("disabled");
     fetch('/connect', {
       method: 'GET',
       headers: {
@@ -120,35 +128,64 @@
         'Content-Type': 'application/json'
       }
     }).then(function (response) {
-      return response.json()
+      if (!response.ok) {
+        throw Error(response.error);
+      }
+      return response.json();
     }).then(function (data) {
-      alert(JSON.stringify(data));
+      status_global.classList.add("alert-success");
+      status_global.innerHTML = "Device connected with serial ID: " + data["serial"];
+      document.getElementById("connectButton").classList.remove("disabled");
+    }).catch(function (error) {
+      status_global.classList.add("alert-danger");
+      status_global.innerHTML = "Error connecting device: " + error;
+      document.getElementById("connectButton").classList.remove("disabled");
     });
   }
   function stopServer() {
-    fetch('/stopServer', {
+    document.getElementById("stopServerButton").classList.add("disabled");
+    fetch('/exit-server', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       }
     }).then(function (response) {
-      return response.json()
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
     }).then(function (data) {
-      alert(JSON.stringify(data));
+      status_global.classList.add("alert-success");
+      status_global.innerHTML = "ADB server has stopped!";
+      document.getElementById("stopServerButton").classList.remove("disabled");
+    }).catch(function (error) {
+      status_global.classList.add("alert-danger");
+      status_global.innerHTML = "Error stopping server: " + error;
+      document.getElementById("stopServerButton").classList.remove("disabled");
     });
   }
   function getScreenshots() {
-    fetch('/screenshot', {
+    document.getElementById("screenshotButton").classList.add("disabled");
+    fetch('/screen-grab', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       }
     }).then(function (response) {
-      return response.json()
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      return response.json();
     }).then(function (data) {
-      alert(JSON.stringify(data));
+      status_global.classList.add("alert-success");
+      status_global.innerHTML = "Screenshots have taken!";
+      document.getElementById("screenshotButton").classList.remove("disabled");
+    }).catch(function (error) {
+      status_global.classList.add("alert-danger");
+      status_global.innerHTML = "Error taking screenshots: " + error;
+      document.getElementById("screenshotButton").classList.remove("disabled");
     });
   }
 </script>
