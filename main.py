@@ -4,7 +4,7 @@ from functools import partial
 from hashlib import sha256
 from multiprocessing import Process, Pool, cpu_count
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from ppadb import InstallError
 from starlette.requests import Request
 from starlette.responses import StreamingResponse, FileResponse
@@ -12,6 +12,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 import tempfile
 from ppadb.client import Client as AdbClient
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -19,7 +20,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Have some global variables to set app to run, devices, adb stuff etc.
 
-global started_state
+simu_application_name = ""
 
 client = AdbClient(host="127.0.0.1", port=5037)
 
@@ -34,9 +35,17 @@ def check_adb_running():
             print(command)
 
 
-def launch_app(device, app_name):
-    # command = am start -n com.package.name/com.package.name.MainActivity or UnityPlayerActivity
-    device.shell("monkey -p" + app_name + " -v 1")
+def launch_app(device, app_name, d_type: bool = False):
+    """
+    Launches an app on the specified device based on the device type and application name
+    :param device: the Device object for ppadb
+    :param app_name: the application name, ie: com.simu-launch.calculator
+    :param d_type: the device type, True = Quest, False = Android
+    """
+
+    command = "am start -n" + app_name + "/" + app_name + ".UnityPlayerActivity" if d_type else "monkey -p" + app_name \
+                                                                                                + " -v 1"
+    device.shell(command)
 
 @app.get("/")
 async def home(request: Request):
@@ -64,16 +73,26 @@ async def start(request: Request):
     vr_app_name = "com.alturgames.BendingOaksVR/com.unity3d.player.UnityPlayerActivity"
     android_app_name = "com.amazon.calculator"
 
-    # try:
-    #     pool = Pool(cpu_count())
-    #     launch_func = partial(launch_app, app_name=android_app_name)
-    #     results = pool.map(launch_func, client_list)
-    #     pool.close()
-    #     pool.join()
-    # except RuntimeError as e:
-    #     return {"success": False, "error": e.__str__()}
+    try:
+        pool = Pool(cpu_count())
+        launch_func = partial(launch_app, app_name=android_app_name, d_type=False)
+        results = pool.map(launch_func, client_list)
+        pool.close()
+        pool.join()
+    except RuntimeError as e:
+        return {"success": False, "error": e.__str__()}
 
     return {"success": True, "device_count": len(client_list)}
+
+def save_file(filename, data):
+    with open(filename, 'wb') as f:
+        f.write(data)
+
+@app.post("/upload")
+async def upload(file: UploadFile = File(...)):
+    contents = await file.read()
+    save_file(file.filename, contents)
+    return {"filename": file.filename}
 
 @app.get("/load")
 async def load(request: Request):
@@ -87,7 +106,9 @@ async def load(request: Request):
     check_adb_running()
     client_list = client.devices()
 
-    apk_path = "apks/calculator.apk"
+    apk_path = "apks/" + os.listdir("apks")[0]
+
+    print(apk_path)
 
     apk_name = apk_path[4:]
     apk_name = apk_name[:4]

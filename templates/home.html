@@ -1,41 +1,47 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-  .btn-custom {
-    text-align: center !important;
-    line-height: 0 !important;
-    min-width: 10rem;
-    min-height: 10rem;
-    font-size: 5rem;
-    box-sizing: content-box;
-  }
-</style>
+  <style>
+    .btn-custom {
+      text-align: center !important;
+      line-height: 0 !important;
+      min-width: 10rem;
+      min-height: 10rem;
+      font-size: 5rem;
+      box-sizing: content-box;
+    }
+  </style>
 
-<div class="container align-self-center">
-  <div id="status" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert"></div>
-  <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
-    <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
+
+
+  <div class="container align-self-center">
+  {% include "load/upload_modal.html" %}
+    <div id="status" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert"></div>
+    <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
+      <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="uploadButtonDiv">
+      <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-toggle="modal" data-target="#uploadModal">UPLOAD EXPERIENCE</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="loadButtonDiv">
+      <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" onclick="loadExperience()">LOAD ON DEVICES</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="stopButtonDiv">
+      <a id="stopButton" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="connectButtonDiv">
+      <a id="connectButton" class="btn btn-warning btn-custom d-flex align-items-center justify-content-center" onclick="connectDevice()">CONNECT DEVICE</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
+      <a id="stopServerButton" class="btn btn-danger btn-custom d-flex align-items-center justify-content-center" onclick="stopServer()">STOP SERVER</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
+      <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="htmxGrabDiv">
+      <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
+    </div>
   </div>
-  <div class="row justify-content-center mb-2" id="loadButtonDiv">
-    <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" onclick="loadExperience()">LOAD</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="stopButtonDiv">
-    <a id="stopButton" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="connectButtonDiv">
-    <a id="connectButton" class="btn btn-warning btn-custom d-flex align-items-center justify-content-center" onclick="connectDevice()">CONNECT DEVICE</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
-    <a id="stopServerButton" class="btn btn-danger btn-custom d-flex align-items-center justify-content-center" onclick="stopServer()">STOP SERVER</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
-    <a id="screenshotButton"" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="htmxGrabDiv">
-    <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
-  </div>
-</div>
 
 
 {% endblock %}
