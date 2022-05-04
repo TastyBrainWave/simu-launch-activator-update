@@ -245,6 +245,7 @@ async def screen(request: Request, refresh_ms: int, size: str, device_serial: st
 
 @app.get("/linkup")
 async def linkup(request: Request):
+    print(1111)
     check_adb_running()
     global my_devices
     my_devices = {device.serial: device for device in client.devices()}
