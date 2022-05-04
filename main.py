@@ -64,14 +64,14 @@ async def start(request: Request):
     vr_app_name = "com.alturgames.BendingOaksVR/com.unity3d.player.UnityPlayerActivity"
     android_app_name = "com.amazon.calculator"
 
-    # try:
-    #     pool = Pool(cpu_count())
-    #     launch_func = partial(launch_app, app_name=android_app_name)
-    #     results = pool.map(launch_func, client_list)
-    #     pool.close()
-    #     pool.join()
-    # except RuntimeError as e:
-    #     return {"success": False, "error": e.__str__()}
+    try:
+         pool = Pool(cpu_count())
+         launch_func = partial(launch_app, app_name=android_app_name)
+         results = pool.map(launch_func, client_list)
+         pool.close()
+         pool.join()
+    except RuntimeError as e:
+         return {"success": False, "error": e.__str__()}
 
     return {"success": True, "device_count": len(client_list)}
 
