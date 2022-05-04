@@ -220,7 +220,7 @@ screen_shots_cache = {}
 
 @app.get("/screen/{refresh_ms}/{size}/{device_serial}.png")
 async def screen(request: Request, refresh_ms: int, size: str, device_serial: str):
-    global my_devices
+
     def gen_image():
         with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
             im = my_devices[device_serial].screencap()
@@ -243,9 +243,13 @@ async def screen(request: Request, refresh_ms: int, size: str, device_serial: st
     return FileResponse(screen_shots_cache[device_serial][size]['file_id'], media_type="image/png")
 
 
+@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}/")
+async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
+    return templates.TemplateResponse("htmx/device.html", {"request": request, "device_serial": device_serial})
+
+
 @app.get("/linkup")
 async def linkup(request: Request):
-    print(1111)
     check_adb_running()
     global my_devices
     my_devices = {device.serial: device for device in client.devices()}

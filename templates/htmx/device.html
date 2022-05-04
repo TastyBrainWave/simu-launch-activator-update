@@ -1,4 +1,4 @@
-<div>
-    <img src="screen/500/large/{{ device.serial }}.png" hx-get="screen/500/large/{{ device.serial }}.png" hx-swap="outerHTML" hx-trigger="every 2s" alt="device screenshot" >
-    device: {{ device }}
+<div hx-get="device-screen/500/large/{{ device_serial }}" hx-trigger="every 2s">
+  <img src="screen/500/large/{{ device_serial }}.png" alt="device screenshot">
+  device: {{ device_serial }}
 </div>
