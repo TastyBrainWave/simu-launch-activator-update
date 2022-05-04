@@ -1,13 +1,13 @@
 import datetime
 import os
 from functools import partial
-from hashlib import sha256
+from helpers import launch_app, save_file, check_adb_running
 from multiprocessing import Process, Pool, cpu_count
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from ppadb import InstallError
 from starlette.requests import Request
-from starlette.responses import StreamingResponse, FileResponse
+from starlette.responses import StreamingResponse, FileResponse, RedirectResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 import tempfile
@@ -21,31 +21,10 @@ templates = Jinja2Templates(directory="templates")
 # Have some global variables to set app to run, devices, adb stuff etc.
 
 simu_application_name = ""
+device_type = False # False for Android, True for Quest
 
 client = AdbClient(host="127.0.0.1", port=5037)
 
-def check_adb_running():
-    try:
-        devices = client.devices()
-
-    except RuntimeError as e:
-        if e.__str__().find("Is adb running on your computer?"):
-            print("ADB Server not running, starting it now!")
-            command = os.system("adb start-server")
-            print(command)
-
-
-def launch_app(device, app_name, d_type: bool = False):
-    """
-    Launches an app on the specified device based on the device type and application name
-    :param device: the Device object for ppadb
-    :param app_name: the application name, ie: com.simu-launch.calculator
-    :param d_type: the device type, True = Quest, False = Android
-    """
-
-    command = "am start -n" + app_name + "/" + app_name + ".UnityPlayerActivity" if d_type else "monkey -p" + app_name \
-                                                                                                + " -v 1"
-    device.shell(command)
 
 @app.get("/")
 async def home(request: Request):
@@ -66,16 +45,16 @@ async def start(request: Request):
     :return: dictionary of all device serial numbers
     """
 
-    check_adb_running()
+    check_adb_running(client)
 
     client_list = client.devices()
 
-    vr_app_name = "com.alturgames.BendingOaksVR/com.unity3d.player.UnityPlayerActivity"
-    android_app_name = "com.amazon.calculator"
+    global simu_application_name
+    global device_type
 
     try:
         pool = Pool(cpu_count())
-        launch_func = partial(launch_app, app_name=android_app_name, d_type=False)
+        launch_func = partial(launch_app, app_name=simu_application_name, d_type=device_type)
         results = pool.map(launch_func, client_list)
         pool.close()
         pool.join()
@@ -84,15 +63,25 @@ async def start(request: Request):
 
     return {"success": True, "device_count": len(client_list)}
 
-def save_file(filename, data):
-    with open(filename, 'wb') as f:
-        f.write(data)
+
 
 @app.post("/upload")
-async def upload(file: UploadFile = File(...)):
-    contents = await file.read()
-    save_file(file.filename, contents)
-    return {"filename": file.filename}
+async def upload(file: UploadFile = File(...), device: str = Form(...)):
+    try:
+        contents = await file.read()
+        save_file(file.filename, contents)
+
+        global simu_application_name
+        simu_application_name = file.filename
+
+        global device_type
+        device_type = True if device == "quest" else False
+
+        print(device_type, simu_application_name)
+
+        return {"success": True}
+    except IOError as e:
+        return {"success": False, "error": e.__str__()}
 
 @app.get("/load")
 async def load(request: Request):
@@ -103,7 +92,7 @@ async def load(request: Request):
     :return: a success dictionary signifying the operation was successful
     """
 
-    check_adb_running()
+    check_adb_running(client)
     client_list = client.devices()
 
     apk_path = "apks/" + os.listdir("apks")[0]
@@ -161,7 +150,7 @@ async def connect(request: Request):
 
     global BASE_PORT
 
-    check_adb_running()
+    check_adb_running(client)
 
     devices = client.devices()
 
@@ -210,7 +199,7 @@ async def screen_grab(request: Request):
     :return: a dictionary containing the success flag
     """
 
-    check_adb_running()
+    check_adb_running(client)
 
     devices = client.devices()
 
@@ -243,7 +232,7 @@ my_devices = None
 
 @app.get("/linkup")
 async def linkup(request: Request):
-    check_adb_running()
+    check_adb_running(client)
     global my_devices
     my_devices = {device.serial: device for device in client.devices()}
     return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})

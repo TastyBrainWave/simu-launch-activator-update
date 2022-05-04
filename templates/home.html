@@ -15,13 +15,16 @@
 
 
   <div class="container align-self-center">
-  {% include "load/upload_modal.html" %}
+
+    {% include "load/upload_modal.html" %}
+
     <div id="status" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert"></div>
     <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
       <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
+
     </div>
     <div class="row justify-content-center mb-2" id="uploadButtonDiv">
-      <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-toggle="modal" data-target="#uploadModal">UPLOAD EXPERIENCE</a>
+      <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#uploadModal">UPLOAD EXPERIENCE</a>
     </div>
     <div class="row justify-content-center mb-2" id="loadButtonDiv">
       <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" onclick="loadExperience()">LOAD ON DEVICES</a>
@@ -48,6 +51,30 @@
 
 {% block javascript %}
 <script>
+  function uploadAPKForm() {
+      const formElement = document.getElementById('uploadForm')
+      var formData = new FormData(formElement)
+
+      fetch('/upload', {
+          method: 'POST',
+          body: formData
+      }).then(function (response) {
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+
+          $('#uploadModal').modal('hide')
+
+          return response.json();
+      }).then(function (data) {
+        status_global.classList.add("alert-success");
+        status_global.innerHTML = "Experience has been uploaded. You may now load it on devices";
+      }).catch(function (error) {
+        status_global.classList.add("alert-danger");
+        status_global.innerHTML = "Error uploading experience to server: " + error;
+      });
+  }
+
   status_global = document.getElementById("status");
   function remove_class(element) {
     var lastClass = element.attr('class').split(' ').pop();
