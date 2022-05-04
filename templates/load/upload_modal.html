@@ -1,5 +1,5 @@
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="exampleModalLabel">Load APK</h5>
@@ -7,8 +7,10 @@
       </div>
       <div class="modal-body">
         <form id="uploadForm">
-          <label for="file">Experience APK</label>
-          <input name="file" type="file">
+          <fieldset>
+            <legend>Experience APK:</legend>
+            <input name="file" type="file">
+          </fieldset>
           <fieldset>
             <legend>Device type:</legend>
             <div>
@@ -23,8 +25,8 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" onclick="uploadAPKForm()">Submit</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="uploadAPKForm()">Submit</button>
       </div>
     </div>
   </div>

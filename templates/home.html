@@ -10,6 +10,9 @@
       font-size: 5rem;
       box-sizing: content-box;
     }
+    .btn-orange {
+        background-color: orange;
+    }
   </style>
 
 
@@ -24,7 +27,7 @@
 
     </div>
     <div class="row justify-content-center mb-2" id="uploadButtonDiv">
-      <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#uploadModal">UPLOAD EXPERIENCE</a>
+      <a style="font-size: 4rem" id="loadButton" class="btn btn-orange btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#uploadModal">UPLOAD EXPERIENCE</a>
     </div>
     <div class="row justify-content-center mb-2" id="loadButtonDiv">
       <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" onclick="loadExperience()">LOAD ON DEVICES</a>
@@ -52,28 +55,6 @@
 {% block javascript %}
 <script defer src="/static/main.js"></script>
 <script>
-  function uploadAPKForm() {
-      const formElement = document.getElementById('uploadForm')
-      var formData = new FormData(formElement)
 
-      fetch('/upload', {
-          method: 'POST',
-          body: formData
-      }).then(function (response) {
-          if (!response.ok) {
-            throw Error(response.statusText);
-          }
-
-          $('#uploadModal').modal('hide')
-
-          return response.json();
-      }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has been uploaded. You may now load it on devices";
-      }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error uploading experience to server: " + error;
-      });
-  }
 </script>
 {% endblock %}

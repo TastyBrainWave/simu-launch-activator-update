@@ -18,10 +18,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-# Have some global variables to set app to run, devices, adb stuff etc.
-
-simu_application_name = ""
-device_type = False # False for Android, True for Quest
+# Globally accessible variables
+simu_application_name = ""  # The application name for the APK, so that it can be used to load it inside the devices
+device_type = False  # False for Android, True for Quest
+BASE_PORT = 5555
 
 client = AdbClient(host="127.0.0.1", port=5037)
 
@@ -123,20 +123,18 @@ async def stop(request: Request):
 
     client_list = client.devices()
 
-    app_name = "com.amazon.calculator"
+    global simu_application_name
 
     try:
         for device in client_list:
             print(device.serial)
-            command = "am force-stop " + app_name
+            command = "am force-stop " + simu_application_name
             print(command)
             device.shell(command)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
-    return {"success": True, "stopped_app": app_name}
-
-BASE_PORT = 5555
+    return {"success": True, "stopped_app": simu_application_name}
 
 @app.get("/connect")
 async def connect(request: Request):

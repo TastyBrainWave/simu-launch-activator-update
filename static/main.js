@@ -1,3 +1,27 @@
+function uploadAPKForm() {
+    const formElement = document.getElementById('uploadForm')
+    var formData = new FormData(formElement)
+
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+
+        $('#uploadModal').modal('hide')
+
+        return response.json();
+    }).then(function (data) {
+        status_global.classList.add("alert-success");
+        status_global.innerHTML = "Experience has been uploaded. You may now load it on devices";
+    }).catch(function (error) {
+        status_global.classList.add("alert-danger");
+        status_global.innerHTML = "Error uploading experience to server: " + error;
+    });
+}
+
 status_global = document.getElementById("status");
 function remove_class(element) {
     var lastClass = element.attr('class').split(' ').pop();
