@@ -6,20 +6,24 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <form id="uploadForm">
+        <form id="uploadForm" action="/upload" enctype="multipart/form-data" method="post">
           <fieldset>
             <legend>Experience APK:</legend>
-            <input name="file" type="file">
+            <input name="file" type="file" id="upload">
           </fieldset>
           <fieldset>
-            <legend>Device type:</legend>
+            <legend>Command type</legend>
             <div>
-              <label for="android">Android</label>
-              <input name="device" id="android" type="radio" value="android" checked>
+              <label for="command">Android</label>
+              <input name="command" id="command" type="radio" value="android" checked>
             </div>
             <div>
-              <label for="quest">Quest</label>
-              <input name="device" type="radio" id="quest" value="quest">
+              <label for="command">Unreal Engine</label>
+              <input name="command" id="command" type="radio" value="com.epicgames.ue4.GameActivity">
+            </div>
+            <div>
+              <label for="android">Unity 3D</label>
+              <input name="command" id="command" type="radio" value="com.unity3d.player.UnityPlayerActivity">
             </div>
           </fieldset>
         </form>

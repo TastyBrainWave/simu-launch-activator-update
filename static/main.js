@@ -1,3 +1,9 @@
+function transformFormData(){
+            var myForm = document.getElementById('myForm');
+            var qs = new URLSearchParams(new FormData(myForm)).toString();
+            myForm.action = 'http://127.0.0.1:8000/submit?'+qs;
+         }
+
 function uploadAPKForm() {
     const formElement = document.getElementById('uploadForm')
     var formData = new FormData(formElement)
@@ -18,6 +24,7 @@ function uploadAPKForm() {
         status_global.innerHTML = "Experience has been uploaded. You may now load it on devices";
     }).catch(function (error) {
         status_global.classList.add("alert-danger");
+        console.log(error);
         status_global.innerHTML = "Error uploading experience to server: " + error;
     });
 }

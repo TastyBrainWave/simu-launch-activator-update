@@ -1,9 +1,14 @@
 import datetime
 import os
 from functools import partial
+
+from fastapi.encoders import jsonable_encoder
+from sqlalchemy.orm import Session
 from helpers import launch_app, save_file, check_adb_running
 from multiprocessing import Process, Pool, cpu_count
+from typing import List
 
+from fastapi import FastAPI, UploadFile, File, Depends
 from fastapi import FastAPI, UploadFile, File, Form
 from ppadb import InstallError
 from starlette.requests import Request
@@ -13,14 +18,23 @@ from starlette.templating import Jinja2Templates
 import tempfile
 from ppadb.client import Client as AdbClient
 
+from sql_app import models, schemas, crud
+from sql_app.database import engine, SessionLocal
+from sql_app.schemas import APKDetailsCreate, APKDetails, APKDetailsBase
+
+models.Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 templates = Jinja2Templates(directory="templates")
 
-# Globally accessible variables
-simu_application_name = ""  # The application name for the APK, so that it can be used to load it inside the devices
-device_type = False  # False for Android, True for Quest
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 BASE_PORT = 5555
 
 client = AdbClient(host="127.0.0.1", port=5037)
@@ -37,7 +51,7 @@ async def home(request: Request):
 
 
 @app.get("/start")
-async def start(request: Request):
+async def start(request: Request, db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
 
@@ -49,12 +63,11 @@ async def start(request: Request):
 
     client_list = client.devices()
 
-    global simu_application_name
-    global device_type
+    item = jsonable_encoder(crud.get_first_apk_details(db))
 
     try:
         pool = Pool(cpu_count())
-        launch_func = partial(launch_app, app_name=simu_application_name, d_type=device_type)
+        launch_func = partial(launch_app, app_name=item["apk_name"], d_type=item["device_type"])
         results = pool.map(launch_func, client_list)
         pool.close()
         pool.join()
@@ -64,9 +77,9 @@ async def start(request: Request):
     return {"success": True, "device_count": len(client_list)}
 
 
-
 @app.post("/upload")
-async def upload(file: UploadFile = File(...), device: str = Form(...)):
+async def upload(file: UploadFile = File(...), command: str = Form(...), db: Session = Depends(get_db)):
+
     try:
         contents = await file.read()
         save_file(file.filename, contents)
@@ -74,20 +87,22 @@ async def upload(file: UploadFile = File(...), device: str = Form(...)):
         global simu_application_name
         simu_application_name = file.filename
 
-        global device_type
-        device_type = True if device == "quest" else False
+        device_type = 0 if command == "android" else 1
 
-        print(device_type, simu_application_name)
+        item = APKDetailsBase(apk_name=file.filename, command="" if command == "android" else command, device_type=device_type)
+
+        crud.create_apk_details_item(db=db, item=APKDetailsCreate.parse_obj(item.dict()))
 
         return {"success": True}
     except IOError as e:
         return {"success": False, "error": e.__str__()}
 
 @app.get("/load")
-async def load(request: Request):
+async def load(request: Request, db: Session = Depends(get_db)):
     """
         Installs the experience on all devices
 
+    :param db: the DB session
     :param request: the Request parameter
     :return: a success dictionary signifying the operation was successful
     """
@@ -95,12 +110,15 @@ async def load(request: Request):
     check_adb_running(client)
     client_list = client.devices()
 
-    apk_path = "apks/" + os.listdir("apks")[0]
+    apk_paths = os.listdir("apks")
+    apk_path = "apks/"
 
-    print(apk_path)
+    item = jsonable_encoder(crud.get_first_apk_details(db))
 
-    apk_name = apk_path[4:]
-    apk_name = apk_name[:4]
+    if item["apk_name"] in apk_paths:
+        apk_path += item["apk_name"]
+    else:
+        return {"success": False, "error": "Cannot find the Experience APK in the directory. Make sure you uploaded it!"}
 
     try:
         for device in client_list:
@@ -113,7 +131,7 @@ async def load(request: Request):
     return {"success": True, "device_count": len(client_list)}
 
 @app.get("/stop")
-async def stop(request: Request):
+async def stop(request: Request, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
@@ -123,18 +141,20 @@ async def stop(request: Request):
 
     client_list = client.devices()
 
-    global simu_application_name
+    item = jsonable_encoder(crud.get_first_apk_details(db))
+
+    app_name = item["apk_name"] if not ".apk" in item["apk_name"] else item["apk_name"][:-4]
 
     try:
         for device in client_list:
             print(device.serial)
-            command = "am force-stop " + simu_application_name
+            command = "am force-stop " + app_name
             print(command)
             device.shell(command)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
-    return {"success": True, "stopped_app": simu_application_name}
+    return {"success": True, "stopped_app": app_name}
 
 @app.get("/connect")
 async def connect(request: Request):

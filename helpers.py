@@ -19,8 +19,13 @@ def launch_app(device, app_name, d_type: bool = False):
       :param d_type: the device type, True = Quest, False = Android
       """
 
-    command = "am start -n" + app_name + "/" + app_name + ".UnityPlayerActivity" if d_type else "monkey -p" + app_name \
+    if ".apk" in app_name:
+        app_name = app_name[:-4]
+
+    command = "am start -n" + app_name + "/" + app_name + ".UnityPlayerActivity" if d_type else "monkey -p " + app_name \
                                                                                                 + " -v 1"
+    print(command)
+
     device.shell(command)
 
 def save_file(filename, data):
