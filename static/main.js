@@ -181,9 +181,6 @@ function connectDevice() {
         headers: {
             "Content-type": "application/json"
         },
-        body: {
-            "remote_address": "",
-        }
     }).then(function (response) {
         if (!response.ok) {
             throw Error(response.error);
