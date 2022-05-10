@@ -6,7 +6,7 @@ import sqlalchemy
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from helpers import launch_app, save_file, check_adb_running
+from helpers import launch_app, save_file, check_adb_running, BASE_DIR
 from multiprocessing import Process, Pool, cpu_count
 from typing import List
 

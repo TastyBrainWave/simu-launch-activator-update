@@ -1,5 +1,7 @@
 import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
 def check_adb_running(client):
     try:
         devices = client.devices()
