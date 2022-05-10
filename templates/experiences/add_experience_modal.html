@@ -1,0 +1,40 @@
+<div class="modal fade" id="addExperienceModal" tabindex="-1" aria-labelledby="addExperienceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addExperienceModalLabel">Add remote experience</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addExperienceForm" action="/add-remote-experience" enctype="multipart/form-data" method="post">
+          <fieldset>
+            <legend>This tool allows you to specify an existing experience which is already installed on the devices.</legend>
+          </fieldset>
+          <fieldset>
+            <legend>Experience APK name (include the .apk extension)</legend>
+            <input name="apk_name" type="text" id="apk_name">
+          </fieldset>
+          <fieldset>
+            <legend>Command type</legend>
+            <div>
+              <label for="command">Android</label>
+              <input name="command" id="command" type="radio" value="android" checked>
+            </div>
+            <div>
+              <label for="command">Unreal Engine</label>
+              <input name="command" id="command" type="radio" value="com.epicgames.ue4.GameActivity">
+            </div>
+            <div>
+              <label for="android">Unity 3D</label>
+              <input name="command" id="command" type="radio" value="com.unity3d.player.UnityPlayerActivity">
+            </div>
+          </fieldset>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="addRemoteExperience()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>

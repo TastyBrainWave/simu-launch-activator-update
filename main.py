@@ -2,7 +2,9 @@ import datetime
 import os
 from functools import partial
 
+import sqlalchemy
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from helpers import launch_app, save_file, check_adb_running
 from multiprocessing import Process, Pool, cpu_count
@@ -19,6 +21,7 @@ import tempfile
 from ppadb.client import Client as AdbClient
 
 from sql_app import models, schemas, crud
+from sql_app.crud import get_all_apk_details
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetails, APKDetailsBase
 
@@ -27,6 +30,8 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+simu_application_name = ""
 
 def get_db():
     db = SessionLocal()
@@ -41,13 +46,30 @@ client = AdbClient(host="127.0.0.1", port=5037)
 
 
 @app.get("/")
-async def home(request: Request):
+async def home(request: Request, db: Session = Depends(get_db)):
     """
         View mainly responsible for handling the front end, since nothing will happen on the backend at this endpoint.
+    :param db: the DB dependency
     :param request: the Request() object
     :return: a TemplateResponse object containing the homepage
     """
-    return templates.TemplateResponse("home.html", {"request": request})
+
+    uploaded_experiences = get_all_apk_details(db)
+
+    for item in uploaded_experiences:
+        print(item.apk_name)
+
+    global simu_application_name
+
+    print(simu_application_name)
+
+    return templates.TemplateResponse("home.html",
+                                      {
+                                          "request": request,
+                                          "choices": [item.apk_name for item in uploaded_experiences],
+                                          "app_name": simu_application_name
+                                      }
+                                      )
 
 
 @app.get("/start")
@@ -55,6 +77,7 @@ async def start(request: Request, db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
 
+    :param db: the database dependency
     :param request: The Request parameter
     :return: dictionary of all device serial numbers
     """
@@ -63,11 +86,15 @@ async def start(request: Request, db: Session = Depends(get_db)):
 
     client_list = client.devices()
 
-    item = jsonable_encoder(crud.get_first_apk_details(db))
+    global simu_application_name
+
+    item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
+
+    print(item)
 
     try:
         pool = Pool(cpu_count())
-        launch_func = partial(launch_app, app_name=item["apk_name"], d_type=item["device_type"])
+        launch_func = partial(launch_app, app_name=item["apk_name"], d_type=item["device_type"], command=item["command"])
         results = pool.map(launch_func, client_list)
         pool.close()
         pool.join()
@@ -97,11 +124,12 @@ async def upload(file: UploadFile = File(...), command: str = Form(...), db: Ses
     except IOError as e:
         return {"success": False, "error": e.__str__()}
 
-@app.get("/load")
-async def load(request: Request, db: Session = Depends(get_db)):
+@app.post("/load")
+async def load(load_choices: str = Form(...), db: Session = Depends(get_db)):
     """
         Installs the experience on all devices
 
+    :param load_choices: the choice of experience specified by the user
     :param db: the DB session
     :param request: the Request parameter
     :return: a success dictionary signifying the operation was successful
@@ -113,10 +141,15 @@ async def load(request: Request, db: Session = Depends(get_db)):
     apk_paths = os.listdir("apks")
     apk_path = "apks/"
 
-    item = jsonable_encoder(crud.get_first_apk_details(db))
+    item = load_choices
 
-    if item["apk_name"] in apk_paths:
-        apk_path += item["apk_name"]
+    global simu_application_name
+    simu_application_name = item
+
+    print(item, simu_application_name)
+
+    if item in apk_paths:
+        apk_path += item
     else:
         return {"success": False, "error": "Cannot find the Experience APK in the directory. Make sure you uploaded it!"}
 
@@ -130,11 +163,36 @@ async def load(request: Request, db: Session = Depends(get_db)):
 
     return {"success": True, "device_count": len(client_list)}
 
+@app.post("/set-remote-experience")
+async def set_remote_experience(set_choices: str = Form(...)):
+    if set_choices:
+        global simu_application_name
+        simu_application_name = set_choices
+
+        return {"success": True}
+
+    return {"success": False}
+
+@app.post("/add-remote-experience")
+async def set_remote_experience(apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)):
+    try:
+        device_type = 0 if command == "android" else 1
+
+        item = APKDetailsBase(apk_name=apk_name, command="" if command == "android" else command,
+                              device_type=device_type)
+
+        crud.create_apk_details_item(db=db, item=APKDetailsCreate.parse_obj(item.dict()))
+
+        return {"success": True}
+    except SQLAlchemyError as e:
+        return {"success": False, "error": e.__str__()}
+
 @app.get("/stop")
 async def stop(request: Request, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
+    :param db:
     :param request: The Request parameter
     :return: a dictionary containing the success flag of the operation and any errors
     """
@@ -156,12 +214,13 @@ async def stop(request: Request, db: Session = Depends(get_db)):
 
     return {"success": True, "stopped_app": app_name}
 
-@app.get("/connect")
-async def connect(request: Request):
+@app.post("/connect")
+async def connect():
     """
         Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
         the USB.
 
+    :param ip_address: optional parameter for the IP Address
     :param request: The Request parameter
     :return: a dictionary containing the success flag of the operation and any errors
     """
@@ -172,12 +231,10 @@ async def connect(request: Request):
 
     devices = client.devices()
 
+
     device_ip = devices[0].shell("ip addr show wlan0")
-
     device_ip = device_ip[device_ip.find("inet "):]
-
     device_ip = device_ip[:device_ip.find("/")]
-
     device_ip = device_ip[device_ip.find(" ")+1:]
 
     try:

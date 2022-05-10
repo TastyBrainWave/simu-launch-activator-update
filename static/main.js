@@ -30,6 +30,7 @@ function uploadAPKForm() {
 }
 
 status_global = document.getElementById("status");
+selected_experience_global = document.getElementById("experience");
 function remove_class(element) {
     var lastClass = element.attr('class').split(' ').pop();
     if (lastClass.includes("alert-")) {
@@ -62,18 +63,24 @@ function startExperience() {
 
 function loadExperience() {
     document.getElementById("loadButton").classList.add("disabled");
+
+    const formElement = document.getElementById('loadForm')
+    var formData = new FormData(formElement)
+
     fetch('/load', {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
+        method: 'POST',
+        body: formData
     }).then(function (response) {
         if (!response.ok) {
             throw Error(response.statusText);
         }
+
+        $('#loadModal').modal('hide');
+
         return response.json();
     }).then(function (data) {
+        selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
+
         status_global.classList.add("alert-success");
         status_global.innerHTML = "Experience has loaded on " + data["device_count"] + " devices!";
         document.getElementById("loadButton").classList.remove("disabled");
@@ -83,6 +90,67 @@ function loadExperience() {
         document.getElementById("loadButton").classList.remove("disabled");
     });
 }
+
+function setRemoteExperience() {
+    document.getElementById("setRemoteButton").classList.add("disabled");
+
+    const formElement = document.getElementById('setRemoteExperienceForm')
+    var formData = new FormData(formElement)
+
+    fetch('/set-remote-experience', {
+        method: 'POST',
+        body: formData
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+
+        $('#setExperienceModal').modal('hide');
+
+        return response.json();
+    }).then(function (data) {
+        selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("set_choices")
+
+        status_global.classList.add("alert-success");
+        status_global.innerHTML = "Experience has been set! You may now start it!";
+        document.getElementById("setRemoteButton").classList.remove("disabled");
+    }).catch(function (error) {
+        status_global.classList.add("alert-danger");
+        status_global.innerHTML = "Error setting experience: " + error;
+        document.getElementById("setRemoteButton").classList.remove("disabled");
+    });
+}
+
+function addRemoteExperience() {
+    document.getElementById("addRemoteButton").classList.add("disabled");
+
+    const formElement = document.getElementById('addExperienceForm')
+    var formData = new FormData(formElement)
+
+    fetch('/add-remote-experience', {
+        method: 'POST',
+        body: formData
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+
+        $('#addExperienceModal').modal('hide');
+
+        return response.json();
+    }).then(function (data) {
+
+        status_global.classList.add("alert-success");
+        status_global.innerHTML = "Experience has been added! You may now set it as the active experience";
+        document.getElementById("addRemoteButton").classList.remove("disabled");
+    }).catch(function (error) {
+        status_global.classList.add("alert-danger");
+        status_global.innerHTML = "Error adding experience: " + error;
+        document.getElementById("addRemoteButton").classList.remove("disabled");
+    });
+}
+
+
 function stopExperience() {
     document.getElementById("stopButton").classList.add("disabled");
     fetch('/stop', {
@@ -98,7 +166,7 @@ function stopExperience() {
         return response.json();
     }).then(function (data) {
         status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has stopped on all decives!";
+        status_global.innerHTML = "Experience has stopped on all devices!";
         document.getElementById("stopButton").classList.remove("disabled");
     }).catch(function (error) {
         status_global.classList.add("alert-danger");
@@ -109,11 +177,7 @@ function stopExperience() {
 function connectDevice() {
     document.getElementById("connectButton").classList.add("disabled");
     fetch('/connect', {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
+        method: 'POST',
     }).then(function (response) {
         if (!response.ok) {
             throw Error(response.error);

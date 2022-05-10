@@ -13,6 +13,12 @@
     .btn-orange {
         background-color: orange;
     }
+    .btn-yellow {
+        background-color: yellow;
+    }
+    .btn-blue {
+        background-color: aquamarine;
+    }
   </style>
 
 
@@ -20,7 +26,17 @@
   <div class="container align-self-center">
 
     {% include "load/upload_modal.html" %}
+    {% include "load/load_modal.html" %}
+    {% include "experiences/set_experience_modal.html" %}
+    {% include "experiences/add_experience_modal.html" %}
 
+    <div id="experience" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert">
+      {% if app_name %}
+        The following experience is currently selected: {{ app_name[:-4] }}
+      {% else %}
+        No experience currently selected! Use the "Load on devices" button to do so!
+      {% endif %}
+    </div>
     <div id="status" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert"></div>
     <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
       <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
@@ -29,8 +45,14 @@
     <div class="row justify-content-center mb-2" id="uploadButtonDiv">
       <a style="font-size: 4rem" id="loadButton" class="btn btn-orange btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#uploadModal">UPLOAD EXPERIENCE</a>
     </div>
+    <div class="row justify-content-center mb-2" id="setExperienceButtonDiv">
+      <a style="font-size: 4rem" id="setRemoteButton" class="btn btn-blue btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#setExperienceModal">SET EXPERIENCE</a>
+    </div>
+    <div class="row justify-content-center mb-2" id="addExperienceButtonDiv">
+      <a style="font-size: 4rem" id="addRemoteButton" class="btn btn-yellow btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#addExperienceModal">ADD NEW EXPERIENCE</a>
+    </div>
     <div class="row justify-content-center mb-2" id="loadButtonDiv">
-      <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" onclick="loadExperience()">LOAD ON DEVICES</a>
+      <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#loadModal">LOAD ON DEVICES</a>
     </div>
     <div class="row justify-content-center mb-2" id="stopButtonDiv">
       <a id="stopButton" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>

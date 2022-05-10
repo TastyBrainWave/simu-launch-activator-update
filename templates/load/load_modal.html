@@ -1,0 +1,28 @@
+<div class="modal fade" id="loadModal" tabindex="-1" aria-labelledby="loadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loadModalLabel">Load APK</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="loadForm" action="/load" enctype="multipart/form-data" method="post">
+          <fieldset>
+            <legend>Choose the experience to be loaded on the devices</legend>
+            <label>
+              <select id="load_choices_dropdown" name="load_choices" required>
+                {% for choice in choices %}
+                  <option value="{{ choice }}">{{ choice }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </fieldset>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="loadExperience()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>

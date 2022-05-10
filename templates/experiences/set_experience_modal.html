@@ -1,0 +1,28 @@
+<div class="modal fade" id="setExperienceModal" tabindex="-1" aria-labelledby="setExperienceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="setExperienceModalLabel">Load APK</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="setRemoteExperienceForm" action="/set-remote-experience" enctype="multipart/form-data" method="post">
+          <fieldset>
+            <legend>Choose the experience to be used on the devices</legend>
+            <label>
+              <select id="set_choices_dropdown" name="set_choices" required>
+                {% for choice in choices %}
+                  <option value="{{ choice }}">{{ choice }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </fieldset>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="setRemoteExperience()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 
 
-def get_apk_details(db: Session, apk_id: int):
-    return db.query(models.APKDetails).filter(models.APKDetails.id == apk_id).first()
+def get_apk_details(db: Session, apk_id: int = None, apk_name: str = None):
+    return db.query(models.APKDetails).filter(models.APKDetails.apk_name == apk_name).first() if apk_name is not None else db.query(models.APKDetails).filter(models.APKDetails.id == apk_id).first()
 
 def get_first_apk_details(db: Session):
     return db.query(models.APKDetails).order_by(models.APKDetails.id.desc()).first()

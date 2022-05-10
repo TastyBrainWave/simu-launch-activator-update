@@ -11,7 +11,7 @@ def check_adb_running(client):
             print(command)
 
 
-def launch_app(device, app_name, d_type: bool = False):
+def launch_app(device, app_name, d_type: bool = False, command: str = None):
     """
       Launches an app on the specified device based on the device type and application name
       :param device: the Device object for ppadb
@@ -22,7 +22,7 @@ def launch_app(device, app_name, d_type: bool = False):
     if ".apk" in app_name:
         app_name = app_name[:-4]
 
-    command = "am start -n" + app_name + "/" + app_name + ".UnityPlayerActivity" if d_type else "monkey -p " + app_name \
+    command = "am start -n " + app_name + "/" + command if d_type else "monkey -p " + app_name \
                                                                                                 + " -v 1"
     print(command)
 
