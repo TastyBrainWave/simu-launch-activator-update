@@ -230,7 +230,9 @@ async def connect(request: Request):
 
     check_adb_running(client)
 
-    remote_address = request["remote_address"] if "remote_address" in request.keys() else ""
+    json = await request.json() if len((await request.body()).decode()) > 0 else {}
+
+    remote_address = json["remote_address"] if "remote_address" in json else ""
 
     devices = client.devices()
 
