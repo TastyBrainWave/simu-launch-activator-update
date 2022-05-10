@@ -69,14 +69,16 @@
     <div class="row justify-content-center mb-2" id="htmxGrabDiv">
       <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
     </div>
+    <div class="row justify-content-center mb-2" id="htmxGrabDiv">
+      <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center"
+         hx-get="/linkup" hx-swap="outerHTML"
+         hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
+    </div>
   </div>
 
 
 {% endblock %}
 
 {% block javascript %}
-<script defer src="/static/main.js"></script>
-<script>
-
-</script>
+  <script defer src="/static/main.js"></script>
 {% endblock %}

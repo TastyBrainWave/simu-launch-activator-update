@@ -1,3 +1,4 @@
 {% for device in devices %}
+  {% set device_serial = device.serial %}
     {% include 'htmx/device.html' %}
 {% endfor %}

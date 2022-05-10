@@ -271,6 +271,7 @@ async def exit_server(request: Request):
 
     return {"success": result}
 
+
 @app.get("/screen-grab")
 async def screen_grab(request: Request):
     """
@@ -300,21 +301,47 @@ async def screen_grab(request: Request):
     return {"success": True}
 
 
-@app.get("/screen/{device_serial}.png")
-async def screen(request: Request, device_serial: str):
-    im = my_devices[device_serial].screencap()
-
-    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
-        FOUT.write(im)
-        return FileResponse(FOUT.name, media_type="image/png")
-
 my_devices = None
+screen_shots_cache = {}
+
+
+# screen_shots_cache ={ device_id: { abvde: {size1: {timestamp: x, file_id: y }}}}
+
+
+@app.get("/screen/{refresh_ms}/{size}/{device_serial}.png")
+async def screen(request: Request, refresh_ms: int, size: str, device_serial: str):
+
+    def gen_image():
+        with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
+            im = my_devices[device_serial].screencap()
+            FOUT.write(im)
+            return FOUT.name
+
+    timestamp = datetime.datetime.now()
+
+    if device_serial not in screen_shots_cache:
+        screen_shots_cache[device_serial] = {}
+
+    if size not in screen_shots_cache[device_serial]:
+        screen_shots_cache[device_serial][size] = {'timestamp': timestamp, 'file_id': gen_image()}
+
+    elif screen_shots_cache[device_serial][size]['timestamp'] + datetime.timedelta(
+            milliseconds=refresh_ms) < timestamp:
+        screen_shots_cache[device_serial][size]['timestamp'] = timestamp
+        screen_shots_cache[device_serial][size]['file_id'] = gen_image()
+
+    return FileResponse(screen_shots_cache[device_serial][size]['file_id'], media_type="image/png")
+
+
+@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}/")
+async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
+    return templates.TemplateResponse("htmx/device.html", {"request": request, "device_serial": device_serial})
+
 
 @app.get("/linkup")
 async def linkup(request: Request):
     check_adb_running(client)
     global my_devices
     my_devices = {device.serial: device for device in client.devices()}
+
     return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
-
-
