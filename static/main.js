@@ -178,6 +178,12 @@ function connectDevice() {
     document.getElementById("connectButton").classList.add("disabled");
     fetch('/connect', {
         method: 'POST',
+        headers: {
+            "Content-type": "application/json"
+        },
+        body: {
+            "remote_address": "",
+        }
     }).then(function (response) {
         if (!response.ok) {
             throw Error(response.error);

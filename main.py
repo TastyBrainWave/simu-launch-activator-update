@@ -199,7 +199,9 @@ async def stop(request: Request, db: Session = Depends(get_db)):
 
     client_list = client.devices()
 
-    item = jsonable_encoder(crud.get_first_apk_details(db))
+    global simu_application_name
+
+    item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
 
     app_name = item["apk_name"] if not ".apk" in item["apk_name"] else item["apk_name"][:-4]
 
@@ -215,13 +217,12 @@ async def stop(request: Request, db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 @app.post("/connect")
-async def connect():
+async def connect(request: Request):
     """
         Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
         the USB.
 
-    :param ip_address: optional parameter for the IP Address
-    :param request: The Request parameter
+    :param request: The Request parameter which is used to receive the device data.
     :return: a dictionary containing the success flag of the operation and any errors
     """
 
@@ -229,13 +230,17 @@ async def connect():
 
     check_adb_running(client)
 
+    remote_address = request["remote_address"] if "remote_address" in request.keys() else ""
+
     devices = client.devices()
 
-
-    device_ip = devices[0].shell("ip addr show wlan0")
-    device_ip = device_ip[device_ip.find("inet "):]
-    device_ip = device_ip[:device_ip.find("/")]
-    device_ip = device_ip[device_ip.find(" ")+1:]
+    if not remote_address:
+        device_ip = devices[0].shell("ip addr show wlan0")
+        device_ip = device_ip[device_ip.find("inet "):]
+        device_ip = device_ip[:device_ip.find("/")]
+        device_ip = device_ip[device_ip.find(" ")+1:]
+    else:
+        device_ip = remote_address
 
     try:
         os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
