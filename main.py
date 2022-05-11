@@ -264,6 +264,8 @@ async def stop(devices: list = Form(...), db: Session = Depends(get_db)):
     :return: a dictionary containing the success flag of the operation and any errors
     """
 
+    check_adb_running(client)
+
     client_list = (
         client.devices()
         if not devices
