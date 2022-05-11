@@ -80,6 +80,7 @@ function loadExperience() {
 
     const formElement = document.getElementById('loadForm')
     var formData = new FormData(formElement)
+    formData.append("devices", "[]")
 
     fetch('/load', {
         method: 'POST',
