@@ -1,9 +1,14 @@
-function transformFormData(){
-            var myForm = document.getElementById('myForm');
-            var qs = new URLSearchParams(new FormData(myForm)).toString();
-            myForm.action = 'http://127.0.0.1:8000/submit?'+qs;
-         }
-
+var status_global = document.getElementById("status");
+var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
+function transformFormData() {
+    var myForm = document.getElementById('myForm');
+    var qs = new URLSearchParams(new FormData(myForm)).toString();
+    myForm.action = 'http://127.0.0.1:8000/submit?' + qs;
+}
+showStatus = (text) => {
+    status_global.innerHTML = text;
+    statusToast.show();
+}
 function uploadAPKForm() {
     const formElement = document.getElementById('uploadForm')
     var formData = new FormData(formElement)
@@ -20,16 +25,14 @@ function uploadAPKForm() {
 
         return response.json();
     }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has been uploaded. You may now load it on devices";
+        showStatus("Experience has been uploaded. You may now load it on devices");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
         console.log(error);
-        status_global.innerHTML = "Error uploading experience to server: " + error;
+        showStatus("Error uploading experience to server: " + error);
+
     });
 }
 
-status_global = document.getElementById("status");
 selected_experience_global = document.getElementById("experience");
 function remove_class(element) {
     var lastClass = element.attr('class').split(' ').pop();
@@ -54,12 +57,10 @@ function startExperience() {
         }
         return response.json();
     }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has started on " + data["device_count"] + " devices!";
+        showStatus("Experience has started on " + data["device_count"] + " devices!");
         document.getElementById("startButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error starting experience: " + error;
+        showStatus("Error starting experience: " + error);
         document.getElementById("startButton").classList.remove("disabled");
     });
 }
@@ -83,13 +84,11 @@ function loadExperience() {
         return response.json();
     }).then(function (data) {
         selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
-
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has loaded on " + data["device_count"] + " devices!";
+        showStatus("Experience has loaded on " + data["device_count"] + " devices!");
         document.getElementById("loadButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error loading experience: " + error;
+
+        showStatus("Error loading experience: " + error);
         document.getElementById("loadButton").classList.remove("disabled");
     });
 }
@@ -114,12 +113,12 @@ function setRemoteExperience() {
     }).then(function (data) {
         selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("set_choices")
 
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has been set! You may now start it!";
+
+        showStatus("Experience has been set! You may now start it!");
         document.getElementById("setRemoteButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error setting experience: " + error;
+
+        showStatus("Error setting experience: " + error);
         document.getElementById("setRemoteButton").classList.remove("disabled");
     });
 }
@@ -143,12 +142,12 @@ function addRemoteExperience() {
         return response.json();
     }).then(function (data) {
 
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has been added! You may now set it as the active experience";
+
+        showStatus("Experience has been added! You may now set it as the active experience");
         document.getElementById("addRemoteButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error adding experience: " + error;
+
+        showStatus("Error adding experience: " + error);
         document.getElementById("addRemoteButton").classList.remove("disabled");
     });
 }
@@ -168,12 +167,12 @@ function stopExperience() {
         }
         return response.json();
     }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Experience has stopped on all devices!";
+
+        showStatus("Experience has stopped on all devices!");
         document.getElementById("stopButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error stopping experience: " + error;
+
+        showStatus("Error stopping experience: " + error);
         document.getElementById("stopButton").classList.remove("disabled");
     });
 }
@@ -190,12 +189,12 @@ function connectDevice() {
         }
         return response.json();
     }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Device connected with serial ID: " + data["serial"];
+
+        showStatus("Device connected with serial ID: " + data["serial"]);
         document.getElementById("connectButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error connecting device: " + error;
+
+        showStatus("Error connecting device: " + error);
         document.getElementById("connectButton").classList.remove("disabled");
     });
 }
@@ -212,12 +211,12 @@ function disconnectDevice() {
         }
         return response.json();
     }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "All devices have been disconnected";
+
+        showStatus("All devices have been disconnected");
         document.getElementById("disconnectButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error disconnecting devices: " + error;
+
+        showStatus("Error disconnecting devices: " + error);
         document.getElementById("disconnectButton").classList.remove("disabled");
     });
 }
@@ -235,12 +234,12 @@ function stopServer() {
         }
         return response.json();
     }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "ADB server has stopped!";
+
+        showStatus("ADB server has stopped!");
         document.getElementById("stopServerButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error stopping server: " + error;
+
+        showStatus("Error stopping server: " + error);
         document.getElementById("stopServerButton").classList.remove("disabled");
     });
 }
@@ -258,12 +257,12 @@ function getScreenshots() {
         }
         return response.json();
     }).then(function (data) {
-        status_global.classList.add("alert-success");
-        status_global.innerHTML = "Screenshots have taken!";
+
+        showStatus("Screenshots have taken!");
         document.getElementById("screenshotButton").classList.remove("disabled");
     }).catch(function (error) {
-        status_global.classList.add("alert-danger");
-        status_global.innerHTML = "Error taking screenshots: " + error;
+
+        showStatus("Error taking screenshots: " + error);
         document.getElementById("screenshotButton").classList.remove("disabled");
     });
 }
