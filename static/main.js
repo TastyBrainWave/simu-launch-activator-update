@@ -48,7 +48,6 @@ function startExperience() {
     fetch('/start', {
         method: 'POST',
 
-        body: formData
     }).then(function (response) {
         if (!response.ok) {
             throw Error(response.statusText);
