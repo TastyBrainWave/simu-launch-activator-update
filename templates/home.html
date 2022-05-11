@@ -60,14 +60,14 @@
     <div class="row justify-content-center mb-2" id="connectButtonDiv">
       <a id="connectButton" class="btn btn-warning btn-custom d-flex align-items-center justify-content-center" onclick="connectDevice()">CONNECT DEVICE</a>
     </div>
+    <div class="row justify-content-center mb-2" id="disconnectButtonDiv">
+      <a id="disconnectButton" class="btn btn-danger btn-custom d-flex align-items-center justify-content-center" onclick="disconnectDevice()">DISCONNECT ALL DEVICES</a>
+    </div>
     <div class="row justify-content-center mb-2" id="stopServerButtonDiv">
       <a id="stopServerButton" class="btn btn-danger btn-custom d-flex align-items-center justify-content-center" onclick="stopServer()">STOP SERVER</a>
     </div>
     <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
       <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
-    </div>
-    <div class="row justify-content-center mb-2" id="htmxGrabDiv">
-      <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
     </div>
     <div class="row justify-content-center mb-2" id="htmxGrabDiv">
       <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center"
