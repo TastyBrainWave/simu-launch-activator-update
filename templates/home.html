@@ -33,7 +33,6 @@
       <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
     </div>
   </div>
-
 </div>
 {% include "load/upload_modal.html" %}
 {% include "load/load_modal.html" %}
@@ -89,6 +88,6 @@
 {% endblock %}
 
 {% block javascript %}
-<script>const connected_devices = {{ devices_connected| safe }};</script>
+<script>const connected_devices = {{ devices_connected | safe }};</script>
 <script defer src="/static/main.js"></script>
 {% endblock %}
