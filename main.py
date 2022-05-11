@@ -90,9 +90,12 @@ async def start(request: Request, db: Session = Depends(get_db)):
 
     item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
 
-    print(item)
-
     try:
+        if item is None:
+            return {"success": False, "error": "Could not start experience. Are you sure you selected one?"}
+
+        print("Starting experience " + simu_application_name + " on " + str(len(client_list)) + " devices")
+
         pool = Pool(cpu_count())
         launch_func = partial(launch_app, app_name=item["apk_name"], d_type=item["device_type"], command=item["command"])
         results = pool.map(launch_func, client_list)
@@ -145,8 +148,6 @@ async def load(load_choices: str = Form(...), db: Session = Depends(get_db)):
 
     global simu_application_name
     simu_application_name = item
-
-    print(item, simu_application_name)
 
     if item in apk_paths:
         apk_path += item
@@ -254,6 +255,32 @@ async def connect(request: Request):
             return {"success": True, "serial": devices[0].serial}
 
         return {"success": False}
+    except RuntimeError as e:
+        return {"success": False, "error_log": e.__str__()}
+
+@app.post("/disconnect")
+async def disconnect(request: Request):
+    """
+        Disconnects all devices from the server.
+
+    :param request: The Request parameter which is used to receive the device data.
+    :return: a dictionary containing the success flag of the operation and any errors
+    """
+
+    global BASE_PORT
+
+    check_adb_running(client)
+    devices = client.devices()
+
+    try:
+        for device in devices:
+            print("Disconnecting device " + device.serial + " from server!")
+            working = client.remote_disconnect(device.serial)
+            if not working:
+                print(1)
+                return {"success": False, "error": "Encountered an error disconnecting device with ID/IP: " + device.serial}
+
+        return {"success": True}
     except RuntimeError as e:
         return {"success": False, "error_log": e.__str__()}
 

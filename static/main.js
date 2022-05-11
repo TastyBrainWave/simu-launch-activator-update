@@ -196,6 +196,28 @@ function connectDevice() {
         document.getElementById("connectButton").classList.remove("disabled");
     });
 }
+function disconnectDevice() {
+    document.getElementById("disconnectButton").classList.add("disabled");
+    fetch('/disconnect', {
+        method: 'POST',
+        headers: {
+            "Content-type": "application/json"
+        },
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.error);
+        }
+        return response.json();
+    }).then(function (data) {
+        status_global.classList.add("alert-success");
+        status_global.innerHTML = "All devices have been disconnected";
+        document.getElementById("disconnectButton").classList.remove("disabled");
+    }).catch(function (error) {
+        status_global.classList.add("alert-danger");
+        status_global.innerHTML = "Error disconnecting devices: " + error;
+        document.getElementById("disconnectButton").classList.remove("disabled");
+    });
+}
 function stopServer() {
     document.getElementById("stopServerButton").classList.add("disabled");
     fetch('/exit-server', {
