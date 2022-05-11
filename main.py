@@ -1,9 +1,11 @@
 import datetime
+import json
 import os
 from functools import partial
 
 import sqlalchemy
 from fastapi.encoders import jsonable_encoder
+from ppadb.device import Device
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from helpers import launch_app, save_file, check_adb_running, BASE_DIR
@@ -33,12 +35,14 @@ templates = Jinja2Templates(directory="templates")
 
 simu_application_name = ""
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 BASE_PORT = 5555
 
@@ -54,6 +58,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
     :return: a TemplateResponse object containing the homepage
     """
 
+    check_adb_running(client)
+
     uploaded_experiences = get_all_apk_details(db)
 
     for item in uploaded_experiences:
@@ -61,30 +67,36 @@ async def home(request: Request, db: Session = Depends(get_db)):
 
     global simu_application_name
 
-    print(simu_application_name)
+    print([device.serial for device in client.devices()])
 
-    return templates.TemplateResponse("home.html",
-                                      {
-                                          "request": request,
-                                          "choices": [item.apk_name for item in uploaded_experiences],
-                                          "app_name": simu_application_name
-                                      }
-                                      )
+    return templates.TemplateResponse(
+        "home.html",
+        {
+            "request": request,
+            "choices": [item.apk_name for item in uploaded_experiences],
+            "app_name": simu_application_name,
+            "devices_connected": [device.serial for device in client.devices()],
+        },
+    )
 
 
-@app.get("/start")
-async def start(request: Request, db: Session = Depends(get_db)):
+@app.post("/start")
+async def start(devices: list = Form(...), db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
 
+    :param devices: a list of devices which the experience will start on. Not providing any will start the experience on all devices
     :param db: the database dependency
-    :param request: The Request parameter
     :return: dictionary of all device serial numbers
     """
 
     check_adb_running(client)
 
-    client_list = client.devices()
+    client_list = (
+        client.devices()
+        if not devices
+        else [Device(client, device) for device in devices]
+    )
 
     global simu_application_name
 
@@ -92,12 +104,26 @@ async def start(request: Request, db: Session = Depends(get_db)):
 
     try:
         if item is None:
-            return {"success": False, "error": "Could not start experience. Are you sure you selected one?"}
+            return {
+                "success": False,
+                "error": "Could not start experience. Are you sure you selected one?",
+            }
 
-        print("Starting experience " + simu_application_name + " on " + str(len(client_list)) + " devices")
+        print(
+            "Starting experience "
+            + simu_application_name
+            + " on "
+            + str(len(client_list))
+            + " devices"
+        )
 
         pool = Pool(cpu_count())
-        launch_func = partial(launch_app, app_name=item["apk_name"], d_type=item["device_type"], command=item["command"])
+        launch_func = partial(
+            launch_app,
+            app_name=item["apk_name"],
+            d_type=item["device_type"],
+            command=item["command"],
+        )
         results = pool.map(launch_func, client_list)
         pool.close()
         pool.join()
@@ -108,7 +134,11 @@ async def start(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post("/upload")
-async def upload(file: UploadFile = File(...), command: str = Form(...), db: Session = Depends(get_db)):
+async def upload(
+    file: UploadFile = File(...),
+    command: str = Form(...),
+    db: Session = Depends(get_db),
+):
 
     try:
         contents = await file.read()
@@ -119,27 +149,40 @@ async def upload(file: UploadFile = File(...), command: str = Form(...), db: Ses
 
         device_type = 0 if command == "android" else 1
 
-        item = APKDetailsBase(apk_name=file.filename, command="" if command == "android" else command, device_type=device_type)
+        item = APKDetailsBase(
+            apk_name=file.filename,
+            command="" if command == "android" else command,
+            device_type=device_type,
+        )
 
-        crud.create_apk_details_item(db=db, item=APKDetailsCreate.parse_obj(item.dict()))
+        crud.create_apk_details_item(
+            db=db, item=APKDetailsCreate.parse_obj(item.dict())
+        )
 
         return {"success": True}
     except IOError as e:
         return {"success": False, "error": e.__str__()}
 
-@app.post("/load")
-async def load(load_choices: str = Form(...), db: Session = Depends(get_db)):
-    """
-        Installs the experience on all devices
 
+@app.post("/load")
+async def load(
+    load_choices: str = Form(...),
+    devices: str = Form(...),
+):
+    """
+        Installs the experience on selected or all devices.
+
+    :param devices: a list of device serial IDs to install the experience on
     :param load_choices: the choice of experience specified by the user
-    :param db: the DB session
-    :param request: the Request parameter
     :return: a success dictionary signifying the operation was successful
     """
 
     check_adb_running(client)
-    client_list = client.devices()
+    client_list = (
+        client.devices()
+        if not devices
+        else [Device(client, device) for device in devices]
+    )
 
     apk_paths = os.listdir("apks")
     apk_path = "apks/"
@@ -152,7 +195,10 @@ async def load(load_choices: str = Form(...), db: Session = Depends(get_db)):
     if item in apk_paths:
         apk_path += item
     else:
-        return {"success": False, "error": "Cannot find the Experience APK in the directory. Make sure you uploaded it!"}
+        return {
+            "success": False,
+            "error": "Cannot find the Experience APK in the directory. Make sure you uploaded it!",
+        }
 
     try:
         for device in client_list:
@@ -164,6 +210,7 @@ async def load(load_choices: str = Form(...), db: Session = Depends(get_db)):
 
     return {"success": True, "device_count": len(client_list)}
 
+
 @app.post("/set-remote-experience")
 async def set_remote_experience(set_choices: str = Form(...)):
     if set_choices:
@@ -174,48 +221,79 @@ async def set_remote_experience(set_choices: str = Form(...)):
 
     return {"success": False}
 
+
 @app.post("/add-remote-experience")
-async def set_remote_experience(apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)):
+async def add_remote_experience(
+    apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)
+):
+    """
+        Adds a new experience, which has either been previously installed or is available on the device already.
+    :param apk_name: the name of the APK which includes the .apk extension
+    :param command: the command that the experience needs to execute
+    :param db: the database dependency
+    :return: a success dictionary signifying the operation was successful
+    """
+
     try:
         device_type = 0 if command == "android" else 1
 
-        item = APKDetailsBase(apk_name=apk_name, command="" if command == "android" else command,
-                              device_type=device_type)
+        item = APKDetailsBase(
+            apk_name=apk_name,
+            command="" if command == "android" else command,
+            device_type=device_type,
+        )
 
-        crud.create_apk_details_item(db=db, item=APKDetailsCreate.parse_obj(item.dict()))
+        crud.create_apk_details_item(
+            db=db, item=APKDetailsCreate.parse_obj(item.dict())
+        )
+
+        print("Remote experience added!")
 
         return {"success": True}
     except SQLAlchemyError as e:
         return {"success": False, "error": e.__str__()}
 
-@app.get("/stop")
-async def stop(request: Request, db: Session = Depends(get_db)):
+
+@app.post("/stop")
+async def stop(devices: list = Form(...), db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
-    :param db:
-    :param request: The Request parameter
+    :param devices: a list of devices to stop the experience on
+    :param db: the database dependency
     :return: a dictionary containing the success flag of the operation and any errors
     """
 
-    client_list = client.devices()
+    client_list = (
+        client.devices()
+        if not devices
+        else [Device(client, device) for device in devices]
+    )
 
     global simu_application_name
 
     item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
 
-    app_name = item["apk_name"] if not ".apk" in item["apk_name"] else item["apk_name"][:-4]
+    if item is None:
+        return {
+            "success": False,
+            "error": "No application to stop, make sure there is one running!",
+        }
+
+    app_name = (
+        item["apk_name"] if ".apk" not in item["apk_name"] else item["apk_name"][:-4]
+    )
 
     try:
         for device in client_list:
-            print(device.serial)
+            print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
-            print(command)
             device.shell(command)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
     return {"success": True, "stopped_app": app_name}
+
 
 @app.post("/connect")
 async def connect(request: Request):
@@ -239,9 +317,9 @@ async def connect(request: Request):
 
     if not remote_address:
         device_ip = devices[0].shell("ip addr show wlan0")
-        device_ip = device_ip[device_ip.find("inet "):]
-        device_ip = device_ip[:device_ip.find("/")]
-        device_ip = device_ip[device_ip.find(" ")+1:]
+        device_ip = device_ip[device_ip.find("inet ") :]
+        device_ip = device_ip[: device_ip.find("/")]
+        device_ip = device_ip[device_ip.find(" ") + 1 :]
     else:
         device_ip = remote_address
 
@@ -250,7 +328,9 @@ async def connect(request: Request):
         working = client.remote_connect(device_ip, port=BASE_PORT)
 
         if working:
-            print("Established connection with client " + device_ip + ":" + str(BASE_PORT))
+            print(
+                "Established connection with client " + device_ip + ":" + str(BASE_PORT)
+            )
 
             return {"success": True, "serial": devices[0].serial}
 
@@ -258,19 +338,24 @@ async def connect(request: Request):
     except RuntimeError as e:
         return {"success": False, "error_log": e.__str__()}
 
-@app.post("/disconnect")
-async def disconnect(request: Request):
-    """
-        Disconnects all devices from the server.
 
-    :param request: The Request parameter which is used to receive the device data.
+@app.post("/disconnect")
+async def disconnect(devices: list = Form(...)):
+    """
+        Disconnects devices from the server.
+
+    :devices: a list of devices to disconnect from
     :return: a dictionary containing the success flag of the operation and any errors
     """
 
     global BASE_PORT
 
     check_adb_running(client)
-    devices = client.devices()
+    client_list = (
+        client.devices()
+        if not devices
+        else [Device(client, device) for device in devices]
+    )
 
     try:
         for device in devices:
@@ -278,18 +363,24 @@ async def disconnect(request: Request):
             working = client.remote_disconnect(device.serial)
             if not working:
                 print(1)
-                return {"success": False, "error": "Encountered an error disconnecting device with ID/IP: " + device.serial}
+                return {
+                    "success": False,
+                    "error": "Encountered an error disconnecting device with ID/IP: "
+                    + device.serial,
+                }
 
         return {"success": True}
     except RuntimeError as e:
         return {"success": False, "error_log": e.__str__()}
 
-@app.get("/exit-server")
-async def exit_server(request: Request):
+
+@app.post("/exit-server")
+async def exit_server():
     """
         Kills the ADB server and all connections with devices. Essentially a system shutdown, where the FastAPI backend
         remains alive.
-    :param request: the Request object
+
+
     :return: a dictionary containing the success flag
     """
 
@@ -316,7 +407,9 @@ async def screen_grab(request: Request):
     screen_caps_folder = "screenshots/"
 
     try:
-        folder = screen_caps_folder + datetime.datetime.now().strftime("%m%d%Y%H%M%S") + "/"
+        folder = (
+            screen_caps_folder + datetime.datetime.now().strftime("%m%d%Y%H%M%S") + "/"
+        )
         os.makedirs(folder)
         i = 0
         for device in devices:
@@ -339,9 +432,10 @@ screen_shots_cache = {}
 
 @app.get("/screen/{refresh_ms}/{size}/{device_serial}.png")
 async def screen(request: Request, refresh_ms: int, size: str, device_serial: str):
-
     def gen_image():
-        with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
+        with tempfile.NamedTemporaryFile(
+            mode="w+b", suffix=".png", delete=False
+        ) as FOUT:
             im = my_devices[device_serial].screencap()
             FOUT.write(im)
             return FOUT.name
@@ -352,19 +446,31 @@ async def screen(request: Request, refresh_ms: int, size: str, device_serial: st
         screen_shots_cache[device_serial] = {}
 
     if size not in screen_shots_cache[device_serial]:
-        screen_shots_cache[device_serial][size] = {'timestamp': timestamp, 'file_id': gen_image()}
+        screen_shots_cache[device_serial][size] = {
+            "timestamp": timestamp,
+            "file_id": gen_image(),
+        }
 
-    elif screen_shots_cache[device_serial][size]['timestamp'] + datetime.timedelta(
-            milliseconds=refresh_ms) < timestamp:
-        screen_shots_cache[device_serial][size]['timestamp'] = timestamp
-        screen_shots_cache[device_serial][size]['file_id'] = gen_image()
+    elif (
+        screen_shots_cache[device_serial][size]["timestamp"]
+        + datetime.timedelta(milliseconds=refresh_ms)
+        < timestamp
+    ):
+        screen_shots_cache[device_serial][size]["timestamp"] = timestamp
+        screen_shots_cache[device_serial][size]["file_id"] = gen_image()
 
-    return FileResponse(screen_shots_cache[device_serial][size]['file_id'], media_type="image/png")
+    return FileResponse(
+        screen_shots_cache[device_serial][size]["file_id"], media_type="image/png"
+    )
 
 
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}/")
-async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
-    return templates.TemplateResponse("htmx/device.html", {"request": request, "device_serial": device_serial})
+async def devicescreen(
+    request: Request, refresh_ms: int, size: str, device_serial: str
+):
+    return templates.TemplateResponse(
+        "htmx/device.html", {"request": request, "device_serial": device_serial}
+    )
 
 
 @app.get("/linkup")
@@ -373,4 +479,6 @@ async def linkup(request: Request):
     global my_devices
     my_devices = {device.serial: device for device in client.devices()}
 
-    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
+    return templates.TemplateResponse(
+        "htmx/devices.html", {"request": request, "devices": client.devices()}
+    )

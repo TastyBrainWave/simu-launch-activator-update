@@ -39,12 +39,16 @@ function remove_class(element) {
 }
 function startExperience() {
     document.getElementById("startButton").classList.add("disabled");
+
+    var formData = new FormData()
+    var devices = []
+    devices.push(connected_devices[0])
+    formData.append("devices", devices.toString())
+
     fetch('/start', {
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
+        method: 'POST',
+
+        body: formData
     }).then(function (response) {
         if (!response.ok) {
             throw Error(response.statusText);
@@ -154,7 +158,7 @@ function addRemoteExperience() {
 function stopExperience() {
     document.getElementById("stopButton").classList.add("disabled");
     fetch('/stop', {
-        method: 'GET',
+        method: 'POST',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
@@ -221,7 +225,7 @@ function disconnectDevice() {
 function stopServer() {
     document.getElementById("stopServerButton").classList.add("disabled");
     fetch('/exit-server', {
-        method: 'GET',
+        method: 'POST',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'

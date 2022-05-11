@@ -80,5 +80,6 @@
 {% endblock %}
 
 {% block javascript %}
-<script defer src="/static/main.js"></script>
+  <script>const connected_devices = {{ devices_connected|safe }};</script>
+  <script defer src="/static/main.js"></script>
 {% endblock %}
