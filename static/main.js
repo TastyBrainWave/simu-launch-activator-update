@@ -1,5 +1,10 @@
+
+//GLOBAL VARS
 var status_global = document.getElementById("status");
 var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
+var selected_experience_global = document.getElementById("experience");
+
+//HELPER FUNCTIONS
 function transformFormData() {
     var myForm = document.getElementById('myForm');
     var qs = new URLSearchParams(new FormData(myForm)).toString();
@@ -42,14 +47,14 @@ function uploadAPKForm() {
 
     });
 }
-
-selected_experience_global = document.getElementById("experience");
 function remove_class(element) {
     var lastClass = element.attr('class').split(' ').pop();
     if (lastClass.includes("alert-")) {
         element.removeClass(lastClass)
     }
 }
+
+//BUTTON EVENTS
 function startExperience() {
     document.getElementById("startButton").classList.add("disabled");
 
@@ -277,3 +282,11 @@ function getScreenshots() {
         document.getElementById("screenshotButton").classList.remove("disabled");
     });
 }
+//DEVICE CARDS
+testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
+connected_devices.forEach((device) => {
+    var card = document.querySelector("#device-card").content.cloneNode(true);
+    card.querySelector("#device-name").textContent = device;
+    console.log(card);
+    document.querySelector("#main-container").appendChild(card);
+});

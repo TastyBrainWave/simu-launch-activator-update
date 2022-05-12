@@ -38,16 +38,10 @@
 {% include "load/load_modal.html" %}
 {% include "experiences/set_experience_modal.html" %}
 {% include "experiences/add_experience_modal.html" %}
+
 <div class="container align-self-center">
-  <div id="experience" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert">
-    {% if app_name %}
-    The following experience is currently selected: {{ app_name[:-4] }}
-    {% else %}
-    No experience currently selected! Use the "Load on devices" button to do so!
-    {% endif %}
-  </div>
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-    <div id="statusToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+  <div class="position-absolute end-0 me-2" style="z-index: 11">
+    <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
 
         <div id="status" class="toast-body">
@@ -55,6 +49,15 @@
         <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     </div>
+  </div>
+  <div id="main-container" class="row row-cols-1 row-cols-md-4 g-4 mt-3 float-center">
+  </div>
+  <div id=" experience" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert">
+    {% if app_name %}
+    The following experience is currently selected: {{ app_name[:-4] }}
+    {% else %}
+    No experience currently selected! Use the "Load on devices" button to do so!
+    {% endif %}
   </div>
   <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
     <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
@@ -82,6 +85,23 @@
     <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
   </div>
 </div>
+
+<template id="device-card">
+  <div class="col justify-content-center">
+
+    <div class="card mb-2" style="max-width: 18rem">
+      <img src="https://picsum.photos/200" class="card-img-top">
+      <div class="card-body">
+
+        <h5 id="device-name" class="card-text">Device ID unknown</h5>
+
+      </div>
+
+    </div>
+  </div>
+
+
+</template>
 
 
 
