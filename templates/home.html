@@ -1,27 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-  .btn-custom {
-    text-align: center !important;
-    line-height: 0 !important;
-    min-width: 10rem;
-    min-height: 10rem;
-    font-size: 5rem;
-    box-sizing: content-box;
-  }
 
-  .btn-orange {
-    background-color: orange;
-  }
+.btn-orange {
+background-color: orange;
+}
 
-  .btn-yellow {
-    background-color: yellow;
-  }
+.btn-yellow {
+background-color: yellow;
+}
 
-  .btn-blue {
-    background-color: aquamarine;
-  }
+.btn-blue {
+background-color: aquamarine;
+}
 </style>
 
 <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
@@ -43,10 +34,9 @@
   <div class="position-absolute end-0 me-2" style="z-index: 11">
     <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
-
-        <div id="status" class="toast-body">
-        </div>
-        <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
+        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
+        <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
       </div>
     </div>
   </div>
@@ -62,28 +52,38 @@
   <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
     <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
 
+    <div id="status" class="toast-body">
+    </div>
+    <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
   </div>
-  <div class="row justify-content-center mb-2" id="uploadButtonDiv">
-    <a style="font-size: 4rem" id="loadButton" class="btn btn-orange btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#uploadModal">UPLOAD EXPERIENCE</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="setExperienceButtonDiv">
-    <a style="font-size: 4rem" id="setRemoteButton" class="btn btn-blue btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#setExperienceModal">SET EXPERIENCE</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="addExperienceButtonDiv">
-    <a style="font-size: 4rem" id="addRemoteButton" class="btn btn-yellow btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#addExperienceModal">ADD NEW EXPERIENCE</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="loadButtonDiv">
-    <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#loadModal">LOAD ON DEVICES</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="stopButtonDiv">
-    <a id="stopButton" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
-    <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="htmxGrabDiv">
-    <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
-  </div>
+</div>
+</div>
+<div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
+  <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
+
+</div>
+<div class="row justify-content-center mb-2" id="uploadButtonDiv">
+  <a style="font-size: 4rem" id="loadButton" class="btn btn-orange btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#uploadModal">UPLOAD EXPERIENCE</a>
+</div>
+<div class="row justify-content-center mb-2" id="setExperienceButtonDiv">
+  <a style="font-size: 4rem" id="setRemoteButton" class="btn btn-blue btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#setExperienceModal">SET EXPERIENCE</a>
+</div>
+<div class="row justify-content-center mb-2" id="addExperienceButtonDiv">
+  <a style="font-size: 4rem" id="addRemoteButton" class="btn btn-yellow btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#addExperienceModal">ADD NEW EXPERIENCE</a>
+</div>
+<div class="row justify-content-center mb-2" id="loadButtonDiv">
+  <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#loadModal">LOAD ON DEVICES</a>
+</div>
+<div class="row justify-content-center mb-2" id="stopButtonDiv">
+  <a id="stopButton" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>
+</div>
+<div class="row justify-content-center mb-2" id="screenshotButtonDiv">
+  <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
+</div>
+<div class="row justify-content-center mb-2" id="htmxGrabDiv">
+  <a style="font-size: 4rem" id='devices-modal-open' {# note this id used by htmx in our modal #} class="btn btn-fuchsia btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#devicesModal">DEVICES</a>
+
+</div>
 </div>
 
 <template id="device-card">
