@@ -1,0 +1,25 @@
+<div class="modal fade" id="devicesModal" tabindex="-1" aria-labelledby="devicesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="devicesModalLabel">Devices</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" hx-get="/devices-modal-start" hx-trigger="hidden.bs.modal from:#devicesModal">
+        {% include 'htmx/devices_start.html' %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id='devices-modal-close' data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+    var myModalEl = document.getElementById('devicesModal')
+    myModalEl.addEventListener('hidden.bs.modal', function (event) {
+        $('#devices-modal-body').html("");
+    })
+
+</script>

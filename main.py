@@ -1,11 +1,15 @@
+import base64
 import datetime
 import json
 import os
 from functools import partial
 
+import cv2
+import numpy as np
 import sqlalchemy
 from fastapi.encoders import jsonable_encoder
 from ppadb.device import Device
+from ppadb.device_async import DeviceAsync
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from helpers import launch_app, save_file, check_adb_running, BASE_DIR
@@ -436,59 +440,109 @@ async def screen_grab(request: Request):
 my_devices = None
 screen_shots_cache = {}
 
-
-# screen_shots_cache ={ device_id: { abvde: {size1: {timestamp: x, file_id: y }}}}
-
-
-@app.get("/screen/{refresh_ms}/{size}/{device_serial}.png")
-async def screen(request: Request, refresh_ms: int, size: str, device_serial: str):
+def check_image(device_serial, refresh_ms, size):
     def gen_image():
-        with tempfile.NamedTemporaryFile(
-            mode="w+b", suffix=".png", delete=False
-        ) as FOUT:
-            im = my_devices[device_serial].screencap()
-            FOUT.write(im)
+
+        with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
+            try:
+                device: Device = my_devices[device_serial]
+            except TypeError:
+                return False
+
+            im = device.screencap()
+            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+
+            # cv2.imshow("", image)
+            # cv2.waitKey(0)
+
+            image = image[0:image.shape[0], 0: int(image.shape[1]*.5)]
+
+            height = image.shape[0]
+            width = int(image.shape[1] / height * 320)
+            height = 320
+
+            dsize = (width, height)
+            output = cv2.resize(image, dsize)
+
+            cv2.imwrite(FOUT.name, output)
+
             return FOUT.name
 
     timestamp = datetime.datetime.now()
 
     if device_serial not in screen_shots_cache:
         screen_shots_cache[device_serial] = {}
-
     if size not in screen_shots_cache[device_serial]:
-        screen_shots_cache[device_serial][size] = {
-            "timestamp": timestamp,
-            "file_id": gen_image(),
-        }
+        ancient = datetime.datetime.now() - datetime.timedelta(hours=10)
+        screen_shots_cache[device_serial][size] = {'timestamp': ancient, 'file_id': None}
+    if screen_shots_cache[device_serial][size]['timestamp'] + datetime.timedelta(
+            milliseconds=refresh_ms) < timestamp:
+        screen_shots_cache[device_serial][size]['timestamp'] = timestamp
+        try:
+            print(1)
+            screen_shots_cache[device_serial][size]['file_id'] = gen_image()
+            print(2)
+        except RuntimeError:
+            return False
+    return True
 
-    elif (
-        screen_shots_cache[device_serial][size]["timestamp"]
-        + datetime.timedelta(milliseconds=refresh_ms)
-        < timestamp
-    ):
-        screen_shots_cache[device_serial][size]["timestamp"] = timestamp
-        screen_shots_cache[device_serial][size]["file_id"] = gen_image()
+@app.get("/device-button/{device_serial}/{button}")
+async def device_button(request: Request, device_serial: str, button: str):
+    commands = {'power': ['/dev/input/event2 1 74 1', '/dev/input/event2 0 0 0'],
+                'vol-up': ['/dev/input/event2 1 73 1', '/dev/input/event2 0 0 0'],
+                'vol-down': ['/dev/input/event2 1 72 1', '/dev/input/event2 0 0 0']}
+    [button_down, button_up] = commands.get(button)
+    print(button_down, button_up,2233)
+    device: Device = my_devices[device_serial]
+    print(0, device.shell("chmod 666 /dev/input/event0"))
+    print(0, device.shell("chmod 666 /dev/input/event1"))
+    print(11, device.shell('sendevent ' + button_down), 159)
+    print(11, device.shell('sendevent ' + button_up), 222)
+    print(11, device.shell('sendevent ' + button_down), 1591)
+    print(11, device.shell('sendevent ' + button_up), 2221)
+    print(411, device.shell('adb shell media volume --stream 3 --set 15'), 2221)
 
-    return FileResponse(
-        screen_shots_cache[device_serial][size]["file_id"], media_type="image/png"
-    )
+    pass
 
 
-@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}/")
-async def devicescreen(
-    request: Request, refresh_ms: int, size: str, device_serial: str
-):
-    return templates.TemplateResponse(
-        "htmx/device.html", {"request": request, "device_serial": device_serial}
-    )
+@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
+async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
+    success = check_image(device_serial, refresh_ms, size)
+
+    if not success:
+      return templates.TemplateResponse("htmx/device.html", {"request": request,
+                                                      "device_serial": device_serial,
+                                                      'err': 'lost connection'})
+    image = screen_shots_cache[device_serial][size]['file_id']
+    err = None
+    try:
+        with open(image, "rb") as img_file:
+            base64_image = base64.b64encode(img_file.read()).decode('utf-8')
+
+    except TypeError:
+        base64_image = None
+        err = 'issue'
+
+    return templates.TemplateResponse("htmx/device.html", {"request": request,
+                                                           "device_serial": device_serial,
+                                                           'base64_image': base64_image,
+                                                           'err': err})
+
+@app.get("/devices-modal-start")
+async def devices_start(request: Request):
+    return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
 
 
 @app.get("/linkup")
 async def linkup(request: Request):
     check_adb_running(client)
     global my_devices
-    my_devices = {device.serial: device for device in client.devices()}
+    devices = client.devices()
+    my_devices = {device.serial: device for device in devices}
 
-    return templates.TemplateResponse(
-        "htmx/devices.html", {"request": request, "devices": client.devices()}
-    )
+    for device in devices:
+        device.shell('adb shell setprop debug.oculus.capture.width 192')
+        device.shell('adb shell setprop debug.oculus.capture.height 108')
+
+
+    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
