@@ -1,0 +1,24 @@
+.btn-custom {
+    text-align: center !important;
+    line-height: 0 !important;
+    min-width: 10rem;
+    min-height: 10rem;
+    font-size: 5rem;
+    box-sizing: content-box;
+}
+
+.btn-orange {
+    background-color: orange;
+}
+
+.btn-yellow {
+    background-color: yellow;
+}
+
+.btn-blue {
+    background-color: aquamarine;
+}
+
+.btn-fuchsia {
+    background-color: fuchsia;
+}

@@ -1,28 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-  .btn-custom {
-    text-align: center !important;
-    line-height: 0 !important;
-    min-width: 10rem;
-    min-height: 10rem;
-    font-size: 5rem;
-    box-sizing: content-box;
-  }
-
-  .btn-orange {
-    background-color: orange;
-  }
-
-  .btn-yellow {
-    background-color: yellow;
-  }
-
-  .btn-blue {
-    background-color: aquamarine;
-  }
-</style>
 
 <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
   <div class="container-fluid">
@@ -80,7 +58,7 @@
     <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
   </div>
   <div class="row justify-content-center mb-2" id="htmxGrabDiv">
-    <a style="font-size: 1.5rem" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">LINKUP (polling screenshots of all devices via htmx)</a>
+    <a class="btn btn-fuchsia btn-custom d-flex align-items-center justify-content-center" hx-get="/linkup" hx-swap="outerHTML" hx-trigger="click">DEVICES</a>
   </div>
 </div>
 
