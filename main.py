@@ -167,7 +167,7 @@ async def upload(
 @app.post("/load")
 async def load(
     load_choices: str = Form(...),
-    devices: str = Form(...),
+    devices: list = Form(...),
 ):
     """
         Installs the experience on selected or all devices.
@@ -326,15 +326,23 @@ async def connect(request: Request):
         device_ip = remote_address
 
     try:
-        os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
-        working = client.remote_connect(device_ip, port=BASE_PORT)
+        if not remote_address:
+            os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
+        working = False
+        i = 0
+
+        # Attempt connection 3 times
+
+        while not working and i < 3:
+            working = client.remote_connect(device_ip, port=BASE_PORT)
+            i += 1
 
         if working:
             print(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
             )
 
-            return {"success": True, "serial": devices[0].serial}
+            return {"success": True, "serial": device_ip}
 
         return {"success": False}
     except RuntimeError as e:
@@ -360,7 +368,7 @@ async def disconnect(devices: list = Form(...)):
     )
 
     try:
-        for device in devices:
+        for device in client_list:
             print("Disconnecting device " + device.serial + " from server!")
             working = client.remote_disconnect(device.serial)
             if not working:

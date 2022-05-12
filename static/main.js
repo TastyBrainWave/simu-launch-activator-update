@@ -5,7 +5,17 @@ function transformFormData() {
     var qs = new URLSearchParams(new FormData(myForm)).toString();
     myForm.action = 'http://127.0.0.1:8000/submit?' + qs;
 }
-showStatus = (text) => {
+showStatus = (text = "The showStatus function was used incoorrectly and status text was not defined", isError = false) => {
+    if (isError === true) {
+        document.getElementById("statusToast").classList.add("bg-danger");
+        document.getElementById("toastClose").classList.add("btn-close-white");
+        status_global.classList.add("text-white");
+    }
+    else if (document.getElementById("statusToast").classList.contains("bg-danger")) {
+        document.getElementById("statusToast").classList.remove("bg-danger");
+        document.getElementById("toastClose").classList.remove("btn-close-white");
+        status_global.classList.remove("text-white");
+    }
     status_global.innerHTML = text;
     statusToast.show();
 }
@@ -70,6 +80,7 @@ function loadExperience() {
 
     const formElement = document.getElementById('loadForm')
     var formData = new FormData(formElement)
+    formData.append("devices", "[]")
 
     fetch('/load', {
         method: 'POST',
@@ -194,7 +205,7 @@ function connectDevice() {
         document.getElementById("connectButton").classList.remove("disabled");
     }).catch(function (error) {
 
-        showStatus("Error connecting device: " + error);
+        showStatus("Error connecting device: " + error, true);
         document.getElementById("connectButton").classList.remove("disabled");
     });
 }
