@@ -283,10 +283,51 @@ function getScreenshots() {
     });
 }
 //DEVICE CARDS
+class DeviceCard extends HTMLElement {
+    constructor(image, deviceId, selected) {
+        super();
+        this.attachShadow({ mode: 'open' });
+        var bootstrapStyles = document.createElement('link')
+        bootstrapStyles.rel = 'stylesheet'
+        bootstrapStyles.href = 'static/bootstrap-5.0.2-dist/css/bootstrap.css'
+        this.shadowRoot.appendChild(bootstrapStyles);
+        this.shadowRoot.appendChild(document.querySelector("#device-card").content.cloneNode(true));
+        this.image = image;
+        this.deviceId = deviceId;
+        this.selected = selected;
+        var checkbox = this.shadowRoot.getElementById("cardSelect");
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                this.selected = true;
+                this.shadowRoot.getElementById("main-card").classList.add("shadow");
+            } else {
+                this.selected = false;
+                this.shadowRoot.getElementById("main-card").classList.remove("shadow");
+            }
+
+        })
+
+    }
+    updateImage(image) {
+        this.image = image;
+        this.shadowRoot.querySelector("img").src = image;
+    }
+    connectedCallback() {
+        this.shadowRoot.querySelector("img").src = this.image;
+        this.shadowRoot.querySelector("#device-name").innerHTML = this.deviceId;
+
+    }
+}
+window.customElements.define('device-card', DeviceCard);
+
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
+var cardList = []
 connected_devices.forEach((device) => {
-    var card = document.querySelector("#device-card").content.cloneNode(true);
-    card.querySelector("#device-name").textContent = device;
-    console.log(card);
+    //var card = document.querySelector("#device-card").content.cloneNode(true);
+    //card.querySelector("#device-name").textContent = device;
+    //console.log(card);
+    //document.querySelector("#main-container").appendChild(card);
+    var card = new DeviceCard("https://picsum.photos/200", device, false);
     document.querySelector("#main-container").appendChild(card);
+    cardList.push(card);
 });

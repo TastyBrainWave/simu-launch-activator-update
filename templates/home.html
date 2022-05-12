@@ -1,19 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<style>
-  .btn-orange {
-    background-color: orange;
-  }
-
-  .btn-yellow {
-    background-color: yellow;
-  }
-
-  .btn-blue {
-    background-color: aquamarine;
-  }
-</style>
 
 <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
   <div class="container-fluid">
@@ -82,10 +69,13 @@
 </div>
 
 <template id="device-card">
-  <div class="col justify-content-center">
+  <div id="main-card" class="col justify-content-center">
 
     <div class="card mb-2" style="max-width: 18rem">
-      <img src="https://picsum.photos/200" class="card-img-top">
+      <div>
+        <input class="form-check-input position-absolute ms-1" type="checkbox" id="cardSelect"></input>
+        <img src="https://picsum.photos/200" class="card-img-top">
+      </div>
       <div class="card-body">
 
         <h5 id="device-name" class="card-text">Device ID unknown</h5>
