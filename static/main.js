@@ -40,8 +40,6 @@ function send(params) {
             throw Error(response.statusText);
         }
         if (params['success']) params['success'](response);
-    }).then(function (data) {
-        if (params['then']) params['then']();
     }).catch(function (error) {
         if (params['problem']) params['problem'](error);
         else {
@@ -367,11 +365,23 @@ connected_devices.forEach((device) => {
 
 window.addEventListener('load', function () {
 
-
     var slider = $('#volume');
 
     slider.on('change', function (ev) {
-        var newVal = slider.val()
+        var vol = slider.val();
+
+        send({
+            url: 'volume',
+            body: JSON.stringify({'volume': vol}),
+            headers: {"Content-Type": "application/json"},
+            success: function () {
+                console.log('changed volume to ' + vol);
+            },
+            problem: function () {
+                console.log('could not change volume to ' + vol);
+            },
+            finally: '',
+        });
 
     });
 

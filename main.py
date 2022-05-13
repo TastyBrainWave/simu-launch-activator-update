@@ -139,11 +139,10 @@ async def start(devices: list = Form(...), db: Session = Depends(get_db)):
 
 @app.post("/upload")
 async def upload(
-    file: UploadFile = File(...),
-    command: str = Form(...),
-    db: Session = Depends(get_db),
+        file: UploadFile = File(...),
+        command: str = Form(...),
+        db: Session = Depends(get_db),
 ):
-
     try:
         contents = await file.read()
         save_file(file.filename, contents)
@@ -170,8 +169,8 @@ async def upload(
 
 @app.post("/load")
 async def load(
-    load_choices: str = Form(...),
-    devices: list = Form(...),
+        load_choices: str = Form(...),
+        devices: list = Form(...),
 ):
     """
         Installs the experience on selected or all devices.
@@ -228,7 +227,7 @@ async def set_remote_experience(set_choices: str = Form(...)):
 
 @app.post("/add-remote-experience")
 async def add_remote_experience(
-    apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)
+        apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)
 ):
     """
         Adds a new experience, which has either been previously installed or is available on the device already.
@@ -323,9 +322,9 @@ async def connect(request: Request):
 
     if not remote_address:
         device_ip = devices[0].shell("ip addr show wlan0")
-        device_ip = device_ip[device_ip.find("inet ") :]
+        device_ip = device_ip[device_ip.find("inet "):]
         device_ip = device_ip[: device_ip.find("/")]
-        device_ip = device_ip[device_ip.find(" ") + 1 :]
+        device_ip = device_ip[device_ip.find(" ") + 1:]
     else:
         device_ip = remote_address
 
@@ -380,7 +379,7 @@ async def disconnect(devices: list = Form(...)):
                 return {
                     "success": False,
                     "error": "Encountered an error disconnecting device with ID/IP: "
-                    + device.serial,
+                             + device.serial,
                 }
 
         return {"success": True}
@@ -422,7 +421,7 @@ async def screen_grab(request: Request):
 
     try:
         folder = (
-            screen_caps_folder + datetime.datetime.now().strftime("%m%d%Y%H%M%S") + "/"
+                screen_caps_folder + datetime.datetime.now().strftime("%m%d%Y%H%M%S") + "/"
         )
         os.makedirs(folder)
         i = 0
@@ -437,8 +436,20 @@ async def screen_grab(request: Request):
     return {"success": True}
 
 
+@app.post("/volume")
+async def device_button(request: Request):
+    data = await request.json()
+    volume = data['volume']
+    check_adb_running(client)
+    for device in client.devices():
+        outcome = device.shell(f'media volume --stream 3 --set {volume}')
+
+    return {"success": True}
+
+
 my_devices = None
 screen_shots_cache = {}
+
 
 def check_image(device_serial, refresh_ms, size):
     def gen_image():
@@ -455,7 +466,7 @@ def check_image(device_serial, refresh_ms, size):
             # cv2.imshow("", image)
             # cv2.waitKey(0)
 
-            image = image[0:image.shape[0], 0: int(image.shape[1]*.5)]
+            image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
             height = image.shape[0]
             width = int(image.shape[1] / height * 320)
@@ -486,13 +497,14 @@ def check_image(device_serial, refresh_ms, size):
             return False
     return True
 
+
 @app.get("/device-button/{device_serial}/{button}")
 async def device_button(request: Request, device_serial: str, button: str):
     commands = {'power': ['/dev/input/event2 1 74 1', '/dev/input/event2 0 0 0'],
                 'vol-up': ['/dev/input/event2 1 73 1', '/dev/input/event2 0 0 0'],
                 'vol-down': ['/dev/input/event2 1 72 1', '/dev/input/event2 0 0 0']}
     [button_down, button_up] = commands.get(button)
-    print(button_down, button_up,2233)
+    print(button_down, button_up, 2233)
     device: Device = my_devices[device_serial]
     print(0, device.shell("chmod 666 /dev/input/event0"))
     print(0, device.shell("chmod 666 /dev/input/event1"))
@@ -510,9 +522,9 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
     success = check_image(device_serial, refresh_ms, size)
 
     if not success:
-      return templates.TemplateResponse("htmx/device.html", {"request": request,
-                                                      "device_serial": device_serial,
-                                                      'err': 'lost connection'})
+        return templates.TemplateResponse("htmx/device.html", {"request": request,
+                                                               "device_serial": device_serial,
+                                                               'err': 'lost connection'})
     image = screen_shots_cache[device_serial][size]['file_id']
     err = None
     try:
@@ -527,6 +539,7 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
                                                            "device_serial": device_serial,
                                                            'base64_image': base64_image,
                                                            'err': err})
+
 
 @app.get("/devices-modal-start")
 async def devices_start(request: Request):
@@ -543,6 +556,5 @@ async def linkup(request: Request):
     for device in devices:
         device.shell('adb shell setprop debug.oculus.capture.width 192')
         device.shell('adb shell setprop debug.oculus.capture.height 108')
-
 
     return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
