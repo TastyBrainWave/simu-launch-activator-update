@@ -1,4 +1,3 @@
-
 //GLOBAL VARS
 var status_global = document.getElementById("status");
 var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
@@ -10,13 +9,55 @@ function transformFormData() {
     var qs = new URLSearchParams(new FormData(myForm)).toString();
     myForm.action = 'http://127.0.0.1:8000/submit?' + qs;
 }
+
+// doing via object for reasons of clarity
+// params = {
+//  url: '',
+//  method: default POST
+//  body: '',
+//  success: '',
+//  problem: '',
+//  start: '',
+//  finally: '',
+// }
+function send(params) {
+    if (!params['headers']) params['headers'] = {};
+    if (!params['method']) params['method'] = 'POST';
+
+    // // inject universal info such as devices
+    // if(params['body']){
+    //
+    // }
+
+    if (params['start']) params['start']();
+
+    fetch(params['url'], {
+        method: params['method'],
+        body: params['body'],
+        headers: params['headers']
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        if (params['success']) params['success'](response);
+    }).then(function (data) {
+        if (params['then']) params['then']();
+    }).catch(function (error) {
+        if (params['problem']) params['problem'](error);
+        else {
+            console.log(error);
+        }
+    }).finally(function () {
+        if (params['finally']) params['finally']();
+    });
+}
+
 showStatus = (text = "The showStatus function was used incoorrectly and status text was not defined", isError = false) => {
     if (isError === true) {
         document.getElementById("statusToast").classList.add("bg-danger");
         document.getElementById("toastClose").classList.add("btn-close-white");
         status_global.classList.add("text-white");
-    }
-    else if (document.getElementById("statusToast").classList.contains("bg-danger")) {
+    } else if (document.getElementById("statusToast").classList.contains("bg-danger")) {
         document.getElementById("statusToast").classList.remove("bg-danger");
         document.getElementById("toastClose").classList.remove("btn-close-white");
         status_global.classList.remove("text-white");
@@ -24,29 +65,23 @@ showStatus = (text = "The showStatus function was used incoorrectly and status t
     status_global.innerHTML = text;
     statusToast.show();
 }
+
 function uploadAPKForm() {
     const formElement = document.getElementById('uploadForm')
     var formData = new FormData(formElement)
 
-    fetch('/upload', {
-        method: 'POST',
-        body: formData
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
+    send({
+        url: '/upload',
+        body: formData,
+        success: function () {
+            $('#uploadModal').modal('hide')
+        },
+        problem: function (error) {
+            showStatus("Error uploading experience to server: " + error);
         }
-
-        $('#uploadModal').modal('hide')
-
-        return response.json();
-    }).then(function (data) {
-        showStatus("Experience has been uploaded. You may now load it on devices");
-    }).catch(function (error) {
-        console.log(error);
-        showStatus("Error uploading experience to server: " + error);
-
-    });
+    })
 }
+
 function remove_class(element) {
     var lastClass = element.attr('class').split(' ').pop();
     if (lastClass.includes("alert-")) {
@@ -56,237 +91,231 @@ function remove_class(element) {
 
 //BUTTON EVENTS
 function startExperience() {
-    document.getElementById("startButton").classList.add("disabled");
 
     var formData = new FormData()
     var devices = []
     devices.push(connected_devices[0])
     formData.append("devices", devices.toString())
 
-    fetch('/start', {
-        method: 'POST',
-
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
+    send({
+        start: function () {
+            document.getElementById("startButton").classList.add("disabled");
+        },
+        url: '/start',
+        success: function (data) {
+            showStatus("Experience has started on " + data["device_count"] + " devices!");
+        },
+        problem: function (error) {
+            showStatus("Error starting experience: " + error);
+        },
+        finally: function () {
+            document.getElementById("startButton").classList.remove("disabled");
         }
-        return response.json();
-    }).then(function (data) {
-        showStatus("Experience has started on " + data["device_count"] + " devices!");
-        document.getElementById("startButton").classList.remove("disabled");
-    }).catch(function (error) {
-        showStatus("Error starting experience: " + error);
-        document.getElementById("startButton").classList.remove("disabled");
-    });
+    })
+
+
 }
 
 function loadExperience() {
-    document.getElementById("loadButton").classList.add("disabled");
+
 
     const formElement = document.getElementById('loadForm')
     var formData = new FormData(formElement)
     formData.append("devices", "[]")
 
-    fetch('/load', {
-        method: 'POST',
-        body: formData
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
+    send({
+        url: '/load',
+        start: function () {
+            document.getElementById("loadButton").classList.add("disabled");
+        },
+        body: formData,
+        success: function (data) {
+            $('#loadModal').modal('hide');
+            selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
+            showStatus("Experience has loaded on " + data.json()["device_count"] + " devices!");
+
+        },
+        problem: function (error) {
+            showStatus("Error loading experience: " + error);
+
+        },
+        finally: function () {
+            document.getElementById("loadButton").classList.remove("disabled");
         }
+    })
 
-        $('#loadModal').modal('hide');
-
-        return response.json();
-    }).then(function (data) {
-        selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
-        showStatus("Experience has loaded on " + data["device_count"] + " devices!");
-        document.getElementById("loadButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error loading experience: " + error);
-        document.getElementById("loadButton").classList.remove("disabled");
-    });
 }
 
 function setRemoteExperience() {
-    document.getElementById("setRemoteButton").classList.add("disabled");
 
     const formElement = document.getElementById('setRemoteExperienceForm')
     var formData = new FormData(formElement)
 
-    fetch('/set-remote-experience', {
-        method: 'POST',
-        body: formData
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
+    send({
+        url: '/set-remote-experience',
+        start: function () {
+            document.getElementById("setRemoteButton").classList.add("disabled");
+        },
+        body: formData,
+        success: function (data) {
+            $('#setExperienceModal').modal('hide');
+            selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("set_choices")
+            showStatus("Experience has been set! You may now start it!");
+
+        },
+        problem: function (error) {
+            showStatus("Error setting experience: " + error);
+
+        },
+        finally: function () {
+            document.getElementById("setRemoteButton").classList.remove("disabled");
         }
-
-        $('#setExperienceModal').modal('hide');
-
-        return response.json();
-    }).then(function (data) {
-        selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("set_choices")
-
-
-        showStatus("Experience has been set! You may now start it!");
-        document.getElementById("setRemoteButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error setting experience: " + error);
-        document.getElementById("setRemoteButton").classList.remove("disabled");
-    });
+    })
 }
 
 function addRemoteExperience() {
-    document.getElementById("addRemoteButton").classList.add("disabled");
 
     const formElement = document.getElementById('addExperienceForm')
     var formData = new FormData(formElement)
 
-    fetch('/add-remote-experience', {
-        method: 'POST',
-        body: formData
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
+    send({
+        url: '/add-remote-experience',
+        start: function () {
+            document.getElementById("addRemoteButton").classList.add("disabled");
+        },
+        body: formData,
+        success: function () {
+            $('#addExperienceModal').modal('hide');
+            showStatus("Experience has been added! You may now set it as the active experience");
+        },
+        finally: function () {
+            document.getElementById("addRemoteButton").classList.remove("disabled");
         }
+    })
 
-        $('#addExperienceModal').modal('hide');
-
-        return response.json();
-    }).then(function (data) {
-
-
-        showStatus("Experience has been added! You may now set it as the active experience");
-        document.getElementById("addRemoteButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error adding experience: " + error);
-        document.getElementById("addRemoteButton").classList.remove("disabled");
-    });
 }
 
 
 function stopExperience() {
-    document.getElementById("stopButton").classList.add("disabled");
-    fetch('/stop', {
-        method: 'POST',
+
+    send({
+        url: '/stop',
+        start: function () {
+            document.getElementById("stopButton").classList.add("disabled");
+        },
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
+        },
+        success: function () {
+            showStatus("Experience has stopped on all devices!");
+        },
+        finally: function () {
+            document.getElementById("stopButton").classList.remove("disabled");
         }
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
-        }
-        return response.json();
-    }).then(function (data) {
-
-        showStatus("Experience has stopped on all devices!");
-        document.getElementById("stopButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error stopping experience: " + error);
-        document.getElementById("stopButton").classList.remove("disabled");
-    });
+    })
 }
+
 function connectDevice() {
-    document.getElementById("connectButton").classList.add("disabled");
-    fetch('/connect', {
-        method: 'POST',
+
+
+    send({
+        url: '',
+        start: function () {
+            document.getElementById("connectButton").classList.add("disabled");
+        },
         headers: {
             "Content-type": "application/json"
         },
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.error);
+        success: function (data) {
+            showStatus("Device connected with serial ID: " + data.json()["serial"]);
+
+        },
+        problem: function (error) {
+            showStatus("Error connecting device: " + error, true);
+        },
+        finally: function () {
+            document.getElementById("connectButton").classList.remove("disabled");
         }
-        return response.json();
-    }).then(function (data) {
-
-        showStatus("Device connected with serial ID: " + data["serial"]);
-        document.getElementById("connectButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error connecting device: " + error, true);
-        document.getElementById("connectButton").classList.remove("disabled");
-    });
+    })
 }
+
 function disconnectDevice() {
-    document.getElementById("disconnectButton").classList.add("disabled");
-    fetch('/disconnect', {
-        method: 'POST',
+
+    send({
+        url: '/disconnect',
         headers: {
             "Content-type": "application/json"
         },
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.error);
+
+        start: function () {
+            document.getElementById("disconnectButton").classList.add("disabled");
+        },
+        success: function () {
+            showStatus("All devices have been disconnected");
+        },
+        problem: function (error) {
+            showStatus("Error disconnecting devices: " + error);
+        },
+        finally: function () {
+            document.getElementById("disconnectButton").classList.remove("disabled");
         }
-        return response.json();
-    }).then(function (data) {
-
-        showStatus("All devices have been disconnected");
-        document.getElementById("disconnectButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error disconnecting devices: " + error);
-        document.getElementById("disconnectButton").classList.remove("disabled");
-    });
+    })
 }
+
 function stopServer() {
-    document.getElementById("stopServerButton").classList.add("disabled");
-    fetch('/exit-server', {
-        method: 'POST',
+
+    send({
+        url: '/exit-server',
+        start: function () {
+            document.getElementById("stopServerButton").classList.add("disabled");
+        },
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
+        },
+        success: function () {
+            showStatus("ADB server has stopped!");
+        },
+        problem: function (error) {
+            showStatus("Error stopping server: " + error);
+        },
+        finally: function () {
+            document.getElementById("stopServerButton").classList.remove("disabled");
         }
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
-        }
-        return response.json();
-    }).then(function (data) {
-
-        showStatus("ADB server has stopped!");
-        document.getElementById("stopServerButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error stopping server: " + error);
-        document.getElementById("stopServerButton").classList.remove("disabled");
-    });
+    })
 }
+
 function getScreenshots() {
-    document.getElementById("screenshotButton").classList.add("disabled");
-    fetch('/screen-grab', {
+
+    send({
+        url: '/screen-grab',
+        start: function () {
+            document.getElementById("screenshotButton").classList.add("disabled");
+        },
         method: 'GET',
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
+        },
+        success: function () {
+            showStatus("Screenshots have taken!");
+            document.getElementById("screenshotButton").classList.remove("disabled");
+        },
+        problem: function (error) {
+            showStatus("Error taking screenshots: " + error);
+        },
+        finally: function () {
+            document.getElementById("screenshotButton").classList.remove("disabled");
         }
-    }).then(function (response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
-        }
-        return response.json();
-    }).then(function (data) {
-
-        showStatus("Screenshots have taken!");
-        document.getElementById("screenshotButton").classList.remove("disabled");
-    }).catch(function (error) {
-
-        showStatus("Error taking screenshots: " + error);
-        document.getElementById("screenshotButton").classList.remove("disabled");
-    });
+    })
 }
+
 //DEVICE CARDS
 class DeviceCard extends HTMLElement {
     constructor(image, deviceId, selected) {
         super();
-        this.attachShadow({ mode: 'open' });
+        this.attachShadow({mode: 'open'});
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
         bootstrapStyles.href = 'static/bootstrap-5.0.2-dist/css/bootstrap.css'
@@ -308,16 +337,19 @@ class DeviceCard extends HTMLElement {
         })
 
     }
+
     updateImage(image) {
         this.image = image;
         this.shadowRoot.querySelector("img").src = image;
     }
+
     connectedCallback() {
         this.shadowRoot.querySelector("img").src = this.image;
         this.shadowRoot.querySelector("#device-name").innerHTML = this.deviceId;
 
     }
 }
+
 window.customElements.define('device-card', DeviceCard);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
@@ -331,3 +363,16 @@ connected_devices.forEach((device) => {
     document.querySelector("#main-container").appendChild(card);
     cardList.push(card);
 });
+
+
+window.addEventListener('load', function () {
+
+
+    var slider = $('#volume');
+
+    slider.on('change', function (ev) {
+        var newVal = slider.val()
+
+    });
+
+})

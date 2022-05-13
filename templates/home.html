@@ -62,9 +62,14 @@
   <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
     <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
   </div>
+  <div class="row justify-content-center mb-2" id="volumeDiv">
+    <div class=" btn-custom d-flex align-items-center justify-content-center border rounded">
+      <label for="customRange3" class="form-label me-2">Volume</label>
+      <input type="range" class="form-range" style="max-width: 60%" min="0" value="10" max="15" step="1" id="volume">
+    </div>
+  </div>
   <div class="row justify-content-center mb-2" id="htmxGrabDiv">
     <a style="font-size: 4rem" id='devices-modal-open' {# note this id used by htmx in our modal #} class="btn btn-fuchsia btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#devicesModal">DEVICES</a>
-
   </div>
 </div>
 
