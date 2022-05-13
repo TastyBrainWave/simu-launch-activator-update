@@ -220,7 +220,7 @@ function connectDevice() {
 
 
     send({
-        url: '',
+        url: '/connect',
         start: function () {
             document.getElementById("connectButton").classList.add("disabled");
         },
