@@ -27,7 +27,7 @@ import tempfile
 from ppadb.client import Client as AdbClient
 
 from sql_app import models, schemas, crud
-from sql_app.crud import get_all_apk_details
+from sql_app.crud import get_all_apk_details, get_apk_details
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetails, APKDetailsBase
 
@@ -181,9 +181,12 @@ async def load(
     """
 
     check_adb_running(client)
+
+    print(devices)
+
     client_list = (
         client.devices()
-        if not devices
+        if not devices or len(devices) == 0
         else [Device(client, device) for device in devices]
     )
 
@@ -216,6 +219,11 @@ async def load(
 
 @app.post("/set-remote-experience")
 async def set_remote_experience(set_choices: str = Form(...)):
+    """
+        Sets the active experience
+    :param set_choices: the form field of choices
+    :return: a success dictionary signifying the operation was successful
+    """
     if set_choices:
         global simu_application_name
         simu_application_name = set_choices
@@ -223,6 +231,19 @@ async def set_remote_experience(set_choices: str = Form(...)):
         return {"success": True}
 
     return {"success": False}
+
+@app.post("/remove-remote-experience")
+async def remove_remote_experience(remove_choices: str = Form(...), db: Session = Depends(get_db)):
+    try:
+        if remove_choices:
+            print(remove_choices)
+            db.delete(get_apk_details(db, apk_name=remove_choices))
+            db.commit()
+            return {"success": True}
+
+        return {"success": False}
+    except SQLAlchemyError as e:
+        return {"success": False, "error": e.__str__()}
 
 
 @app.post("/add-remote-experience")

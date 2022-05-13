@@ -1,0 +1,31 @@
+<div class="modal fade" id="removeExperienceModal" tabindex="-1" aria-labelledby="removeExperienceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="removeExperienceModalLabel">Remove remote experience</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="removeExperienceForm" action="/remove-remote-experience" enctype="multipart/form-data" method="post">
+          <fieldset>
+            <legend>This tool allows you remove an experience from the list of experiences</legend>
+          </fieldset>
+          <fieldset>
+            <legend>Choose the experience to be removed from the database:</legend>
+            <label>
+              <select id="remove_choices_dropdown" name="remove_choices" required>
+                {% for choice in choices %}
+                  <option value="{{ choice }}">{{ choice }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </fieldset>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="removeRemoteExperience()">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>

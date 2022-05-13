@@ -119,7 +119,9 @@ function loadExperience() {
 
     const formElement = document.getElementById('loadForm')
     var formData = new FormData(formElement)
-    formData.append("devices", "[]")
+    var devices = []
+    devices.push(connected_devices[0])
+    formData.append("devices", devices.toString())
 
     send({
         url: '/load',
@@ -188,6 +190,28 @@ function addRemoteExperience() {
         },
         finally: function () {
             document.getElementById("addRemoteButton").classList.remove("disabled");
+        }
+    })
+
+}
+
+function removeRemoteExperience() {
+
+    const formElement = document.getElementById('removeExperienceForm')
+    var formData = new FormData(formElement)
+
+    send({
+        url: '/remove-remote-experience',
+        start: function () {
+            document.getElementById("removeRemoteButton").classList.add("disabled");
+        },
+        body: formData,
+        success: function () {
+            $('#removeExperienceModal').modal('hide');
+            showStatus("Experience has been removed!");
+        },
+        finally: function () {
+            document.getElementById("removeRemoteButton").classList.remove("disabled");
         }
     })
 
