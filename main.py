@@ -13,7 +13,7 @@ from ppadb.device_async import DeviceAsync
 from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from helpers import launch_app, save_file, check_adb_running, BASE_DIR
+from helpers import launch_app, save_file, BASE_DIR
 from multiprocessing import Process, Pool, cpu_count
 from typing import List
 
@@ -54,7 +54,23 @@ BASE_PORT = 5555
 
 client = AdbClient(host="127.0.0.1", port=5037)
 
+def check_adb_running(func):
 
+    def wrapper(*args, **kwargs):
+        try:
+            devices = client.devices()
+
+        except RuntimeError as e:
+            if e.__str__().find("Is adb running on your computer?"):
+                print("ADB Server not running, starting it now!")
+                command = os.system("adb start-server")
+                print(command)
+        func(*args, **kwargs)
+
+    return wrapper
+
+
+@check_adb_running
 @app.get("/")
 async def home(request: Request, db: Session = Depends(get_db)):
     """
@@ -63,8 +79,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
     :param request: the Request() object
     :return: a TemplateResponse object containing the homepage
     """
-
-    check_adb_running(client)
 
     uploaded_experiences = get_all_apk_details(db)
 
@@ -87,7 +101,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
 
 
 
-
+@check_adb_running
 @app.post("/start")
 async def start(payload: Devices, db: Session = Depends(get_db)):
     """
@@ -97,8 +111,6 @@ async def start(payload: Devices, db: Session = Depends(get_db)):
     :param db: the database dependency
     :return: dictionary of all device serial numbers
     """
-
-    check_adb_running(client)
 
     client_list = (
         client.devices()
@@ -171,6 +183,7 @@ async def upload(
         return {"success": False, "error": e.__str__()}
 
 
+@check_adb_running
 @app.post("/load")
 async def load(payload: Experience):
     """
@@ -179,8 +192,6 @@ async def load(payload: Experience):
     :param payload: the choice of experience specified by the user
     :return: a success dictionary signifying the operation was successful
     """
-
-    check_adb_running(client)
 
     client_list = (
         client.devices()
@@ -229,6 +240,7 @@ async def set_remote_experience(payload: Experience):
     return {"success": False}
 
 
+@check_adb_running
 @app.post("/remove-remote-experience")
 async def remove_remote_experience(payload: Experience, db: Session = Depends(get_db)):
     try:
@@ -242,6 +254,7 @@ async def remove_remote_experience(payload: Experience, db: Session = Depends(ge
         return {"success": False, "error": e.__str__()}
 
 
+@check_adb_running
 @app.post("/add-remote-experience")
 async def add_remote_experience(
         apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)
@@ -274,6 +287,7 @@ async def add_remote_experience(
         return {"success": False, "error": e.__str__()}
 
 
+@check_adb_running
 @app.post("/stop")
 async def stop(payload: Devices, db: Session = Depends(get_db)):
     """
@@ -283,8 +297,6 @@ async def stop(payload: Devices, db: Session = Depends(get_db)):
     :param db: the database dependency
     :return: a dictionary containing the success flag of the operation and any errors
     """
-
-    check_adb_running(client)
 
     client_list = (
         client.devices()
@@ -317,6 +329,7 @@ async def stop(payload: Devices, db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 
+@check_adb_running
 @app.post("/connect")
 async def connect(request: Request):
     """
@@ -328,8 +341,6 @@ async def connect(request: Request):
     """
 
     global BASE_PORT
-
-    check_adb_running(client)
 
     json = await request.json() if len((await request.body()).decode()) > 0 else {}
 
@@ -369,6 +380,7 @@ async def connect(request: Request):
         return {"success": False, "error_log": e.__str__()}
 
 
+@check_adb_running
 @app.post("/disconnect")
 async def disconnect(devices: list = Form(...)):
     """
@@ -380,7 +392,6 @@ async def disconnect(devices: list = Form(...)):
 
     global BASE_PORT
 
-    check_adb_running(client)
     client_list = (
         client.devices()
         if not devices
@@ -422,6 +433,7 @@ async def exit_server():
     return {"success": result}
 
 
+@check_adb_running
 @app.get("/screen-grab")
 async def screen_grab(request: Request):
     """
@@ -429,8 +441,6 @@ async def screen_grab(request: Request):
     :param request: the Request object
     :return: a dictionary containing the success flag
     """
-
-    check_adb_running(client)
 
     devices = client.devices()
 
@@ -453,9 +463,9 @@ async def screen_grab(request: Request):
     return {"success": True}
 
 
+@check_adb_running
 @app.post("/volume")
 async def volume(payload: Volume):
-    check_adb_running(client)
     for device in client.devices():
         outcome = device.shell(f'media volume --stream 3 --set {payload.volume}')
 
@@ -513,6 +523,7 @@ def check_image(device_serial, refresh_ms, size):
     return True
 
 
+@check_adb_running
 @app.get("/device-button/{device_serial}/{button}")
 async def device_button(request: Request, device_serial: str, button: str):
     commands = {'power': ['/dev/input/event2 1 74 1', '/dev/input/event2 0 0 0'],
@@ -532,6 +543,7 @@ async def device_button(request: Request, device_serial: str, button: str):
     pass
 
 
+@check_adb_running
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
     success = check_image(device_serial, refresh_ms, size)
@@ -561,9 +573,9 @@ async def devices_start(request: Request):
     return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
 
 
+@check_adb_running
 @app.get("/linkup")
 async def linkup(request: Request):
-    check_adb_running(client)
     global my_devices
     devices = client.devices()
     my_devices = {device.serial: device for device in devices}
@@ -573,3 +585,5 @@ async def linkup(request: Request):
         device.shell('adb shell setprop debug.oculus.capture.height 108')
 
     return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
+
+

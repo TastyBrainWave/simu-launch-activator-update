@@ -3,15 +3,6 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
-def check_adb_running(client):
-    try:
-        devices = client.devices()
-
-    except RuntimeError as e:
-        if e.__str__().find("Is adb running on your computer?"):
-            print("ADB Server not running, starting it now!")
-            command = os.system("adb start-server")
-            print(command)
 
 
 def launch_app(device, app_name, d_type: bool = False, command: str = None):
