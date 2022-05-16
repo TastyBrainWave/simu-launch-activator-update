@@ -20,20 +20,27 @@ function transformFormData() {
 //  start: '',
 //  finally: '',
 // }
+
+function add_devices(obj) {
+    if (!obj['devices']) obj['devices'] = ['a', 'b'];
+}
+
 function send(params) {
     if (!params['headers']) params['headers'] = {};
+    params['headers']["Content-type"] = "application/json";
     if (!params['method']) params['method'] = 'POST';
 
-    // // inject universal info such as devices
-    // if(params['body']){
-    //
-    // }
+    // inject universal info such as devices
+    if (!params['body']) params['body'] = {}
+    add_devices(params['body']);
+    // console.log(111, params)
+
 
     if (params['start']) params['start']();
 
     fetch(params['url'], {
         method: params['method'],
-        body: params['body'],
+        body: JSON.stringify(params['body']),
         headers: params['headers']
     }).then(function (response) {
         if (!response.ok) {
@@ -67,16 +74,22 @@ showStatus = (text = "The showStatus function was used incoorrectly and status t
 function uploadAPKForm() {
     const formElement = document.getElementById('uploadForm')
     var formData = new FormData(formElement)
-
-    send({
-        url: '/upload',
-        body: formData,
-        success: function () {
-            $('#uploadModal').modal('hide')
-        },
-        problem: function (error) {
-            showStatus("Error uploading experience to server: " + error);
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
         }
+
+        $('#uploadModal').modal('hide')
+
+        return response.json();
+    }).then(function (data) {
+        showStatus("Experience has been uploaded. You may now load it on devices");
+    }).catch(function (error) {
+        console.log(error);
+        showStatus("Error uploading experience to server: " + error);
     })
 }
 
@@ -90,15 +103,11 @@ function remove_class(element) {
 //BUTTON EVENTS
 function startExperience() {
 
-    var formData = new FormData()
-    var devices = []
-    devices.push(connected_devices[0])
-    formData.append("devices", devices.toString())
-
     send({
         start: function () {
             document.getElementById("startButton").classList.add("disabled");
         },
+        body: {},
         url: '/start',
         success: function (data) {
             showStatus("Experience has started on " + data["device_count"] + " devices!");
@@ -116,22 +125,20 @@ function startExperience() {
 
 function loadExperience() {
 
+    var experience = document.getElementById("load_choices_dropdown").value;
 
-    const formElement = document.getElementById('loadForm')
-    var formData = new FormData(formElement)
-    var devices = []
-    devices.push(connected_devices[0])
-    formData.append("devices", devices.toString())
 
     send({
         url: '/load',
         start: function () {
             document.getElementById("loadButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            'experience': experience
+        },
         success: function (data) {
             $('#loadModal').modal('hide');
-            selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
+            selected_experience_global.innerHTML = "The following experience is currently selected: " + experience
             showStatus("Experience has loaded on " + data.json()["device_count"] + " devices!");
 
         },
@@ -143,23 +150,23 @@ function loadExperience() {
             document.getElementById("loadButton").classList.remove("disabled");
         }
     })
-
 }
 
 function setRemoteExperience() {
 
-    const formElement = document.getElementById('setRemoteExperienceForm')
-    var formData = new FormData(formElement)
+    var experience = document.getElementById("set_choices_dropdown").value;
 
     send({
         url: '/set-remote-experience',
         start: function () {
             document.getElementById("setRemoteButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            'experience': experience
+        },
         success: function (data) {
             $('#setExperienceModal').modal('hide');
-            selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("set_choices")
+            selected_experience_global.innerHTML = "The following experience is currently selected: " + experience
             showStatus("Experience has been set! You may now start it!");
 
         },
@@ -173,42 +180,44 @@ function setRemoteExperience() {
     })
 }
 
-function addRemoteExperience() {
-
-    const formElement = document.getElementById('addExperienceForm')
-    var formData = new FormData(formElement)
-
-    send({
-        url: '/add-remote-experience',
-        start: function () {
-            document.getElementById("addRemoteButton").classList.add("disabled");
-        },
-        body: formData,
-        success: function () {
-            $('#addExperienceModal').modal('hide');
-            showStatus("Experience has been added! You may now set it as the active experience");
-        },
-        finally: function () {
-            document.getElementById("addRemoteButton").classList.remove("disabled");
-        }
-    })
-
-}
+// function addRemoteExperience() {
+//
+//     const formElement = document.getElementById('addExperienceForm')
+//     var formData = new FormData(formElement)
+//
+//     send({
+//         url: '/add-remote-experience',
+//         start: function () {
+//             document.getElementById("addRemoteButton").classList.add("disabled");
+//         },
+//         body: formData,
+//         success: function () {
+//             $('#addExperienceModal').modal('hide');
+//             showStatus("Experience has been added! You may now set it as the active experience");
+//         },
+//         finally: function () {
+//             document.getElementById("addRemoteButton").classList.remove("disabled");
+//         }
+//     })
+//
+// }
 
 function removeRemoteExperience() {
 
-    const formElement = document.getElementById('removeExperienceForm')
-    var formData = new FormData(formElement)
+    var experience = document.getElementById("remove_choices_dropdown").value;
+
 
     send({
         url: '/remove-remote-experience',
         start: function () {
             document.getElementById("removeRemoteButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            'experience': experience
+        },
         success: function () {
             $('#removeExperienceModal').modal('hide');
-            showStatus("Experience has been removed!");
+            showStatus("Experience " + experience + " has been removed!");
         },
         finally: function () {
             document.getElementById("removeRemoteButton").classList.remove("disabled");
@@ -224,10 +233,6 @@ function stopExperience() {
         url: '/stop',
         start: function () {
             document.getElementById("stopButton").classList.add("disabled");
-        },
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
         },
         success: function () {
             showStatus("Experience has stopped on all devices!");
@@ -392,17 +397,16 @@ window.addEventListener('load', function () {
     var slider = $('#volume');
 
     slider.on('change', function (ev) {
-        var vol = slider.val();
+        var volume = parseInt(slider.val());
 
         send({
             url: 'volume',
-            body: JSON.stringify({'volume': vol}),
-            headers: {"Content-Type": "application/json"},
+            body: {'volume': volume},
             success: function () {
-                console.log('changed volume to ' + vol);
+                console.log('changed volume to ' + volume);
             },
             problem: function () {
-                console.log('could not change volume to ' + vol);
+                console.log('could not change volume to ' + volume);
             },
             finally: '',
         });

@@ -10,13 +10,14 @@ import sqlalchemy
 from fastapi.encoders import jsonable_encoder
 from ppadb.device import Device
 from ppadb.device_async import DeviceAsync
+from pydantic import BaseModel
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from helpers import launch_app, save_file, check_adb_running, BASE_DIR
 from multiprocessing import Process, Pool, cpu_count
 from typing import List
 
-from fastapi import FastAPI, UploadFile, File, Depends
+from fastapi import FastAPI, UploadFile, File, Depends, Body
 from fastapi import FastAPI, UploadFile, File, Form
 from ppadb import InstallError
 from starlette.requests import Request
@@ -26,6 +27,7 @@ from starlette.templating import Jinja2Templates
 import tempfile
 from ppadb.client import Client as AdbClient
 
+from models_pydantic import Volume, Devices, Experience
 from sql_app import models, schemas, crud
 from sql_app.crud import get_all_apk_details, get_apk_details
 from sql_app.database import engine, SessionLocal
@@ -84,12 +86,14 @@ async def home(request: Request, db: Session = Depends(get_db)):
     )
 
 
+
+
 @app.post("/start")
-async def start(devices: list = Form(...), db: Session = Depends(get_db)):
+async def start(payload: Devices, db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
 
-    :param devices: a list of devices which the experience will start on. Not providing any will start the experience on all devices
+    :param payload: a list of devices which the experience will start on. Not providing any will start the experience on all devices
     :param db: the database dependency
     :return: dictionary of all device serial numbers
     """
@@ -98,8 +102,8 @@ async def start(devices: list = Form(...), db: Session = Depends(get_db)):
 
     client_list = (
         client.devices()
-        if not devices
-        else [Device(client, device) for device in devices]
+        if not payload.devices
+        else [Device(client, device) for device in payload.devices]
     )
 
     global simu_application_name
@@ -168,38 +172,30 @@ async def upload(
 
 
 @app.post("/load")
-async def load(
-        load_choices: str = Form(...),
-        devices: list = Form(...),
-):
+async def load(payload: Experience):
     """
         Installs the experience on selected or all devices.
 
-    :param devices: a list of device serial IDs to install the experience on
-    :param load_choices: the choice of experience specified by the user
+    :param payload: the choice of experience specified by the user
     :return: a success dictionary signifying the operation was successful
     """
 
     check_adb_running(client)
 
-    print(devices)
-
     client_list = (
         client.devices()
-        if not devices or len(devices) == 0
-        else [Device(client, device) for device in devices]
+        if not payload.devices
+        else [Device(client, device) for device in payload.devices]
     )
 
     apk_paths = os.listdir("apks")
     apk_path = "apks/"
 
-    item = load_choices
-
     global simu_application_name
-    simu_application_name = item
+    simu_application_name = payload.experience
 
-    if item in apk_paths:
-        apk_path += item
+    if payload.experience in apk_paths:
+        apk_path += payload.experience
     else:
         return {
             "success": False,
@@ -218,26 +214,26 @@ async def load(
 
 
 @app.post("/set-remote-experience")
-async def set_remote_experience(set_choices: str = Form(...)):
+async def set_remote_experience(payload: Experience):
     """
         Sets the active experience
     :param set_choices: the form field of choices
     :return: a success dictionary signifying the operation was successful
     """
-    if set_choices:
+    if payload.experience:
         global simu_application_name
-        simu_application_name = set_choices
+        simu_application_name = payload.experience
 
         return {"success": True}
 
     return {"success": False}
 
+
 @app.post("/remove-remote-experience")
-async def remove_remote_experience(remove_choices: str = Form(...), db: Session = Depends(get_db)):
+async def remove_remote_experience(payload: Experience, db: Session = Depends(get_db)):
     try:
-        if remove_choices:
-            print(remove_choices)
-            db.delete(get_apk_details(db, apk_name=remove_choices))
+        if payload.experience:
+            db.delete(get_apk_details(db, apk_name=payload.experience))
             db.commit()
             return {"success": True}
 
@@ -279,7 +275,7 @@ async def add_remote_experience(
 
 
 @app.post("/stop")
-async def stop(devices: list = Form(...), db: Session = Depends(get_db)):
+async def stop(payload: Devices, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
@@ -292,8 +288,8 @@ async def stop(devices: list = Form(...), db: Session = Depends(get_db)):
 
     client_list = (
         client.devices()
-        if not devices
-        else [Device(client, device) for device in devices]
+        if not payload.devices
+        else [Device(client, device) for device in payload.devices]
     )
 
     global simu_application_name
@@ -458,12 +454,10 @@ async def screen_grab(request: Request):
 
 
 @app.post("/volume")
-async def device_button(request: Request):
-    data = await request.json()
-    volume = data['volume']
+async def volume(payload: Volume):
     check_adb_running(client)
     for device in client.devices():
-        outcome = device.shell(f'media volume --stream 3 --set {volume}')
+        outcome = device.shell(f'media volume --stream 3 --set {payload.volume}')
 
     return {"success": True}
 
