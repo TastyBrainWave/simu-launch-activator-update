@@ -2,6 +2,7 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+
 def check_adb_running(client):
     try:
         devices = client.devices()
@@ -25,16 +26,17 @@ def launch_app(device, app_name, d_type: bool = False, command: str = None):
         app_name = app_name[:-4]
 
     command = "am start -n " + app_name + "/" + command if d_type else "monkey -p " + app_name \
-                                                                                                + " -v 1"
+                                                                       + " -v 1"
     print(command)
 
     device.shell(command)
 
-def save_file(filename, data):
 
-    delete_old = "apks/" + os.listdir("apks")[0]
-    os.remove(delete_old)
+def save_file(filename, data):
+    apks = os.listdir("apks")
+    if apks:
+        delete_old = "apks/" + apks[0]
+        os.remove(delete_old)
 
     with open("apks/" + filename, 'wb') as f:
         f.write(data)
-
