@@ -2,20 +2,21 @@
 
 {% block content %}
 
-<div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">{% include "icons/headset-vr.html" %} Multi Device Experience Tool</a>
-    <div class="d-flex">
-      <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
-      <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
-      <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
+  <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">{% include "icons/headset-vr.html" %} Multi Device Experience Tool</a>
+      <div class="d-flex">
+        <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
+        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
+        <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
+      </div>
     </div>
   </div>
-</div>
-{% include "load/upload_modal.html" %}
-{% include "load/load_modal.html" %}
-{% include "experiences/set_experience_modal.html" %}
-{% include "experiences/add_experience_modal.html" %}
+  {% include "load/upload_modal.html" %}
+  {% include "load/load_modal.html" %}
+  {% include "experiences/set_experience_modal.html" %}
+  {% include "experiences/add_experience_modal.html" %}
+  {% include "experiences/remove_experience_modal.html" %}
 
 <div class="container align-self-center">
   <div class="position-absolute end-0 me-2" style="z-index: 11">
@@ -53,6 +54,9 @@
   <div class="row justify-content-center mb-2" id="addExperienceButtonDiv">
     <a style="font-size: 4rem" id="addRemoteButton" class="btn btn-yellow btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#addExperienceModal">ADD NEW EXPERIENCE</a>
   </div>
+  <div class="row justify-content-center mb-2" id="removeExperienceButtonDiv">
+    <a style="font-size: 4rem" id="removeRemoteButton" class="btn btn-yellow btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">REMOVE EXPERIENCE</a>
+  </div>
   <div class="row justify-content-center mb-2" id="loadButtonDiv">
     <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#loadModal">LOAD ON DEVICES</a>
   </div>
@@ -62,9 +66,14 @@
   <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
     <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
   </div>
+  <div class="row justify-content-center mb-2" id="volumeDiv">
+    <div class=" btn-custom d-flex align-items-center justify-content-center border rounded">
+      <label for="customRange3" class="form-label me-2">Volume</label>
+      <input type="range" class="form-range" style="max-width: 60%" min="0" value="10" max="15" step="1" id="volume">
+    </div>
+  </div>
   <div class="row justify-content-center mb-2" id="htmxGrabDiv">
     <a style="font-size: 4rem" id='devices-modal-open' {# note this id used by htmx in our modal #} class="btn btn-fuchsia btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#devicesModal">DEVICES</a>
-
   </div>
 </div>
 
@@ -73,7 +82,7 @@
 
     <div class="card mb-2" style="max-width: 18rem">
       <div>
-        <input class="form-check-input position-absolute ms-1" type="checkbox" id="cardSelect"></input>
+        <input class="form-check-input position-absolute ms-1" type="checkbox" id="cardSelect">
         <img src="https://picsum.photos/200" class="card-img-top">
       </div>
       <div class="card-body">
