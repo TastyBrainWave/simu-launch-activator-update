@@ -168,7 +168,7 @@ function loadExperience() {
 function setRemoteExperience() {
 
     var experience = document.getElementById("set_choices_dropdown").value;
-console.log(experience,2332)
+
     send({
         url: '/set-remote-experience',
         start: function () {
