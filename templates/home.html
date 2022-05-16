@@ -7,7 +7,7 @@
       <a class="navbar-brand" href="#">{% include "icons/headset-vr.html" %} Multi Device Experience Tool</a>
       <div class="d-flex">
         <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
-        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
+        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect</a>
         <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
       </div>
     </div>
@@ -19,12 +19,11 @@
   {% include "experiences/remove_experience_modal.html" %}
 
 <div class="container align-self-center">
-  <div class="position-absolute end-0 me-2" style="z-index: 11">
+  <div class="position-fixed end-0 me-2" style="z-index: 11">
     <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
 
-        <div id="status" class="toast-body">
-        </div>
+        <div id="status" class="toast-body fs-2 text"></div>
         <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     </div>
