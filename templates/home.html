@@ -30,7 +30,7 @@
   </div>
   <div id="main-container" class="row row-cols-1 row-cols-md-4 g-4 mt-3 float-center">
   </div>
-  <div id=" experience" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert">
+  <div id="experience" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert">
     {% if app_name %}
     The following experience is currently selected: {{ app_name[:-4] }}
     {% else %}
@@ -101,6 +101,5 @@
 {% endblock %}
 
 {% block javascript %}
-<script>const connected_devices = {{ devices_connected | safe }};</script>
 <script defer src="/static/main.js"></script>
 {% endblock %}

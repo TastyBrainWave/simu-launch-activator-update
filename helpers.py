@@ -1,8 +1,18 @@
 import os
 
+from ppadb.client import Client as AdbClient
+from ppadb.device import Device
+
+from models_pydantic import Devices
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
+def process_devices(client: AdbClient, payload: Devices):
+    print(client.devices(), 22)
+    if payload.devices:
+        return [Device(client, device) for device in payload.devices]
+    return client.devices()
 
 
 def launch_app(device, app_name, d_type: bool = False, command: str = None):
@@ -11,6 +21,7 @@ def launch_app(device, app_name, d_type: bool = False, command: str = None):
       :param device: the Device object for ppadb
       :param app_name: the application name, ie: com.simu-launch.calculator
       :param d_type: the device type, True = Quest, False = Android
+      :param command: the command
       """
 
     if ".apk" in app_name:

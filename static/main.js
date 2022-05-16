@@ -22,7 +22,8 @@ function transformFormData() {
 // }
 
 function add_devices(obj) {
-    if (!obj['devices']) obj['devices'] = ['a', 'b'];
+
+    console.log(obj)
 }
 
 function send(params) {
@@ -30,11 +31,15 @@ function send(params) {
     params['headers']["Content-type"] = "application/json";
     if (!params['method']) params['method'] = 'POST';
 
-    // inject universal info such as devices
-    if (!params['body']) params['body'] = {}
-    add_devices(params['body']);
-    // console.log(111, params)
 
+    if (!params['body']) {
+        if (params['method'].toLowerCase() === 'post') {
+            params['body'] = {}
+        }
+    }
+    if (!params['body']['devices']) {
+        params['body']['devices'] = devices_manager.devices();
+    }
 
     if (params['start']) params['start']();
 
@@ -46,12 +51,22 @@ function send(params) {
         if (!response.ok) {
             throw Error(response.statusText);
         }
-        if (params['success']) params['success'](response);
+
+        response.json().then(function (json) {
+            if (json['success']){
+                params['success'](json);
+            }
+            else {
+                if (params['problem']) params['problem'](json);
+            }
+
+
+        })
+
     }).catch(function (error) {
-        if (params['problem']) params['problem'](error);
-        else {
-            console.log(error);
-        }
+        if (params['problem']) params['problem'](json);
+        console.log(error);
+
     }).finally(function () {
         if (params['finally']) params['finally']();
     });
@@ -127,7 +142,6 @@ function loadExperience() {
 
     var experience = document.getElementById("load_choices_dropdown").value;
 
-
     send({
         url: '/load',
         start: function () {
@@ -140,7 +154,6 @@ function loadExperience() {
             $('#loadModal').modal('hide');
             selected_experience_global.innerHTML = "The following experience is currently selected: " + experience
             showStatus("Experience has loaded on " + data.json()["device_count"] + " devices!");
-
         },
         problem: function (error) {
             showStatus("Error loading experience: " + error);
@@ -155,7 +168,7 @@ function loadExperience() {
 function setRemoteExperience() {
 
     var experience = document.getElementById("set_choices_dropdown").value;
-
+console.log(experience,2332)
     send({
         url: '/set-remote-experience',
         start: function () {
@@ -167,7 +180,7 @@ function setRemoteExperience() {
         success: function (data) {
             $('#setExperienceModal').modal('hide');
             selected_experience_global.innerHTML = "The following experience is currently selected: " + experience
-            showStatus("Experience has been set! You may now start it!");
+            showStatus("Experience '"+ experience + "' has been set! You may now start it!");
 
         },
         problem: function (error) {
@@ -255,7 +268,7 @@ function connectDevice() {
             "Content-type": "application/json"
         },
         success: function (data) {
-            showStatus("Device connected with serial ID: " + data.json()["serial"]);
+            showStatus("Device connected with serial ID: " + json["serial"]);
 
         },
         problem: function (error) {
@@ -271,10 +284,6 @@ function disconnectDevice() {
 
     send({
         url: '/disconnect',
-        headers: {
-            "Content-type": "application/json"
-        },
-
         start: function () {
             document.getElementById("disconnectButton").classList.add("disabled");
         },
@@ -380,16 +389,41 @@ class DeviceCard extends HTMLElement {
 window.customElements.define('device-card', DeviceCard);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
-var cardList = []
-connected_devices.forEach((device) => {
-    //var card = document.querySelector("#device-card").content.cloneNode(true);
-    //card.querySelector("#device-name").textContent = device;
-    //console.log(card);
-    //document.querySelector("#main-container").appendChild(card);
-    var card = new DeviceCard("https://picsum.photos/200", device, false);
-    document.querySelector("#main-container").appendChild(card);
-    cardList.push(card);
-});
+
+
+var devices_manager = function () {
+    var api = {};
+
+    var card_map = {};
+
+    fetch('devices', {
+        method: 'GET',
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.json()
+        })
+        .then(function (json) {
+            for (var device of json['devices']) {
+
+                var card = new DeviceCard("https://picsum.photos/200", device, false);
+                document.querySelector("#main-container").appendChild(card);
+                card_map[device] = card;
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+        })
+
+    api.devices = function () {
+        console.log(card_map, 22)
+        return card_map.keys;
+    }
+
+    return api;
+}();
 
 
 window.addEventListener('load', function () {
@@ -402,11 +436,18 @@ window.addEventListener('load', function () {
         send({
             url: 'volume',
             body: {'volume': volume},
-            success: function () {
-                console.log('changed volume to ' + volume);
+            success: function (json) {
+
+                if (!json['success']) {
+                    showStatus('problem changing volume' + json['fails'])
+                } else {
+                    showStatus('changed volume to ' + volume)
+                }
+
+
             },
-            problem: function () {
-                console.log('could not change volume to ' + volume);
+            problem: function (info) {
+                console.log('could not change volume to ' + volume + ':' + info);
             },
             finally: '',
         });

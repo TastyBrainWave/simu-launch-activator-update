@@ -10,7 +10,7 @@
           <fieldset>
             <legend>Choose the experience to be loaded on the devices</legend>
             <label>
-              <select id="load_choices_dropdown" name="load_choices" required>
+              <select id="load_choices_dropdown" name="load_choices" required class="form-select-lg" aria-label="Select Experience">
                 {% for choice in choices %}
                   <option value="{{ choice }}">{{ choice }}</option>
                 {% endfor %}
