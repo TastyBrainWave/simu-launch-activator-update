@@ -47,7 +47,7 @@ def get_db():
 
 BASE_PORT = 5555
 
-client = AdbClient(host="127.0.0.1", port=5037)
+client: AdbClient = AdbClient(host="127.0.0.1", port=5037)
 
 
 def check_adb_running(func):
@@ -67,7 +67,16 @@ def check_adb_running(func):
 @check_adb_running
 @app.get("/devices")
 async def devices():
-    return {'devices': [str(device.serial) for device in client.devices()]}
+    devices = []
+    errs = []
+
+    try:
+        device: Device
+        for device in client.devices():
+            devices.append(str(device.serial))
+    except RuntimeError as e:
+        errs.append(str(e))
+    return {'devices': devices, 'errs': errs}
 
 
 @check_adb_running
@@ -86,8 +95,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
         print(item.apk_name)
 
     global simu_application_name
-
-    print([device.serial for device in client.devices()])
 
     return templates.TemplateResponse(
         "home.html",
@@ -473,30 +480,19 @@ screen_shots_cache = {}
 def check_image(device_serial, refresh_ms, size):
     def gen_image():
 
-        with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
-            try:
-                device: Device = my_devices[device_serial]
-            except TypeError:
-                return False
+        my_width = 192
+        my_height = 108
 
-            im = device.screencap()
-            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        device: Device = client.device(device_serial)
+        device.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
+        device.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
+        im = device.screencap()
 
-            # cv2.imshow("", image)
-            # cv2.waitKey(0)
+        image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
-            image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
-
-            height = image.shape[0]
-            width = int(image.shape[1] / height * 320)
-            height = 320
-
-            dsize = (width, height)
-            output = cv2.resize(image, dsize)
-
-            cv2.imwrite(FOUT.name, output)
-
-            return FOUT.name
+        _, encoded_img = cv2.imencode('.png', image)
+        return base64.b64encode(encoded_img).decode("utf-8")
 
     timestamp = datetime.datetime.now()
 
@@ -509,12 +505,43 @@ def check_image(device_serial, refresh_ms, size):
             milliseconds=refresh_ms) < timestamp:
         screen_shots_cache[device_serial][size]['timestamp'] = timestamp
         try:
-            print(1)
             screen_shots_cache[device_serial][size]['file_id'] = gen_image()
-            print(2)
-        except RuntimeError:
+        except RuntimeError as e:
             return False
+
     return True
+
+
+@check_adb_running
+@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
+async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
+    success = check_image(device_serial, refresh_ms, size)
+
+    if not success:
+        return {'success': False}
+
+    image = screen_shots_cache[device_serial][size]['file_id']
+    err = None
+    return {'base64_image': image}
+
+
+@app.get("/devices-modal-start")
+async def devices_start(request: Request):
+    return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
+
+
+@check_adb_running
+@app.get("/linkup")
+async def linkup(request: Request):
+    global my_devices
+    devices = client.devices()
+    my_devices = {device.serial: device for device in devices}
+
+    for device in devices:
+        device.shell('adb shell setprop debug.oculus.capture.width 192')
+        device.shell('adb shell setprop debug.oculus.capture.height 108')
+
+    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
 
 
 @check_adb_running
@@ -535,47 +562,3 @@ async def device_button(request: Request, device_serial: str, button: str):
     print(411, device.shell('adb shell media volume --stream 3 --set 15'), 2221)
 
     pass
-
-
-@check_adb_running
-@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
-async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
-    success = check_image(device_serial, refresh_ms, size)
-
-    if not success:
-        return templates.TemplateResponse("htmx/device.html", {"request": request,
-                                                               "device_serial": device_serial,
-                                                               'err': 'lost connection'})
-    image = screen_shots_cache[device_serial][size]['file_id']
-    err = None
-    try:
-        with open(image, "rb") as img_file:
-            base64_image = base64.b64encode(img_file.read()).decode('utf-8')
-
-    except TypeError:
-        base64_image = None
-        err = 'issue'
-
-    return templates.TemplateResponse("htmx/device.html", {"request": request,
-                                                           "device_serial": device_serial,
-                                                           'base64_image': base64_image,
-                                                           'err': err})
-
-
-@app.get("/devices-modal-start")
-async def devices_start(request: Request):
-    return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
-
-
-@check_adb_running
-@app.get("/linkup")
-async def linkup(request: Request):
-    global my_devices
-    devices = client.devices()
-    my_devices = {device.serial: device for device in devices}
-
-    for device in devices:
-        device.shell('adb shell setprop debug.oculus.capture.width 192')
-        device.shell('adb shell setprop debug.oculus.capture.height 108')
-
-    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})

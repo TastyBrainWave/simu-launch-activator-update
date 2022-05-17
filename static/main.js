@@ -53,10 +53,9 @@ function send(params) {
         }
 
         response.json().then(function (json) {
-            if (json['success']){
+            if (json['success']) {
                 params['success'](json);
-            }
-            else {
+            } else {
                 if (params['problem']) params['problem'](json);
             }
 
@@ -180,7 +179,7 @@ function setRemoteExperience() {
         success: function (data) {
             $('#setExperienceModal').modal('hide');
             selected_experience_global.innerHTML = "The following experience is currently selected: " + experience
-            showStatus("Experience '"+ experience + "' has been set! You may now start it!");
+            showStatus("Experience '" + experience + "' has been set! You may now start it!");
 
         },
         problem: function (error) {
@@ -379,6 +378,11 @@ class DeviceCard extends HTMLElement {
         this.shadowRoot.querySelector("img").src = image;
     }
 
+    updateImage64(image64) {
+
+        this.shadowRoot.querySelector("img").src = "data:image/png;base64, " + image64;
+    }
+
     connectedCallback() {
         this.shadowRoot.querySelector("img").src = this.image;
         this.shadowRoot.querySelector("#device-name").innerHTML = this.deviceId;
@@ -394,7 +398,42 @@ testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
 var devices_manager = function () {
     var api = {};
 
-    var card_map = {};
+    var card_map = {}; // {device_name: {'card': my_card, 'poll': my_poll}
+
+    var default_polling_rate = 5000 // ms
+    var image_height = 100;
+
+    function screengrab_polling(device, on, rate) {
+        if (!rate) rate = default_polling_rate;
+        if (!on) on = true;
+
+        // let's always remove existing polling
+        if (card_map[device]['poll']) {
+            clearInterval(card_map[device]['poll'])
+            card_map[device]['poll'] = undefined;
+        }
+
+        if (on) {
+            poll();
+            card_map[device]['poll'] = setInterval(poll, rate);
+        }
+
+        function poll() {
+            console.log('polling')
+            fetch("device-screen/" + rate + "/" + image_height + "/" + device)
+                .then(function (response) {
+                    return response.json()
+                })
+                .then(function (json) {
+                    var b64_image = json['base64_image'];
+                    console.log(card_map[device].updateImage64(b64_image),22)
+                    //console.log(b64_image, 22);
+                })
+                .catch(function () {
+                    console.log('error with polling for device ' + device)
+                })
+        }
+    }
 
     fetch('devices', {
         method: 'GET',
@@ -407,10 +446,10 @@ var devices_manager = function () {
         })
         .then(function (json) {
             for (var device of json['devices']) {
-
                 var card = new DeviceCard("https://picsum.photos/200", device, false);
                 document.querySelector("#main-container").appendChild(card);
-                card_map[device] = card;
+                card_map[device] = card
+                screengrab_polling(device, true);
             }
         })
         .catch(function (error) {
@@ -418,7 +457,6 @@ var devices_manager = function () {
         })
 
     api.devices = function () {
-        console.log(card_map, 22)
         return card_map.keys;
     }
 
