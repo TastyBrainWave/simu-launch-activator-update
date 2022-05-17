@@ -2,17 +2,6 @@
 
 {% block content %}
 
-  <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">{% include "icons/headset-vr.html" %} Multi Device Experience Tool</a>
-      <div class="d-flex">
-        <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
-        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect</a>
-        <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
-      </div>
-    </div>
-  </div>
-
   {% include "ui/navbar.html"%}
   {% include "load/upload_modal.html" %}
   {% include "load/load_modal.html" %}
@@ -75,6 +64,5 @@
 {% endblock %}
 
 {% block javascript %}
-<script>const connected_devices = {{ devices_connected | safe }};</script>
 <script defer src="/static/main.js"></script>
 {% endblock %}

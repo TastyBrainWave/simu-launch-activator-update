@@ -1,42 +1,28 @@
 import base64
 import datetime
-import json
 import os
-import tempfile
 from functools import partial
-from multiprocessing import Process, Pool, cpu_count
 
 import cv2
 import numpy as np
-from fastapi import Depends
-from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.encoders import jsonable_encoder
-from ppadb import InstallError
 from ppadb.client import Client as AdbClient
 from ppadb.device import Device
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from helpers import launch_app, save_file, check_adb_running, BASE_DIR
 from multiprocessing import Process, Pool, cpu_count
-from typing import List
+from fastapi import FastAPI, UploadFile, File, Form, Depends
 
-from fastapi import FastAPI, UploadFile, File, Depends
-from fastapi import FastAPI, UploadFile, File, Form
-from pydantic import BaseModel
 from ppadb import InstallError
 from starlette.requests import Request
-from starlette.responses import PlainTextResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
 from helpers import launch_app, save_file, process_devices
-from models_pydantic import Volume, Devices, Experience
+from models_pydantic import Volume, Devices, Experience, NewExperience
 from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetailsBase
-from sql_app.schemas import APKDetailsCreate, APKDetails, APKDetailsBase
-import uvicorn
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -120,15 +106,15 @@ async def home(request: Request, db: Session = Depends(get_db)):
 
 @check_adb_running
 @app.post("/start")
-async def start(devices: str = Form(...), db: Session = Depends(get_db)):
+async def start(payload: Devices, db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
 
-    :param devices: a list of devices which the experience will start on. Not providing any will start the experience on all devices
+    :param payload: a list of devices which the experience will start on. Not providing any will start the experience on all devices
     :param db: the database dependency
     :return: dictionary of all device serial numbers
     """
-    client_list = process_devices(client, devices)
+    client_list = process_devices(client, payload)
 
     # client_list = (
     #     client.devices()
@@ -270,23 +256,21 @@ async def remove_remote_experience(payload: Experience, db: Session = Depends(ge
 
 @check_adb_running
 @app.post("/add-remote-experience")
-async def add_remote_experience(
-        apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)
-):
+async def add_remote_experience(payload: NewExperience, db: Session = Depends(get_db)):
     """
         Adds a new experience, which has either been previously installed or is available on the device already.
-    :param apk_name: the name of the APK which includes the .apk extension
-    :param command: the command that the experience needs to execute
+
+    :param payload:
     :param db: the database dependency
     :return: a success dictionary signifying the operation was successful
     """
 
     try:
-        device_type = 0 if command == "android" else 1
+        device_type = 0 if payload.command == "android" else 1
 
         item = APKDetailsBase(
-            apk_name=apk_name,
-            command="" if command == "android" else command,
+            apk_name=payload.apk_name,
+            command="" if payload.command == "android" else payload.command,
             device_type=device_type,
         )
 
@@ -307,7 +291,7 @@ async def stop(payload: Devices, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
-    :param devices: a list of devices to stop the experience on
+    :param payload: a list of devices to stop the experience on
     :param db: the database dependency
     :return: a dictionary containing the success flag of the operation and any errors
     """
@@ -374,7 +358,7 @@ async def connect(request: Request):
 
         # Attempt connection 3 times
 
-        while not working and i < 3:
+        while not working or i < 3:
             working = client.remote_connect(device_ip, port=BASE_PORT)
             i += 1
 

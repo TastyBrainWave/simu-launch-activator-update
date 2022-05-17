@@ -1,8 +1,9 @@
 from pydantic import BaseModel
+from typing import List
 
 
 class Devices(BaseModel):
-    devices: list[str] = []
+    devices: List[str] = []
 
 
 class Volume(Devices):
@@ -11,3 +12,8 @@ class Volume(Devices):
 
 class Experience(Devices):
     experience: str
+
+class NewExperience(Devices):
+    apk_name: str
+    command: str
+

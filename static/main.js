@@ -43,6 +43,8 @@ function send(params) {
 
     if (params['start']) params['start']();
 
+    console.log(params)
+
     fetch(params['url'], {
         method: params['method'],
         body: JSON.stringify(params['body']),
@@ -55,7 +57,7 @@ function send(params) {
     }).then((response) => {
         if (params['success']) params['success'](response);
     }).catch(function (error) {
-        if (params['problem']) params['problem'](json);
+        if (params['problem']) params['problem'](error);
         console.log(error);
 
     }).finally(function () {
@@ -161,18 +163,19 @@ function loadExperience() {
 
 function setRemoteExperience() {
 
-    const formElement = document.getElementById('setRemoteExperienceForm')
-    var formData = new FormData(formElement)
+    var experience = document.getElementById("set_choices_dropdown").value;
 
     send({
         url: '/set-remote-experience',
         start: function () {
             document.getElementById("setRemoteButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            "experience": experience
+        },
         success: function (data) {
             $('#setExperienceModal').modal('hide');
-            selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("set_choices")
+            selected_experience_global.innerHTML = "The following experience is currently selected: " + experience
             showStatus("Experience has been set! You may now start it!");
 
         },
@@ -196,7 +199,10 @@ function addRemoteExperience() {
         start: function () {
             document.getElementById("addRemoteButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            "apk_name":  document.getElementById("apk_name").value,
+            "command":  document.getElementById("command").value,
+        },
         success: function () {
             $('#addExperienceModal').modal('hide');
             showStatus("Experience has been added! You may now set it as the active experience");
@@ -417,11 +423,11 @@ window.customElements.define('device-card', DeviceCard);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
 var cardList = []
-connected_devices.forEach((device) => {
-    let card = new DeviceCard("https://picsum.photos/200", device, false);
-    document.querySelector("#main-container").appendChild(card);
-    cardList.push(card);
-});
+// devices_manager.devices().forEach((device) => {
+//     let card = new DeviceCard("https://picsum.photos/200", device, false);
+//     document.querySelector("#main-container").appendChild(card);
+//     cardList.push(card);
+// });
 
 
 var devices_manager = function () {
@@ -476,6 +482,7 @@ var devices_manager = function () {
         .then(function (json) {
             for (var device of json['devices']) {
                 var card = new DeviceCard("https://picsum.photos/200", device, false);
+                cardList.push(card);
                 document.querySelector("#main-container").appendChild(card);
                 card_map[device] = card
                 screengrab_polling(device, true);
@@ -493,7 +500,7 @@ var devices_manager = function () {
 }();
 
 var checkSelected = () => {
-    if (selectedCards().length != 0) {
+    if (selectedCards().length !== 0) {
         document.getElementById("navContainer").innerHTML = "";
         let navbarSelect = document.querySelector("#navbarSelect").content.cloneNode(true)
         document.getElementById("navContainer").appendChild(navbarSelect);
