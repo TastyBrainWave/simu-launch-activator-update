@@ -2,14 +2,18 @@ import base64
 import datetime
 import json
 import os
+import tempfile
 from functools import partial
+from multiprocessing import Process, Pool, cpu_count
 
 import cv2
 import numpy as np
-import sqlalchemy
+from fastapi import Depends
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.encoders import jsonable_encoder
+from ppadb import InstallError
+from ppadb.client import Client as AdbClient
 from ppadb.device import Device
-from ppadb.device_async import DeviceAsync
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from helpers import launch_app, save_file, check_adb_running, BASE_DIR
@@ -21,15 +25,16 @@ from fastapi import FastAPI, UploadFile, File, Form
 from pydantic import BaseModel
 from ppadb import InstallError
 from starlette.requests import Request
-from starlette.responses import StreamingResponse, FileResponse, RedirectResponse
+from starlette.responses import PlainTextResponse
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-import tempfile
-from ppadb.client import Client as AdbClient
-
-from sql_app import models, schemas, crud
+from fastapi.responses import JSONResponse
+from helpers import launch_app, save_file, process_devices
+from models_pydantic import Volume, Devices, Experience
+from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details
 from sql_app.database import engine, SessionLocal
+from sql_app.schemas import APKDetailsCreate, APKDetailsBase
 from sql_app.schemas import APKDetailsCreate, APKDetails, APKDetailsBase
 import uvicorn
 
@@ -52,9 +57,39 @@ def get_db():
 
 BASE_PORT = 5555
 
-client = AdbClient(host="127.0.0.1", port=5037)
+client: AdbClient = AdbClient(host="127.0.0.1", port=5037)
 
 
+def check_adb_running(func):
+    def wrapper(*args, **kwargs):
+        try:
+            client.devices()
+        except RuntimeError as e:
+            if e.__str__().find("Is adb running on your computer?"):
+                print("ADB Server not running, starting it now!")
+                command = os.system("adb start-server")
+                print(command)
+        func(*args, **kwargs)
+
+    return wrapper
+
+
+@check_adb_running
+@app.get("/devices")
+async def devices():
+    devices = []
+    errs = []
+
+    try:
+        device: Device
+        for device in client.devices():
+            devices.append(str(device.serial))
+    except RuntimeError as e:
+        errs.append(str(e))
+    return {'devices': devices, 'errs': errs}
+
+
+@check_adb_running
 @app.get("/")
 async def home(request: Request, db: Session = Depends(get_db)):
     """
@@ -64,8 +99,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
     :return: a TemplateResponse object containing the homepage
     """
 
-    check_adb_running(client)
-
     uploaded_experiences = get_all_apk_details(db)
 
     for item in uploaded_experiences:
@@ -73,19 +106,19 @@ async def home(request: Request, db: Session = Depends(get_db)):
 
     global simu_application_name
 
-    print([device.serial for device in client.devices()])
-
     return templates.TemplateResponse(
         "home.html",
         {
             "request": request,
             "choices": [item.apk_name for item in uploaded_experiences],
             "app_name": simu_application_name,
-            "devices_connected": [device.serial for device in client.devices()],
+            # removed as will be v slow if adb not loaded first. Doing this asynchronously now
+            # "devices_connected": [device.serial for device in client.devices()],
         },
     )
 
 
+@check_adb_running
 @app.post("/start")
 async def start(devices: str = Form(...), db: Session = Depends(get_db)):
     """
@@ -95,14 +128,13 @@ async def start(devices: str = Form(...), db: Session = Depends(get_db)):
     :param db: the database dependency
     :return: dictionary of all device serial numbers
     """
+    client_list = process_devices(client, devices)
 
-    check_adb_running(client)
-
-    client_list = (
-        client.devices()
-        if not devices
-        else [Device(client, device) for device in devices.split(",")]
-    )
+    # client_list = (
+    #     client.devices()
+    #     if not devices
+    #     else [Device(client, device) for device in devices.split(",")]
+    # )
 
     global simu_application_name
 
@@ -169,39 +201,26 @@ async def upload(
         return {"success": False, "error": e.__str__()}
 
 
+@check_adb_running
 @app.post("/load")
-async def load(
-        load_choices: str = Form(...),
-        devices: str = Form(...),
-):
+async def load(payload: Experience):
     """
         Installs the experience on selected or all devices.
 
-    :param devices: a list of device serial IDs to install the experience on
-    :param load_choices: the choice of experience specified by the user
+    :param payload: the choice of experience specified by the user
     :return: a success dictionary signifying the operation was successful
     """
 
-    check_adb_running(client)
-
-    print(devices)
-
-    client_list = (
-        client.devices()
-        if not devices or len(devices) == 0
-        else [Device(client, device) for device in devices.split(",")]
-    )
+    client_list = process_devices(client, payload)
 
     apk_paths = os.listdir("apks")
     apk_path = "apks/"
 
-    item = load_choices
-
     global simu_application_name
-    simu_application_name = item
+    simu_application_name = payload.experience
 
-    if item in apk_paths:
-        apk_path += item
+    if payload.experience in apk_paths:
+        apk_path += payload.experience
     else:
         return {
             "success": False,
@@ -220,26 +239,27 @@ async def load(
 
 
 @app.post("/set-remote-experience")
-async def set_remote_experience(set_choices: str = Form(...)):
+async def set_remote_experience(payload: Experience):
     """
         Sets the active experience
-    :param set_choices: the form field of choices
+    :param payload: containing the experience to set remotely
     :return: a success dictionary signifying the operation was successful
     """
-    if set_choices:
+    if payload.experience:
         global simu_application_name
-        simu_application_name = set_choices
+        simu_application_name = payload.experience
 
         return {"success": True}
 
     return {"success": False}
 
+
+@check_adb_running
 @app.post("/remove-remote-experience")
-async def remove_remote_experience(remove_choices: str = Form(...), db: Session = Depends(get_db)):
+async def remove_remote_experience(payload: Experience, db: Session = Depends(get_db)):
     try:
-        if remove_choices:
-            print(remove_choices)
-            db.delete(get_apk_details(db, apk_name=remove_choices))
+        if payload.experience:
+            db.delete(get_apk_details(db, apk_name=payload.experience))
             db.commit()
             return {"success": True}
 
@@ -248,6 +268,7 @@ async def remove_remote_experience(remove_choices: str = Form(...), db: Session 
         return {"success": False, "error": e.__str__()}
 
 
+@check_adb_running
 @app.post("/add-remote-experience")
 async def add_remote_experience(
         apk_name: str = Form(...), command: str = Form(...), db: Session = Depends(get_db)
@@ -280,8 +301,9 @@ async def add_remote_experience(
         return {"success": False, "error": e.__str__()}
 
 
+@check_adb_running
 @app.post("/stop")
-async def stop(devices: str = Form(...), db: Session = Depends(get_db)):
+async def stop(payload: Devices, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
@@ -290,14 +312,8 @@ async def stop(devices: str = Form(...), db: Session = Depends(get_db)):
     :return: a dictionary containing the success flag of the operation and any errors
     """
 
-    check_adb_running(client)
+    client_list = process_devices(client, payload)
 
-    client_list = (
-        client.devices()
-        if not devices
-        else [Device(client, device) for device in devices.split(",")]
-    )
-    print(devices)
     global simu_application_name
 
     item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
@@ -323,6 +339,7 @@ async def stop(devices: str = Form(...), db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 
+@check_adb_running
 @app.post("/connect")
 async def connect(request: Request):
     """
@@ -334,8 +351,6 @@ async def connect(request: Request):
     """
 
     global BASE_PORT
-
-    check_adb_running(client)
 
     json = await request.json() if len((await request.body()).decode()) > 0 else {}
 
@@ -375,8 +390,9 @@ async def connect(request: Request):
         return {"success": False, "error_log": e.__str__()}
 
 
+@check_adb_running
 @app.post("/disconnect")
-async def disconnect(devices: str = Form(...)):
+async def disconnect(payload: Devices):
     """
         Disconnects devices from the server.
 
@@ -386,12 +402,7 @@ async def disconnect(devices: str = Form(...)):
 
     global BASE_PORT
 
-    check_adb_running(client)
-    client_list = (
-        client.devices()
-        if not devices
-        else [Device(client, device) for device in devices.split(",")]
-    )
+    client_list = process_devices(client, payload)
 
     try:
         for device in client_list:
@@ -428,6 +439,7 @@ async def exit_server():
     return {"success": result}
 
 
+@check_adb_running
 @app.get("/screen-grab")
 async def screen_grab(request: Request):
     """
@@ -435,8 +447,6 @@ async def screen_grab(request: Request):
     :param request: the Request object
     :return: a dictionary containing the success flag
     """
-
-    check_adb_running(client)
 
     devices = client.devices()
 
@@ -459,13 +469,21 @@ async def screen_grab(request: Request):
     return {"success": True}
 
 
+@check_adb_running
 @app.post("/volume")
-async def device_button(request: Request):
-    data = await request.json()
-    volume = data['volume']
-    check_adb_running(client)
-    for device in client.devices():
-        outcome = device.shell(f'media volume --stream 3 --set {volume}')
+async def volume(payload: Volume):
+    client_list = process_devices(client, payload)
+
+    fails = []
+    for device in client_list:
+        try:
+            outcome = device.shell(f'media volume --stream 3 --set {payload.volume}')
+        except RuntimeError as e:
+            fails.append(e)
+
+    if fails:
+
+        return {"success": False, "fails": str(fails)}
 
     return {"success": True}
 
@@ -477,30 +495,19 @@ screen_shots_cache = {}
 def check_image(device_serial, refresh_ms, size):
     def gen_image():
 
-        with tempfile.NamedTemporaryFile(mode="w+b", suffix=".png", delete=False) as FOUT:
-            try:
-                device: Device = my_devices[device_serial]
-            except TypeError:
-                return False
+        my_width = 192
+        my_height = 108
 
-            im = device.screencap()
-            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        device: Device = client.device(device_serial)
+        device.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
+        device.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
+        im = device.screencap()
 
-            # cv2.imshow("", image)
-            # cv2.waitKey(0)
+        image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
-            image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
-
-            height = image.shape[0]
-            width = int(image.shape[1] / height * 320)
-            height = 320
-
-            dsize = (width, height)
-            output = cv2.resize(image, dsize)
-
-            cv2.imwrite(FOUT.name, output)
-
-            return FOUT.name
+        _, encoded_img = cv2.imencode('.png', image)
+        return base64.b64encode(encoded_img).decode("utf-8")
 
     timestamp = datetime.datetime.now()
 
@@ -513,14 +520,46 @@ def check_image(device_serial, refresh_ms, size):
             milliseconds=refresh_ms) < timestamp:
         screen_shots_cache[device_serial][size]['timestamp'] = timestamp
         try:
-            print(1)
             screen_shots_cache[device_serial][size]['file_id'] = gen_image()
-            print(2)
-        except RuntimeError:
+        except RuntimeError as e:
             return False
+
     return True
 
 
+@check_adb_running
+@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
+async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
+    success = check_image(device_serial, refresh_ms, size)
+
+    if not success:
+        return {'success': False}
+
+    image = screen_shots_cache[device_serial][size]['file_id']
+    err = None
+    return {'base64_image': image}
+
+
+@app.get("/devices-modal-start")
+async def devices_start(request: Request):
+    return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
+
+
+@check_adb_running
+@app.get("/linkup")
+async def linkup(request: Request):
+    global my_devices
+    devices = client.devices()
+    my_devices = {device.serial: device for device in devices}
+
+    for device in devices:
+        device.shell('adb shell setprop debug.oculus.capture.width 192')
+        device.shell('adb shell setprop debug.oculus.capture.height 108')
+
+    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
+
+
+@check_adb_running
 @app.get("/device-button/{device_serial}/{button}")
 async def device_button(request: Request, device_serial: str, button: str):
     commands = {'power': ['/dev/input/event2 1 74 1', '/dev/input/event2 0 0 0'],
@@ -538,49 +577,3 @@ async def device_button(request: Request, device_serial: str, button: str):
     print(411, device.shell('adb shell media volume --stream 3 --set 15'), 2221)
 
     pass
-
-
-@app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
-async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
-    success = check_image(device_serial, refresh_ms, size)
-
-    if not success:
-        return templates.TemplateResponse("htmx/device.html", {"request": request,
-                                                               "device_serial": device_serial,
-                                                               'err': 'lost connection'})
-    image = screen_shots_cache[device_serial][size]['file_id']
-    err = None
-    try:
-        with open(image, "rb") as img_file:
-            base64_image = base64.b64encode(img_file.read()).decode('utf-8')
-
-    except TypeError:
-        base64_image = None
-        err = 'issue'
-
-    return templates.TemplateResponse("htmx/device.html", {"request": request,
-                                                           "device_serial": device_serial,
-                                                           'base64_image': base64_image,
-                                                           'err': err})
-
-
-@app.get("/devices-modal-start")
-async def devices_start(request: Request):
-    return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
-
-
-@app.get("/linkup")
-async def linkup(request: Request):
-    check_adb_running(client)
-    global my_devices
-    devices = client.devices()
-    my_devices = {device.serial: device for device in devices}
-
-    for device in devices:
-        device.shell('adb shell setprop debug.oculus.capture.width 192')
-        device.shell('adb shell setprop debug.oculus.capture.height 108')
-
-    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)

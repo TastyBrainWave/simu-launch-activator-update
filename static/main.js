@@ -20,20 +20,32 @@ function transformFormData() {
 //  start: '',
 //  finally: '',
 // }
+
+function add_devices(obj) {
+
+    console.log(obj)
+}
+
 function send(params) {
     if (!params['headers']) params['headers'] = {};
+    params['headers']["Content-type"] = "application/json";
     if (!params['method']) params['method'] = 'POST';
 
-    // // inject universal info such as devices
-    // if(params['body']){
-    //
-    // }
+
+    if (!params['body']) {
+        if (params['method'].toLowerCase() === 'post') {
+            params['body'] = {}
+        }
+    }
+    if (!params['body']['devices']) {
+        params['body']['devices'] = devices_manager.devices();
+    }
 
     if (params['start']) params['start']();
 
     fetch(params['url'], {
         method: params['method'],
-        body: params['body'],
+        body: JSON.stringify(params['body']),
         headers: params['headers']
     }).then(function (response) {
         if (!response.ok) {
@@ -43,10 +55,9 @@ function send(params) {
     }).then((response) => {
         if (params['success']) params['success'](response);
     }).catch(function (error) {
-        if (params['problem']) params['problem'](error);
-        else {
-            console.log(error);
-        }
+        if (params['problem']) params['problem'](json);
+        console.log(error);
+
     }).finally(function () {
         if (params['finally']) params['finally']();
     });
@@ -137,7 +148,6 @@ function loadExperience() {
             $('#loadModal').modal('hide');
             selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
             showStatus("Experience has loaded on " + data.json()["device_count"] + " devices!");
-
         },
         problem: function (error) {
             showStatus("Error loading experience: " + error);
@@ -147,7 +157,6 @@ function loadExperience() {
             document.getElementById("loadButton").classList.remove("disabled");
         }
     })
-
 }
 
 function setRemoteExperience() {
@@ -344,8 +353,6 @@ function getScreenshots() {
     })
 }
 
-
-
 //DEVICE CARDS
 class DeviceCard extends HTMLElement {
     constructor(image, deviceId, selected) {
@@ -388,12 +395,18 @@ class DeviceCard extends HTMLElement {
         this.shadowRoot.querySelector("img").src = image;
     }
 
+    updateImage64(image64) {
+
+        this.shadowRoot.querySelector("img").src = "data:image/png;base64, " + image64;
+    }
+
     connectedCallback() {
         this.shadowRoot.querySelector("img").src = this.image;
         this.shadowRoot.querySelector("#device-name").innerHTML = this.deviceId;
 
     }
 }
+
 var deselectAll = function () {
     selectedCards().forEach(function (card) {
         card.updateSelected(false);
@@ -409,6 +422,75 @@ connected_devices.forEach((device) => {
     document.querySelector("#main-container").appendChild(card);
     cardList.push(card);
 });
+
+
+var devices_manager = function () {
+    var api = {};
+
+    var card_map = {}; // {device_name: {'card': my_card, 'poll': my_poll}
+
+    var default_polling_rate = 5000 // ms
+    var image_height = 100;
+
+    function screengrab_polling(device, on, rate) {
+        if (!rate) rate = default_polling_rate;
+        if (!on) on = true;
+
+        // let's always remove existing polling
+        if (card_map[device]['poll']) {
+            clearInterval(card_map[device]['poll'])
+            card_map[device]['poll'] = undefined;
+        }
+
+        if (on) {
+            poll();
+            card_map[device]['poll'] = setInterval(poll, rate);
+        }
+
+        function poll() {
+            console.log('polling')
+            fetch("device-screen/" + rate + "/" + image_height + "/" + device)
+                .then(function (response) {
+                    return response.json()
+                })
+                .then(function (json) {
+                    var b64_image = json['base64_image'];
+                    console.log(card_map[device].updateImage64(b64_image),22)
+                    //console.log(b64_image, 22);
+                })
+                .catch(function () {
+                    console.log('error with polling for device ' + device)
+                })
+        }
+    }
+
+    fetch('devices', {
+        method: 'GET',
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.json()
+        })
+        .then(function (json) {
+            for (var device of json['devices']) {
+                var card = new DeviceCard("https://picsum.photos/200", device, false);
+                document.querySelector("#main-container").appendChild(card);
+                card_map[device] = card
+                screengrab_polling(device, true);
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+        })
+
+    api.devices = function () {
+        return card_map.keys;
+    }
+
+    return api;
+}();
 
 var checkSelected = () => {
     if (selectedCards().length != 0) {
@@ -439,17 +521,17 @@ window.addEventListener('load', function () {
     var slider = $('#volume');
 
     slider.on('change', function (ev) {
-        var vol = slider.val();
+        var volume = parseInt(slider.val());
 
         send({
             url: 'volume',
-            body: JSON.stringify({ 'volume': vol }),
+            body: JSON.stringify({ 'volume': volume }),
             headers: { "Content-Type": "application/json" },
             success: function () {
-                console.log('changed volume to ' + vol);
+                console.log('changed volume to ' + volume);
             },
             problem: function () {
-                console.log('could not change volume to ' + vol);
+                console.log('could not change volume to ' + volume);
             },
             finally: '',
         });

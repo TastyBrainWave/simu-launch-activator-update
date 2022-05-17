@@ -13,7 +13,7 @@
           <fieldset>
             <legend>Choose the experience to be removed from the database:</legend>
             <label>
-              <select id="remove_choices_dropdown" name="remove_choices" required>
+              <select id="remove_choices_dropdown" name="remove_choices" required class="form-select-lg" aria-label="Select Experience">
                 {% for choice in choices %}
                   <option value="{{ choice }}">{{ choice }}</option>
                 {% endfor %}
