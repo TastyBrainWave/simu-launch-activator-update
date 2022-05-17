@@ -98,8 +98,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "choices": [item.apk_name for item in uploaded_experiences],
             "app_name": simu_application_name,
-            # removed as will be v slow if adb not loaded first. Doing this asynchronously now
-            # "devices_connected": [device.serial for device in client.devices()],
         },
     )
 
@@ -115,12 +113,6 @@ async def start(payload: Devices, db: Session = Depends(get_db)):
     :return: dictionary of all device serial numbers
     """
     client_list = process_devices(client, payload)
-
-    # client_list = (
-    #     client.devices()
-    #     if not devices
-    #     else [Device(client, device) for device in devices.split(",")]
-    # )
 
     global simu_application_name
 

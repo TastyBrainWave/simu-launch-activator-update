@@ -28,9 +28,10 @@ function add_devices(obj) {
 
 function send(params) {
     if (!params['headers']) params['headers'] = {};
-    params['headers']["Content-type"] = "application/json";
+    if (!params['headers']["Content-type"]) params['headers']["Content-type"] = "application/json";
     if (!params['method']) params['method'] = 'POST';
 
+    console.log(params['body'])
 
     if (!params['body']) {
         if (params['method'].toLowerCase() === 'post') {
@@ -83,15 +84,22 @@ function uploadAPKForm() {
     const formElement = document.getElementById('uploadForm')
     var formData = new FormData(formElement)
 
-    send({
-        url: '/upload',
-        body: formData,
-        success: function () {
-            $('#uploadModal').modal('hide')
-        },
-        problem: function (error) {
-            showStatus("Error uploading experience to server: " + error);
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
         }
+
+        $('#uploadModal').modal('hide')
+
+        return response.json();
+    }).then(function (data) {
+        showStatus("Experience has been uploaded. You may now load it on devices");
+    }).catch(function (error) {
+        console.log(error);
+        showStatus("Error uploading experience to server: " + error);
     })
 }
 
