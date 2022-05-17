@@ -1,7 +1,7 @@
 import base64
 import datetime
 import os
-from functools import partial
+from functools import partial, wraps
 
 import cv2
 import numpy as np
@@ -17,7 +17,7 @@ from ppadb import InstallError
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
-from helpers import launch_app, save_file, process_devices
+from helpers import launch_app, save_file, process_devices, connect_actions
 from models_pydantic import Volume, Devices, Experience, NewExperience
 from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details
@@ -47,7 +47,8 @@ client: AdbClient = AdbClient(host="127.0.0.1", port=5037)
 
 
 def check_adb_running(func):
-    def wrapper(*args, **kwargs):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
         try:
             client.devices()
         except RuntimeError as e:
@@ -55,13 +56,13 @@ def check_adb_running(func):
                 print("ADB Server not running, starting it now!")
                 command = os.system("adb start-server")
                 print(command)
-        func(*args, **kwargs)
+        return await func(*args, **kwargs)
 
     return wrapper
 
 
-@check_adb_running
 @app.get("/devices")
+@check_adb_running
 async def devices():
     devices = []
     errs = []
@@ -75,8 +76,8 @@ async def devices():
     return {'devices': devices, 'errs': errs}
 
 
-@check_adb_running
 @app.get("/")
+@check_adb_running
 async def home(request: Request, db: Session = Depends(get_db)):
     """
         View mainly responsible for handling the front end, since nothing will happen on the backend at this endpoint.
@@ -102,8 +103,8 @@ async def home(request: Request, db: Session = Depends(get_db)):
     )
 
 
-@check_adb_running
 @app.post("/start")
+@check_adb_running
 async def start(payload: Devices, db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
@@ -179,8 +180,8 @@ async def upload(
         return {"success": False, "error": e.__str__()}
 
 
-@check_adb_running
 @app.post("/load")
+@check_adb_running
 async def load(payload: Experience):
     """
         Installs the experience on selected or all devices.
@@ -232,8 +233,8 @@ async def set_remote_experience(payload: Experience):
     return {"success": False}
 
 
-@check_adb_running
 @app.post("/remove-remote-experience")
+@check_adb_running
 async def remove_remote_experience(payload: Experience, db: Session = Depends(get_db)):
     try:
         if payload.experience:
@@ -246,8 +247,8 @@ async def remove_remote_experience(payload: Experience, db: Session = Depends(ge
         return {"success": False, "error": e.__str__()}
 
 
-@check_adb_running
 @app.post("/add-remote-experience")
+@check_adb_running
 async def add_remote_experience(payload: NewExperience, db: Session = Depends(get_db)):
     """
         Adds a new experience, which has either been previously installed or is available on the device already.
@@ -277,8 +278,8 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
         return {"success": False, "error": e.__str__()}
 
 
-@check_adb_running
 @app.post("/stop")
+@check_adb_running
 async def stop(payload: Devices, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
@@ -315,8 +316,8 @@ async def stop(payload: Devices, db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 
-@check_adb_running
 @app.post("/connect")
+@check_adb_running
 async def connect(request: Request):
     """
         Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
@@ -354,6 +355,9 @@ async def connect(request: Request):
             working = client.remote_connect(device_ip, port=BASE_PORT)
             i += 1
 
+        connected_device = Device(client, device_ip)
+        connect_actions(connected_device)
+
         if working:
             print(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
@@ -366,8 +370,8 @@ async def connect(request: Request):
         return {"success": False, "error_log": e.__str__()}
 
 
-@check_adb_running
 @app.post("/disconnect")
+@check_adb_running
 async def disconnect(payload: Devices):
     """
         Disconnects devices from the server.
@@ -415,8 +419,8 @@ async def exit_server():
     return {"success": result}
 
 
-@check_adb_running
 @app.get("/screen-grab")
+@check_adb_running
 async def screen_grab(request: Request):
     """
         Gets a screenshot from every device.
@@ -445,8 +449,8 @@ async def screen_grab(request: Request):
     return {"success": True}
 
 
-@check_adb_running
 @app.post("/volume")
+@check_adb_running
 async def volume(payload: Volume):
     client_list = process_devices(client, payload)
 
@@ -503,8 +507,8 @@ def check_image(device_serial, refresh_ms, size):
     return True
 
 
-@check_adb_running
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
+@check_adb_running
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
     success = check_image(device_serial, refresh_ms, size)
 
@@ -521,8 +525,8 @@ async def devices_start(request: Request):
     return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
 
 
-@check_adb_running
 @app.get("/linkup")
+@check_adb_running
 async def linkup(request: Request):
     global my_devices
     devices = client.devices()
@@ -535,8 +539,8 @@ async def linkup(request: Request):
     return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
 
 
-@check_adb_running
 @app.get("/device-button/{device_serial}/{button}")
+@check_adb_running
 async def device_button(request: Request, device_serial: str, button: str):
     commands = {'power': ['/dev/input/event2 1 74 1', '/dev/input/event2 0 0 0'],
                 'vol-up': ['/dev/input/event2 1 73 1', '/dev/input/event2 0 0 0'],

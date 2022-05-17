@@ -279,7 +279,9 @@ function connectDevice() {
 
         success: function (data) {
             showStatus("Device connected with serial ID: " + data["serial"]);
-
+            setTimeout(function () {
+                location.reload();
+            }, 3000);
         },
         problem: function (error) {
             showStatus("Error connecting device: " + error, true);
@@ -309,6 +311,9 @@ function disconnectDevice() {
         body: formData,
         success: function () {
             showStatus("All devices have been disconnected");
+            setTimeout(function () {
+                location.reload();
+            }, 3000);
         },
         problem: function (error) {
             showStatus("Error disconnecting devices: " + error);
@@ -474,6 +479,7 @@ var devices_manager = function () {
                 })
                 .catch(function () {
                     console.log('error with polling for device ' + device)
+                    // location.reload()
                 })
         }
     }
@@ -554,3 +560,6 @@ window.addEventListener('load', function () {
     });
 
 })
+
+
+

@@ -42,3 +42,9 @@ def save_file(filename, data):
 
     with open("apks/" + filename, 'wb') as f:
         f.write(data)
+
+def connect_actions(device: Device = None):
+    if device is None:
+        raise RuntimeError("No device present!")
+
+    device.shell(f'cmd media_session volume --stream 3 --set 15')
