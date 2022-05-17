@@ -18,6 +18,7 @@ from typing import List
 
 from fastapi import FastAPI, UploadFile, File, Depends
 from fastapi import FastAPI, UploadFile, File, Form
+from pydantic import BaseModel
 from ppadb import InstallError
 from starlette.requests import Request
 from starlette.responses import StreamingResponse, FileResponse, RedirectResponse
@@ -30,6 +31,7 @@ from sql_app import models, schemas, crud
 from sql_app.crud import get_all_apk_details, get_apk_details
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetails, APKDetailsBase
+import uvicorn
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -85,7 +87,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post("/start")
-async def start(devices: list = Form(...), db: Session = Depends(get_db)):
+async def start(devices: str = Form(...), db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
 
@@ -99,7 +101,7 @@ async def start(devices: list = Form(...), db: Session = Depends(get_db)):
     client_list = (
         client.devices()
         if not devices
-        else [Device(client, device) for device in devices]
+        else [Device(client, device) for device in devices.split(",")]
     )
 
     global simu_application_name
@@ -170,7 +172,7 @@ async def upload(
 @app.post("/load")
 async def load(
         load_choices: str = Form(...),
-        devices: list = Form(...),
+        devices: str = Form(...),
 ):
     """
         Installs the experience on selected or all devices.
@@ -187,7 +189,7 @@ async def load(
     client_list = (
         client.devices()
         if not devices or len(devices) == 0
-        else [Device(client, device) for device in devices]
+        else [Device(client, device) for device in devices.split(",")]
     )
 
     apk_paths = os.listdir("apks")
@@ -279,7 +281,7 @@ async def add_remote_experience(
 
 
 @app.post("/stop")
-async def stop(devices: list = Form(...), db: Session = Depends(get_db)):
+async def stop(devices: str = Form(...), db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
@@ -293,9 +295,9 @@ async def stop(devices: list = Form(...), db: Session = Depends(get_db)):
     client_list = (
         client.devices()
         if not devices
-        else [Device(client, device) for device in devices]
+        else [Device(client, device) for device in devices.split(",")]
     )
-
+    print(devices)
     global simu_application_name
 
     item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
@@ -374,7 +376,7 @@ async def connect(request: Request):
 
 
 @app.post("/disconnect")
-async def disconnect(devices: list = Form(...)):
+async def disconnect(devices: str = Form(...)):
     """
         Disconnects devices from the server.
 
@@ -388,7 +390,7 @@ async def disconnect(devices: list = Form(...)):
     client_list = (
         client.devices()
         if not devices
-        else [Device(client, device) for device in devices]
+        else [Device(client, device) for device in devices.split(",")]
     )
 
     try:
@@ -579,3 +581,6 @@ async def linkup(request: Request):
         device.shell('adb shell setprop debug.oculus.capture.height 108')
 
     return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

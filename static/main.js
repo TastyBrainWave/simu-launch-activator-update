@@ -39,6 +39,8 @@ function send(params) {
         if (!response.ok) {
             throw Error(response.statusText);
         }
+        return response.json();
+    }).then((response) => {
         if (params['success']) params['success'](response);
     }).catch(function (error) {
         if (params['problem']) params['problem'](error);
@@ -50,7 +52,7 @@ function send(params) {
     });
 }
 
-showStatus = (text = "The showStatus function was used incoorrectly and status text was not defined", isError = false) => {
+var showStatus = (text = "The showStatus function was used incoorrectly and status text was not defined", isError = false) => {
     if (isError === true) {
         document.getElementById("statusToast").classList.add("bg-danger");
         document.getElementById("toastClose").classList.add("btn-close-white");
@@ -90,12 +92,14 @@ function remove_class(element) {
 //BUTTON EVENTS
 function startExperience() {
 
-    var formData = new FormData()
     var devices = []
-    devices.push(connected_devices[0])
-    formData.append("devices", devices.toString())
-
+    selectedCards().forEach(element => {
+        devices.push(element.deviceId)
+    });
+    var formData = new FormData()
+    formData.append("devices", devices)
     send({
+        body: formData,
         start: function () {
             document.getElementById("startButton").classList.add("disabled");
         },
@@ -117,12 +121,12 @@ function startExperience() {
 function loadExperience() {
 
 
-    const formElement = document.getElementById('loadForm')
-    var formData = new FormData(formElement)
     var devices = []
-    devices.push(connected_devices[0])
-    formData.append("devices", devices.toString())
-
+    selectedCards().forEach(element => {
+        devices.push(element.deviceId)
+    });
+    var formData = new FormData()
+    formData.append("devices", devices)
     send({
         url: '/load',
         start: function () {
@@ -220,17 +224,20 @@ function removeRemoteExperience() {
 
 function stopExperience() {
 
+    var devices = []
+    selectedCards().forEach(element => {
+        devices.push(element.deviceId)
+    });
+    var formData = new FormData()
+    formData.append("devices", devices)
     send({
         url: '/stop',
         start: function () {
             document.getElementById("stopButton").classList.add("disabled");
         },
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
+        body: formData,
         success: function () {
-            showStatus("Experience has stopped on all devices!");
+            showStatus("Experience has stopped on device(s)!");
         },
         finally: function () {
             document.getElementById("stopButton").classList.remove("disabled");
@@ -246,11 +253,9 @@ function connectDevice() {
         start: function () {
             document.getElementById("connectButton").classList.add("disabled");
         },
-        headers: {
-            "Content-type": "application/json"
-        },
+
         success: function (data) {
-            showStatus("Device connected with serial ID: " + data.json()["serial"]);
+            showStatus("Device connected with serial ID: " + data["serial"]);
 
         },
         problem: function (error) {
@@ -264,15 +269,21 @@ function connectDevice() {
 
 function disconnectDevice() {
 
+    var formData = new FormData()
+    var devices = []
+    selectedCards().forEach(element => {
+        devices.push(element.deviceId)
+
+    });
+    formData.append("devices", devices)
     send({
         url: '/disconnect',
-        headers: {
-            "Content-type": "application/json"
-        },
+
 
         start: function () {
             document.getElementById("disconnectButton").classList.add("disabled");
         },
+        body: formData,
         success: function () {
             showStatus("All devices have been disconnected");
         },
@@ -333,11 +344,13 @@ function getScreenshots() {
     })
 }
 
+
+
 //DEVICE CARDS
 class DeviceCard extends HTMLElement {
     constructor(image, deviceId, selected) {
         super();
-        this.attachShadow({mode: 'open'});
+        this.attachShadow({ mode: 'open' });
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
         bootstrapStyles.href = 'static/bootstrap-5.0.2-dist/css/bootstrap.css'
@@ -349,15 +362,25 @@ class DeviceCard extends HTMLElement {
         var checkbox = this.shadowRoot.getElementById("cardSelect");
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
-                this.selected = true;
-                this.shadowRoot.getElementById("main-card").classList.add("shadow");
+                this.updateSelected(true)
             } else {
-                this.selected = false;
-                this.shadowRoot.getElementById("main-card").classList.remove("shadow");
+                this.updateSelected(false)
             }
 
         })
 
+    }
+    updateSelected(selected) {
+        if (selected === true) {
+            this.selected = true;
+            this.shadowRoot.getElementById("main-card").children[0].classList.add("shadow");
+            checkSelected();
+        }
+        else {
+            this.selected = false;
+            this.shadowRoot.getElementById("main-card").children[0].classList.remove("shadow");
+            checkSelected();
+        }
     }
 
     updateImage(image) {
@@ -371,22 +394,46 @@ class DeviceCard extends HTMLElement {
 
     }
 }
-
+var deselectAll = function () {
+    selectedCards().forEach(function (card) {
+        card.updateSelected(false);
+        card.shadowRoot.querySelector("input").checked = false
+    })
+}
 window.customElements.define('device-card', DeviceCard);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
 var cardList = []
 connected_devices.forEach((device) => {
-    //var card = document.querySelector("#device-card").content.cloneNode(true);
-    //card.querySelector("#device-name").textContent = device;
-    //console.log(card);
-    //document.querySelector("#main-container").appendChild(card);
-    var card = new DeviceCard("https://picsum.photos/200", device, false);
+    let card = new DeviceCard("https://picsum.photos/200", device, false);
     document.querySelector("#main-container").appendChild(card);
     cardList.push(card);
 });
 
+var checkSelected = () => {
+    if (selectedCards().length != 0) {
+        document.getElementById("navContainer").innerHTML = "";
+        let navbarSelect = document.querySelector("#navbarSelect").content.cloneNode(true)
+        document.getElementById("navContainer").appendChild(navbarSelect);
+    }
+    else {
+        document.getElementById("navContainer").innerHTML = "";
+        let navbar = document.querySelector("#navbarStandard").content.cloneNode(true)
+        document.getElementById("navContainer").appendChild(navbar);
+    }
+}
 
+var selectedCards = () => {
+    var count = [];
+    cardList.forEach((card) => {
+        if (card.selected) {
+            count.push(card);
+        }
+    })
+    return count;
+}
+
+//VOLUME CONTROL
 window.addEventListener('load', function () {
 
     var slider = $('#volume');
@@ -396,8 +443,8 @@ window.addEventListener('load', function () {
 
         send({
             url: 'volume',
-            body: JSON.stringify({'volume': vol}),
-            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ 'volume': vol }),
+            headers: { "Content-Type": "application/json" },
             success: function () {
                 console.log('changed volume to ' + vol);
             },

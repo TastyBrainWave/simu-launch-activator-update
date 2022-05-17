@@ -2,21 +2,13 @@
 
 {% block content %}
 
-  <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">{% include "icons/headset-vr.html" %} Multi Device Experience Tool</a>
-      <div class="d-flex">
-        <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
-        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
-        <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
-      </div>
-    </div>
-  </div>
-  {% include "load/upload_modal.html" %}
-  {% include "load/load_modal.html" %}
-  {% include "experiences/set_experience_modal.html" %}
-  {% include "experiences/add_experience_modal.html" %}
-  {% include "experiences/remove_experience_modal.html" %}
+{% include "ui/navbar.html"%}
+{% include "load/upload_modal.html" %}
+{% include "load/load_modal.html" %}
+{% include "experiences/set_experience_modal.html" %}
+{% include "experiences/add_experience_modal.html" %}
+{% include "experiences/remove_experience_modal.html" %}
+{% include "ui/card.html" %}
 
 <div class="container align-self-center">
   <div class="position-absolute end-0 me-2" style="z-index: 11">
@@ -31,7 +23,7 @@
   </div>
   <div id="main-container" class="row row-cols-1 row-cols-md-4 g-4 mt-3 float-center">
   </div>
-  <div id=" experience" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert">
+  <div id="experience" style="font-size: 1.5rem" class="row justify-content-center mb-2 mt-5 alert">
     {% if app_name %}
     The following experience is currently selected: {{ app_name[:-4] }}
     {% else %}
@@ -41,12 +33,12 @@
 
 
 
-  <div class="row justify-content-center mb-2 mt-5 btn-block" id="startButtonDiv">
-    <a id="startButton" class="btn btn-success btn-custom d-flex align-items-center justify-content-center" onclick="startExperience()">START</a>
 
-  </div>
-  <div class="row justify-content-center mb-2" id="uploadButtonDiv">
-    <a style="font-size: 4rem" id="loadButton" class="btn btn-orange btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#uploadModal">UPLOAD EXPERIENCE</a>
+  <div class="row justify-content-center mb-2" id="volumeDiv">
+    <div class="d-flex btn-custom align-items-center justify-content-center border rounded">
+      <label for="customRange3" class="form-label me-2">Volume</label>
+      <input type="range" class="form-range" style="max-width: 60%" min="0" value="10" max="15" step="1" id="volume">
+    </div>
   </div>
   <div class="row justify-content-center mb-2" id="setExperienceButtonDiv">
     <a style="font-size: 4rem" id="setRemoteButton" class="btn btn-blue btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#setExperienceModal">SET EXPERIENCE</a>
@@ -57,45 +49,16 @@
   <div class="row justify-content-center mb-2" id="removeExperienceButtonDiv">
     <a style="font-size: 4rem" id="removeRemoteButton" class="btn btn-yellow btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">REMOVE EXPERIENCE</a>
   </div>
-  <div class="row justify-content-center mb-2" id="loadButtonDiv">
-    <a id="loadButton" class="btn btn-info btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#loadModal">LOAD ON DEVICES</a>
-  </div>
-  <div class="row justify-content-center mb-2" id="stopButtonDiv">
-    <a id="stopButton" class="btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="stopExperience()">STOP</a>
-  </div>
   <div class="row justify-content-center mb-2" id="screenshotButtonDiv">
     <a id="screenshotButton" class=" btn btn-secondary btn-custom d-flex align-items-center justify-content-center" onclick="getScreenshots()">SCREENSHOT</a>
   </div>
-  <div class="row justify-content-center mb-2" id="volumeDiv">
-    <div class=" btn-custom d-flex align-items-center justify-content-center border rounded">
-      <label for="customRange3" class="form-label me-2">Volume</label>
-      <input type="range" class="form-range" style="max-width: 60%" min="0" value="10" max="15" step="1" id="volume">
-    </div>
-  </div>
+
   <div class="row justify-content-center mb-2" id="htmxGrabDiv">
     <a style="font-size: 4rem" id='devices-modal-open' {# note this id used by htmx in our modal #} class="btn btn-fuchsia btn-custom d-flex align-items-center justify-content-center" data-bs-toggle="modal" data-bs-target="#devicesModal">DEVICES</a>
   </div>
 </div>
 
-<template id="device-card">
-  <div id="main-card" class="col justify-content-center">
 
-    <div class="card mb-2" style="max-width: 18rem">
-      <div>
-        <input class="form-check-input position-absolute ms-1" type="checkbox" id="cardSelect">
-        <img src="https://picsum.photos/200" class="card-img-top">
-      </div>
-      <div class="card-body">
-
-        <h5 id="device-name" class="card-text">Device ID unknown</h5>
-
-      </div>
-
-    </div>
-  </div>
-
-
-</template>
 
 
 
