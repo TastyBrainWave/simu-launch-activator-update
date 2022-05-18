@@ -117,10 +117,9 @@ function startExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var formData = new FormData()
-    formData.append("devices", devices)
+    var body = { "devices": devices }
     send({
-        body: formData,
+        body: body,
         start: function () {
             document.getElementById("startButton").classList.add("disabled");
         },
@@ -208,8 +207,8 @@ function addRemoteExperience() {
             document.getElementById("addRemoteButton").classList.add("disabled");
         },
         body: {
-            "apk_name":  document.getElementById("apk_name").value,
-            "command":  document.getElementById("command").value,
+            "apk_name": document.getElementById("apk_name").value,
+            "command": document.getElementById("command").value,
         },
         success: function () {
             $('#addExperienceModal').modal('hide');
@@ -474,7 +473,7 @@ var devices_manager = function () {
                 })
                 .then(function (json) {
                     var b64_image = json['base64_image'];
-                    console.log(card_map[device].updateImage64(b64_image),22)
+                    console.log(card_map[device].updateImage64(b64_image), 22)
                     //console.log(b64_image, 22);
                 })
                 .catch(function () {
