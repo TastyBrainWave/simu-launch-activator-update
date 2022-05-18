@@ -444,7 +444,7 @@ var devices_manager = function () {
 
     var card_map = {}; // {device_name: {'card': my_card, 'poll': my_poll}
 
-    var default_polling_rate = 5000 // ms
+    var default_polling_rate = 2000 // ms
     var image_height = 100;
 
     function screengrab_polling(device, on, rate) {
@@ -461,9 +461,12 @@ var devices_manager = function () {
             poll();
             card_map[device]['poll'] = setInterval(poll, rate);
         }
-
+        var lock = false;
         function poll() {
-            console.log('polling')
+            if(lock){
+                return
+            }
+            lock = true
             fetch("device-screen/" + rate + "/" + image_height + "/" + device)
                 .then(function (response) {
                     return response.json()
@@ -476,6 +479,9 @@ var devices_manager = function () {
                 .catch(function () {
                     console.log('error with polling for device ' + device)
                     // location.reload()
+                })
+                .finally(function(){
+                    lock=false;
                 })
         }
     }

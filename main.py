@@ -455,7 +455,7 @@ async def screen_grab(request: Request):
 @app.post("/volume")
 @check_adb_running
 async def volume(payload: Volume):
-    print(111)
+
     client_list = process_devices(client, payload)
 
     fails = []
@@ -484,20 +484,32 @@ async def check_image(device_serial, refresh_ms, size):
         my_height = 108
         device: DeviceAsync = await client_async.device(device_serial)
         device_sync: Device = client.device(device_serial)
-        device_sync.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
-        device_sync.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
+        # device_sync.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
+        # device_sync.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
         im = await device.screencap()
+        if im:
+            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
 
-        image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
-        image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
+            if screen_shots_cache[device_serial]['quest']:
+                image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
-        _, encoded_img = cv2.imencode('.png', image)
-        return base64.b64encode(encoded_img).decode("utf-8")
+            height = image.shape[0]
+            width = int(image.shape[1] / height * 320)
+            height = 320
+
+            dsize = (width, height)
+            image = cv2.resize(image, dsize)
+
+            _, encoded_img = cv2.imencode('.png', image)
+            return base64.b64encode(encoded_img).decode("utf-8")
+        return None
 
     timestamp = datetime.datetime.now()
 
     if device_serial not in screen_shots_cache:
-        screen_shots_cache[device_serial] = {}
+        info = client.device(device_serial).list_features()
+        print(type(info), info.keys())
+        screen_shots_cache[device_serial] = {'info': info, 'quest': 'oculus.hardware.standalone_vr' in info}
     if size not in screen_shots_cache[device_serial]:
         ancient = datetime.datetime.now() - datetime.timedelta(hours=10)
         screen_shots_cache[device_serial][size] = {'timestamp': ancient, 'file_id': None}
@@ -505,7 +517,9 @@ async def check_image(device_serial, refresh_ms, size):
             milliseconds=refresh_ms) < timestamp:
         screen_shots_cache[device_serial][size]['timestamp'] = timestamp
         try:
-            screen_shots_cache[device_serial][size]['file_id'] = await gen_image()
+            image = await gen_image()
+            if image:
+                screen_shots_cache[device_serial][size]['file_id'] = image
         except RuntimeError as e:
             return False
 
