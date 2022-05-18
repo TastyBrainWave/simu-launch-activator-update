@@ -455,6 +455,7 @@ async def screen_grab(request: Request):
 @app.post("/volume")
 @check_adb_running
 async def volume(payload: Volume):
+    print(111)
     client_list = process_devices(client, payload)
 
     fails = []
@@ -475,14 +476,14 @@ my_devices = None
 screen_shots_cache = {}
 
 
-def check_image(device_serial, refresh_ms, size):
+async def check_image(device_serial, refresh_ms, size):
+
     async def gen_image():
 
         my_width = 192
         my_height = 108
-
         device: DeviceAsync = await client_async.device(device_serial)
-        device_sync: Device = client.device(device)
+        device_sync: Device = client.device(device_serial)
         device_sync.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
         device_sync.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
         im = await device.screencap()
@@ -504,7 +505,7 @@ def check_image(device_serial, refresh_ms, size):
             milliseconds=refresh_ms) < timestamp:
         screen_shots_cache[device_serial][size]['timestamp'] = timestamp
         try:
-            screen_shots_cache[device_serial][size]['file_id'] = gen_image()
+            screen_shots_cache[device_serial][size]['file_id'] = await gen_image()
         except RuntimeError as e:
             return False
 
@@ -515,13 +516,14 @@ def check_image(device_serial, refresh_ms, size):
 @check_adb_running
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
 
-    success = check_image(device_serial, refresh_ms, size)
+    success = await check_image(device_serial, refresh_ms, size)
 
     if not success:
         return {'success': False}
 
     image = screen_shots_cache[device_serial][size]['file_id']
     err = None
+
     return {'base64_image': image}
 
 
