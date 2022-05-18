@@ -405,6 +405,12 @@ var deselectAll = function () {
         card.shadowRoot.querySelector("input").checked = false
     })
 }
+var selectAll = function () {
+    cardList.forEach(function (card) {
+        card.updateSelected(true);
+        card.shadowRoot.querySelector("input").checked = true
+    })
+}
 window.customElements.define('device-card', DeviceCard);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
@@ -534,4 +540,11 @@ window.addEventListener('load', function () {
 
 })
 
-
+var selectAllToggle = () => {
+    if (selectedCards().length === cardList.length) {
+        deselectAll();
+    }
+    else {
+        selectAll();
+    }
+}
