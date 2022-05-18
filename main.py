@@ -501,7 +501,6 @@ async def check_image(device_serial, refresh_ms, size):
 
     if device_serial not in screen_shots_cache:
         info = client.device(device_serial).list_features()
-        print(type(info), info.keys())
         screen_shots_cache[device_serial] = {'info': info, 'quest': 'oculus.hardware.standalone_vr' in info}
     if size not in screen_shots_cache[device_serial]:
         ancient = datetime.datetime.now() - datetime.timedelta(hours=10)
