@@ -272,7 +272,7 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
 
 @app.post("/stop")
 @check_adb_running
-async def stop(payload: Devices, db: Session = Depends(get_db)):
+async def stop(payload: Experience, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
@@ -283,9 +283,10 @@ async def stop(payload: Devices, db: Session = Depends(get_db)):
 
     client_list = process_devices(client, payload)
 
-    global simu_application_name
+    if not payload.experience:
+        return {"success": False, "error": "No experience to be stopped!"}
 
-    item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
+    item = jsonable_encoder(crud.get_apk_details(db, apk_name=payload.experience))
 
     if item is None:
         return {
