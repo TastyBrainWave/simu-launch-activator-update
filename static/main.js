@@ -2,6 +2,7 @@
 var status_global = document.getElementById("status");
 var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
 var selected_experience_global = document.getElementById("experience");
+var cardList = []
 
 //HELPER FUNCTIONS
 function transformFormData() {
@@ -431,7 +432,7 @@ var deselectAll = function () {
 window.customElements.define('device-card', DeviceCard);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
-var cardList = []
+
 // devices_manager.devices().forEach((device) => {
 //     let card = new DeviceCard("https://picsum.photos/200", device, false);
 //     document.querySelector("#main-container").appendChild(card);
@@ -544,7 +545,7 @@ window.addEventListener('load', function () {
 
         send({
             url: 'volume',
-            body: {'volume': volume },
+            body: { 'volume': volume },
             success: function () {
                 console.log('changed volume to ' + volume);
             },
