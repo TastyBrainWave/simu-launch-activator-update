@@ -117,7 +117,7 @@ function startExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices }
+    var body = { "devices": devices, "experience": document.getElementById("set_choices_dropdown").value }
     send({
         body: body,
         start: function () {
@@ -126,6 +126,8 @@ function startExperience() {
         url: '/start',
         success: function (data) {
             showStatus("Experience has started on " + data["device_count"] + " devices!");
+            document.querySelector('#setExperienceModal').modal('hide');
+
         },
         problem: function (error) {
             showStatus("Error starting experience: " + error);
@@ -145,7 +147,7 @@ function loadExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices }
+    var body = { "devices": devices, "experience": document.getElementById("load_choices_dropdown").value }
     send({
         url: '/load',
         start: function () {
@@ -544,7 +546,7 @@ window.addEventListener('load', function () {
 
         send({
             url: 'volume',
-            body: {'volume': volume },
+            body: { 'volume': volume },
             success: function () {
                 console.log('changed volume to ' + volume);
             },
