@@ -367,6 +367,10 @@ class DeviceCard extends HTMLElement {
             }
 
         })
+        this.getBatteryPercentage()
+        setInterval(() => {
+            this.getBatteryPercentage()
+        }, 100000);
 
     }
     updateSelected(selected) {
@@ -380,6 +384,29 @@ class DeviceCard extends HTMLElement {
             this.shadowRoot.getElementById("main-card").children[0].classList.remove("shadow");
             checkSelected();
         }
+    }
+    getBatteryPercentage() {
+        let result
+        fetch("/battery/" + this.deviceId).then(response => {
+            return response.json()
+        }).then(data => {
+            if (data >= 60) {
+                this.shadowRoot.getElementById("batteryBadge").classList.add("text-bg-success")
+                this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-danger")
+                this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-warning")
+            } else if (data < 60 && this.getBatteryPercentage() >= 30) {
+                this.shadowRoot.getElementById("batteryBadge").classList.add("text-bg-warning")
+                this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-success")
+                this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-danger")
+            }
+            else {
+                this.shadowRoot.getElementById("batteryBadge").classList.add("text-bg-danger")
+                this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-success")
+                this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-warning")
+
+            }
+            this.shadowRoot.getElementById("batteryPercent").innerHTML = data + "%";
+        })
     }
 
     updateImage(image) {
