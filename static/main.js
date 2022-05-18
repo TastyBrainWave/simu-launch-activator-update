@@ -60,7 +60,7 @@ function send(params) {
         if (params['success']) params['success'](response);
     }).catch(function (error) {
         if (params['problem']) params['problem'](error);
-        console.log(error);
+        showStatus("Error: " + error, true);
 
     }).finally(function () {
         if (params['finally']) params['finally']();
@@ -127,13 +127,14 @@ function startExperience() {
         url: '/start',
         success: function (data) {
             showStatus("Experience has started on " + data["device_count"] + " devices!");
-            $('#setExperienceModal').modal('hide');
+            ;
 
         },
         problem: function (error) {
             showStatus("Error starting experience: " + error);
         },
         finally: function () {
+            $('#setExperienceModal').modal('hide')
             document.getElementById("startButton").classList.remove("disabled");
         }
     })
@@ -223,7 +224,7 @@ function stopExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices }
+    var body = { "devices": devices, "experience": document.getElementById("stop_choices_dropdown").value }
     send({
         url: '/stop',
         start: function () {
@@ -231,9 +232,11 @@ function stopExperience() {
         },
         body: body,
         success: function () {
+
             showStatus("Experience has stopped on device(s)!");
         },
         finally: function () {
+            $('#stopExperienceModal').modal('hide');
             document.getElementById("stopButton").classList.remove("disabled");
         }
     })
@@ -438,7 +441,7 @@ var devices_manager = function () {
         }
         var lock = false;
         function poll() {
-            if(lock){
+            if (lock) {
                 return
             }
             lock = true
@@ -455,8 +458,8 @@ var devices_manager = function () {
                     console.log('error with polling for device ' + device)
                     // location.reload()
                 })
-                .finally(function(){
-                    lock=false;
+                .finally(function () {
+                    lock = false;
                 })
         }
     }

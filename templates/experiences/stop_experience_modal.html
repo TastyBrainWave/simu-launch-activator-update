@@ -1,0 +1,28 @@
+<div class="modal fade" id="stopExperienceModal" tabindex="-1" aria-labelledby="stopExperienceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stopExperienceModalLabel">Stop Experience</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stopRemoteExperienceForm" enctype="multipart/form-data" method="post">
+                    <fieldset>
+                        <legend>Choose the experience to be started on the devices</legend>
+                        <label>
+                            <select id="stop_choices_dropdown" name="stop_choices" required class="form-select-lg" aria-label="Stop Experience">
+                                {% for choice in choices %}
+                                <option value="{{ choice }}">{{ choice }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </fieldset>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger" onclick="stopExperience()">Stop</button>
+            </div>
+        </div>
+    </div>
+</div>

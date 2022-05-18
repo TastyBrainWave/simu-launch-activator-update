@@ -1,9 +1,10 @@
 <div id="navContainer">
     <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">{% include "icons/headset-vr.html" %} Multi Device Experience Tool</a>
-            <div class="d-flex">  
-                <a id="addRemoveButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2">{% include "icons/plus-slash-minus.html" %}</a>         
+            <a class="navbar-brand " style="font-family: Consolas " href="#">{% include "icons/headset-vr.html" %} simu-launch</a>
+            <div class="d-flex">
+                <a id="addButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">{% include "icons/cloud-minus.html" %}</a>
+                <a id="removeButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#addExperienceModal">{% include "icons/cloud-plus.html" %}</a>
                 <a id="uploadButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2 " data-bs-toggle="modal" data-bs-target="#uploadModal">{% include "icons/file-earmark-arrow-up-fill.html" %}</a>
                 <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
                 <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
@@ -16,9 +17,10 @@
 <template id="navbarStandard">
     <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">{% include "icons/headset-vr.html" %} Multi Device Experience Tool</a>
+            <a class="navbar-brand" style="font-family: Consolas " href="#">{% include "icons/headset-vr.html" %} simu-launch</a>
             <div class="d-flex">
-            <a id="addRemoveButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2">{% include "icons/plus-slash-minus.html" %}</a>
+                <a id="addButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">{% include "icons/cloud-minus.html" %}</a>
+                <a id="removeButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#addExperienceModal">{% include "icons/cloud-plus.html" %}</a>
                 <a id="uploadButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2 " data-bs-toggle="modal" data-bs-target="#uploadModal">{% include "icons/file-earmark-arrow-up-fill.html" %}</a>
                 <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
                 <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
@@ -35,7 +37,7 @@
                 <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect</a>
                 <a id="startButton" class="btn btn-success d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#setExperienceModal">Start</a>
                 <a id="loadButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#loadModal">Load</a>
-                <a id="stopButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopExperience()">Stop</a>
+                <a id="stopButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#stopExperienceModal"">Stop</a>
             </div>
         </div>
     </div>
