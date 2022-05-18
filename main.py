@@ -501,7 +501,9 @@ async def check_image(device_serial, refresh_ms, size):
 
     if device_serial not in screen_shots_cache:
         info = client.device(device_serial).list_features()
-        screen_shots_cache[device_serial] = {'info': info, 'quest': 'oculus.hardware.standalone_vr' in info}
+        screen_shots_cache[device_serial] = {'info': info,
+                                             'quest': 'oculus.hardware.standalone_vr' in info,}
+
     if size not in screen_shots_cache[device_serial]:
         ancient = datetime.datetime.now() - datetime.timedelta(hours=10)
         screen_shots_cache[device_serial][size] = {'timestamp': ancient, 'file_id': None}
@@ -532,42 +534,9 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
 
     return {'base64_image': image}
 
-
-@app.get("/devices-modal-start")
-async def devices_start(request: Request):
-    return templates.TemplateResponse("htmx/devices_modal.html", {"request": request})
-
-
-@app.get("/linkup")
+@app.get("/battery/{device_serial}")
 @check_adb_running
-async def linkup(request: Request):
-    global my_devices
-    devices = client.devices()
-    my_devices = {device.serial: device for device in devices}
-
-    for device in devices:
-        device.shell('adb shell setprop debug.oculus.capture.width 192')
-        device.shell('adb shell setprop debug.oculus.capture.height 108')
-
-    return templates.TemplateResponse("htmx/devices.html", {"request": request, "devices": client.devices()})
-
-
-@app.get("/device-button/{device_serial}/{button}")
-@check_adb_running
-async def device_button(request: Request, device_serial: str, button: str):
-    commands = {'power': ['/dev/input/event2 1 74 1', '/dev/input/event2 0 0 0'],
-                'vol-up': ['/dev/input/event2 1 73 1', '/dev/input/event2 0 0 0'],
-                'vol-down': ['/dev/input/event2 1 72 1', '/dev/input/event2 0 0 0']}
-    [button_down, button_up] = commands.get(button)
-    print(button_down, button_up, 2233)
-    device: Device = my_devices[device_serial]
-    print(0, device.shell("chmod 666 /dev/input/event0"))
-    print(0, device.shell("chmod 666 /dev/input/event1"))
-    print(11, device.shell('sendevent ' + button_down), 159)
-    print(11, device.shell('sendevent ' + button_up), 222)
-    print(11, device.shell('sendevent ' + button_down), 1591)
-    print(11, device.shell('sendevent ' + button_up), 2221)
-    print(411, device.shell('adb shell media volume --stream 3 --set 15'), 2221)
-
-    pass
+async def battery(device_serial: str):
+    device: Device = client.device(device_serial)
+    return device.get_battery_level()
 
