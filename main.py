@@ -2,7 +2,6 @@ import base64
 import datetime
 import os
 from functools import partial, wraps
-
 import cv2
 import numpy as np
 from fastapi.encoders import jsonable_encoder
@@ -284,7 +283,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
     client_list = process_devices(client, payload)
 
     if not payload.experience:
-        return {"success": False, "error": "No experience to be stopped!"}
+        return {"success": False, "error": "No experience to be stopped"}
 
     item = jsonable_encoder(crud.get_apk_details(db, apk_name=payload.experience))
 
@@ -327,6 +326,9 @@ async def connect(request: Request):
     remote_address = json["remote_address"] if "remote_address" in json else ""
 
     devices = client.devices()
+
+    print("json ", json)
+    print("address ", remote_address)
 
     if not remote_address:
         device_ip = devices[0].shell("ip addr show wlan0")
@@ -569,3 +571,4 @@ async def device_button(request: Request, device_serial: str, button: str):
     print(411, device.shell('adb shell media volume --stream 3 --set 15'), 2221)
 
     pass
+

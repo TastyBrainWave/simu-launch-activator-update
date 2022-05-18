@@ -1,7 +1,6 @@
 //GLOBAL VARS
 var status_global = document.getElementById("status");
 var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
-var selected_experience_global = document.getElementById("experience");
 var cardList = []
 
 //HELPER FUNCTIONS
@@ -410,13 +409,6 @@ window.customElements.define('device-card', DeviceCard);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
 
-// devices_manager.devices().forEach((device) => {
-//     let card = new DeviceCard("https://picsum.photos/200", device, false);
-//     document.querySelector("#main-container").appendChild(card);
-//     cardList.push(card);
-// });
-
-
 var devices_manager = function () {
     var api = {};
 
@@ -456,7 +448,7 @@ var devices_manager = function () {
                 })
                 .catch(function () {
                     console.log('error with polling for device ' + device)
-                    // location.reload()
+                    location.reload()
                 })
                 .finally(function () {
                     lock = false;
@@ -541,6 +533,5 @@ window.addEventListener('load', function () {
     });
 
 })
-
 
 
