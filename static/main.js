@@ -394,7 +394,7 @@ class DeviceCard extends HTMLElement {
                 this.shadowRoot.getElementById("batteryBadge").classList.add("text-bg-success")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-danger")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-warning")
-            } else if (data < 60 && this.getBatteryPercentage() >= 30) {
+            } else if (data < 60 && data >= 30) {
                 this.shadowRoot.getElementById("batteryBadge").classList.add("text-bg-warning")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-success")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-danger")
