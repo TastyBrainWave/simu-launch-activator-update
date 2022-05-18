@@ -16,13 +16,17 @@
     <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="d-flex">
 
-        <div id="status" class="toast-body fs-2 text"></div>
+        <div id="status" class="toast-body fs-5 text"></div>
         <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
       </div>
     </div>
   </div>
   <div id="main-container" class="row row-cols-1 row-cols-md-4 g-4 mt-3 float-center">
   </div>
+  <div class="row justify-content-center mb-2" id="volumeDiv">
+    <div class="d-flex btn-custom align-items-center justify-content-center border rounded">
+      <label for="customRange3" class="form-label me-2">Volume</label>
+      <input type="range" class="form-range" style="max-width: 60%" min="0" value="10" max="15" step="1" id="volume">
 
 
 
