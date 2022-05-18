@@ -20,7 +20,7 @@ from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 from helpers import launch_app, save_file, process_devices, connect_actions
-from models_pydantic import Volume, Devices, Experience, NewExperience
+from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details
 from sql_app.database import engine, SessionLocal
@@ -108,17 +108,22 @@ async def home(request: Request, db: Session = Depends(get_db)):
 
 @app.post("/start")
 @check_adb_running
-async def start(payload: Devices, db: Session = Depends(get_db)):
+async def start(payload: StartExperience, db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
 
-    :param payload: a list of devices which the experience will start on. Not providing any will start the experience on all devices
+    :param payload: a list of devices which the experience will start on and the experience
     :param db: the database dependency
     :return: dictionary of all device serial numbers
     """
     client_list = process_devices(client, payload)
 
     global simu_application_name
+
+    if payload.experience:
+        simu_application_name = payload.experience
+    else:
+        return {"success": False, "error": "No experience specified!"}
 
     item = jsonable_encoder(crud.get_apk_details(db, apk_name=simu_application_name))
 
@@ -218,22 +223,6 @@ async def load(payload: Experience):
         return {"success": False, "error": e.__str__()}
 
     return {"success": True, "device_count": len(client_list)}
-
-
-@app.post("/set-remote-experience")
-async def set_remote_experience(payload: Experience):
-    """
-        Sets the active experience
-    :param payload: containing the experience to set remotely
-    :return: a success dictionary signifying the operation was successful
-    """
-    if payload.experience:
-        global simu_application_name
-        simu_application_name = payload.experience
-
-        return {"success": True}
-
-    return {"success": False}
 
 
 @app.post("/remove-remote-experience")

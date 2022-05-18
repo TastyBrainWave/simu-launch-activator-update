@@ -17,3 +17,6 @@ class NewExperience(Devices):
     apk_name: str
     command: str
 
+class StartExperience(Devices):
+    experience: str
+

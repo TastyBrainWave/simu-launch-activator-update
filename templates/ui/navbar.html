@@ -33,7 +33,7 @@
             <a class="navbar-brand" href="#"><button id="selectClose" type="button" class="btn-close m-auto" aria-label="Close" onclick="deselectAll()"></button></a>
             <div class="d-flex">
                 <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect</a>
-                <a id="startButton" class="btn btn-success d-flex align-items-center justify-content-center ms-2" onclick="startExperience()">Start</a>
+                <a id="startButton" class="btn btn-success d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#setExperienceModal">Start</a>
                 <a id="loadButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#loadModal">Load</a>
                 <a id="stopButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopExperience()">Stop</a>
             </div>

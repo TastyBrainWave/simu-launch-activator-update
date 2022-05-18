@@ -8,11 +8,11 @@
       <div class="modal-body">
         <form id="setRemoteExperienceForm" action="/set-remote-experience" enctype="multipart/form-data" method="post">
           <fieldset>
-            <legend>Choose the experience to be used on the devices</legend>
+            <legend>Choose the experience to be started on the devices</legend>
             <label>
               <select id="set_choices_dropdown" name="set_choices" required class="form-select-lg" aria-label="Select Experience">
                 {% for choice in choices %}
-                  <option value="{{ choice }}">{{ choice }}</option>
+                <option value="{{ choice }}">{{ choice }}</option>
                 {% endfor %}
               </select>
             </label>
@@ -21,7 +21,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-success" onclick="setRemoteExperience()">Submit</button>
+        <button type="button" class="btn btn-success" onclick="startExperience()">Start</button>
       </div>
     </div>
   </div>
