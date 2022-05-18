@@ -461,6 +461,7 @@ async def volume(payload: Volume):
     fails = []
     for device in client_list:
         try:
+            outcome = device.shell(f'cmd media_session volume --stream 3 --set {payload.volume}')
             outcome = device.shell(f'media volume --stream 3 --set {payload.volume}')
         except RuntimeError as e:
             fails.append(e)
