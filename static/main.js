@@ -126,7 +126,7 @@ function startExperience() {
         url: '/start',
         success: function (data) {
             showStatus("Experience has started on " + data["device_count"] + " devices!");
-            document.querySelector('#setExperienceModal').modal('hide');
+            $('#setExperienceModal').modal('hide');
 
         },
         problem: function (error) {
@@ -156,7 +156,6 @@ function loadExperience() {
         body: body,
         success: function (data) {
             $('#loadModal').modal('hide');
-            selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
             showStatus("Experience has loaded on " + data.json()["device_count"] + " devices!");
         },
         problem: function (error) {
@@ -169,33 +168,6 @@ function loadExperience() {
     })
 }
 
-function setRemoteExperience() {
-
-    var experience = document.getElementById("set_choices_dropdown").value;
-
-    send({
-        url: '/set-remote-experience',
-        start: function () {
-            document.getElementById("setRemoteButton").classList.add("disabled");
-        },
-        body: {
-            "experience": experience
-        },
-        success: function (data) {
-            $('#setExperienceModal').modal('hide');
-            selected_experience_global.innerHTML = "The following experience is currently selected: " + experience
-            showStatus("Experience has been set! You may now start it!");
-
-        },
-        problem: function (error) {
-            showStatus("Error setting experience: " + error);
-
-        },
-        finally: function () {
-            document.getElementById("setRemoteButton").classList.remove("disabled");
-        }
-    })
-}
 
 function addRemoteExperience() {
 
