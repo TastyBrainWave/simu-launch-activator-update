@@ -540,10 +540,11 @@ window.addEventListener('load', function () {
     slider.on('change', function (ev) {
         var volume = parseInt(slider.val());
 
+
+
         send({
             url: 'volume',
-            body: JSON.stringify({ 'volume': volume }),
-            headers: { "Content-Type": "application/json" },
+            body: {'volume': volume },
             success: function () {
                 console.log('changed volume to ' + volume);
             },
