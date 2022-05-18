@@ -352,7 +352,7 @@ class DeviceCard extends HTMLElement {
         this.attachShadow({ mode: 'open' });
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
-        bootstrapStyles.href = 'static/bootstrap-5.0.2-dist/css/bootstrap.css'
+        bootstrapStyles.href = 'static/bootstrap-5.2.0-beta1-dist/css/bootstrap.css'
         this.shadowRoot.appendChild(bootstrapStyles);
         this.shadowRoot.appendChild(document.querySelector("#device-card").content.cloneNode(true));
         this.image = image;
