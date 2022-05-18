@@ -7,7 +7,9 @@ import cv2
 import numpy as np
 from fastapi.encoders import jsonable_encoder
 from ppadb.client import Client as AdbClient
+from ppadb.client_async import ClientAsync as AdbClientAsync
 from ppadb.device import Device
+from ppadb.device_async import DeviceAsync
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from multiprocessing import Process, Pool, cpu_count
@@ -44,6 +46,7 @@ def get_db():
 BASE_PORT = 5555
 
 client: AdbClient = AdbClient(host="127.0.0.1", port=5037)
+client_async: AdbClientAsync = AdbClientAsync(host="127.0.0.1", port=5037)
 
 
 def check_adb_running(func):
@@ -469,15 +472,16 @@ screen_shots_cache = {}
 
 
 def check_image(device_serial, refresh_ms, size):
-    def gen_image():
+    async def gen_image():
 
         my_width = 192
         my_height = 108
 
-        device: Device = client.device(device_serial)
-        device.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
-        device.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
-        im = device.screencap()
+        device: DeviceAsync = await client_async.device(device_serial)
+        device_sync: Device = client.device(device)
+        device_sync.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
+        device_sync.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
+        im = await device.screencap()
 
         image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
         image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
@@ -506,6 +510,7 @@ def check_image(device_serial, refresh_ms, size):
 @check_adb_running
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
+
     success = check_image(device_serial, refresh_ms, size)
 
     if not success:
