@@ -530,10 +530,10 @@ window.addEventListener('load', function () {
             url: 'volume',
             body: { 'volume': volume },
             success: function () {
-                console.log('changed volume to ' + volume);
+                showStatus('Changed volume to ' + volume);
             },
             problem: function () {
-                console.log('could not change volume to ' + volume);
+                showStatus('Could not change volume to ' + volume, true);
             },
             finally: '',
         });
