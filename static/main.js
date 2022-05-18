@@ -145,14 +145,13 @@ function loadExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var formData = new FormData()
-    formData.append("devices", devices)
+    var body = { "devices": devices }
     send({
         url: '/load',
         start: function () {
             document.getElementById("loadButton").classList.add("disabled");
         },
-        body: formData,
+        body: body,
         success: function (data) {
             $('#loadModal').modal('hide');
             selected_experience_global.innerHTML = "The following experience is currently selected: " + formData.get("load_choices")
@@ -245,19 +244,17 @@ function removeRemoteExperience() {
 
 
 function stopExperience() {
-
     var devices = []
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var formData = new FormData()
-    formData.append("devices", devices)
+    var body = { "devices": devices }
     send({
         url: '/stop',
         start: function () {
             document.getElementById("stopButton").classList.add("disabled");
         },
-        body: formData,
+        body: body,
         success: function () {
             showStatus("Experience has stopped on device(s)!");
         },
