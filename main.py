@@ -560,6 +560,7 @@ async def device_experiences(request: Request, device_serial: str):
         },
     )
 
+
 @app.post("/command/{command}/{device_serial}")
 @check_adb_running
 async def device_command(request: Request, command: str, device_serial: str):
@@ -568,16 +569,23 @@ async def device_command(request: Request, command: str, device_serial: str):
     json = await request.json()
     experience = json['experience']
 
-
-    outcome = ''
-
     if command == 'start':
         # https://stackoverflow.com/a/64241561/960471
         info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
         info = info.strip().split('\n')[0]
         info = info.split(' ')[1]
-        outcome = await device.shell(f"am start -n { info }")
+        outcome = await device.shell(f"am start -n {info}")
+        return {'success': 'Starting' in outcome}
     elif command == 'stop':
-        outcome = await device.shell(f"am force-stop { experience }")
-        print(outcome,88)
-    return {'success': 'Starting' in outcome}
+        # https://stackoverflow.com/a/56078766/960471
+        await device.shell(f"am force-stop {experience}")
+        return {'success': True}
+    elif command == 'stop-some-experience':
+        outcome = await device.shell("dumpsys activity | grep top-activity")
+        if outcome:
+            outcome = outcome.split(":")[-1]
+            outcome = outcome.split('/')[0]
+            await device.shell(f"am force-stop {outcome}")
+            return {'success': True, 'outcome': outcome + ' successfully stopped!'}
+        else:
+            return {'success': False, 'outcome': 'No experience detected to be running'}

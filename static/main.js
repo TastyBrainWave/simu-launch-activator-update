@@ -369,6 +369,9 @@ class DeviceCard extends HTMLElement {
         var check_experiences = this.shadowRoot.getElementById('checkExperiences')
         check_experiences.setAttribute('device_id', deviceId);
 
+        var stop_some_experience_btn = this.shadowRoot.getElementById('stop_some_experience')
+        stop_some_experience_btn.setAttribute('device_id', deviceId);
+
         var check_battery_mins_wait = 5;
         this.getBatteryPercentage()
         setInterval(() => {
@@ -594,5 +597,27 @@ function gather_experiences(el) {
         })
         .catch(function (error) {
             console.log(error);
+        })
+}
+
+function stop_some_experience(el) {
+
+    var device = el.getAttribute('device_id');
+
+            send({
+            body: { 'experience': '?'},
+            start: function () {
+            },
+            url: '/command/stop-some-experience/' + device,
+            success: function (data) {
+                showStatus(data['outcome']);
+
+            },
+            problem: function (error) {
+                showStatus("Error stopping experience: " + error);
+            },
+            finally: function () {
+
+            }
         })
 }
