@@ -9,7 +9,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 def process_devices(client: AdbClient, payload: Devices):
-    print(client.devices(), 22)
     if payload.devices:
         return [Device(client, device) for device in payload.devices]
     return client.devices()

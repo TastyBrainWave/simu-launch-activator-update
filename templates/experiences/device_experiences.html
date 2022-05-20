@@ -1,19 +1,12 @@
 <div class="list-group list-group-flush" data-device="{{ device }}">
   {% for experience in experiences %}
     <li class="list-group-item" data-experience="{{ experience.package }}">
-          {{ experience.name }}
-      <div class="dropdown d-inline-block float-end">
-        <button class="btn btn-primary-light btn-lg dropdown-toggle" type="button" id="dropdownMenuButton1"
-                data-bs-toggle="dropdown" aria-expanded="false">
-          Actions
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
-          <li><a class="dropdown-item" href="#">Start</a></li>
-          <li><a class="dropdown-item" href="#">Stop</a></li>
-          <li><a class="dropdown-item" href="#">Delete</a></li>
-        </ul>
-      </div>
-
+    <div class="btn-group" role="group" aria-label="commands">
+      <button type="button" class="btn btn-lg fs-2" onclick="start_experience(this)">
+        {% include 'icons/play.html' %}</button>
+      <button type="button" class="btn btn-lg fs-2 text-danger" onclick="stop_experience(this)">{% include 'icons/stop.html' %}</button>
+    </div>
+      {{ experience.name }}
     </li>
   {% endfor %}
 </div>

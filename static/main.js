@@ -590,7 +590,6 @@ function gather_experiences(el) {
         })
         .then(function (html) {
             $('#experiences_modal_content').html(html);
-            console.log(html,11)
             $('#experiencesModal').modal('show');
         })
         .catch(function (error) {
