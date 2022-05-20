@@ -1,0 +1,19 @@
+<div class="list-group list-group-flush" data-device="{{ device }}">
+  {% for experience in experiences %}
+    <li class="list-group-item" data-experience="{{ experience.package }}">
+          {{ experience.name }}
+      <div class="dropdown d-inline-block float-end">
+        <button class="btn btn-primary-light btn-lg dropdown-toggle" type="button" id="dropdownMenuButton1"
+                data-bs-toggle="dropdown" aria-expanded="false">
+          Actions
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+          <li><a class="dropdown-item" href="#">Start</a></li>
+          <li><a class="dropdown-item" href="#">Stop</a></li>
+          <li><a class="dropdown-item" href="#">Delete</a></li>
+        </ul>
+      </div>
+
+    </li>
+  {% endfor %}
+</div>

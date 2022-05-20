@@ -117,7 +117,7 @@ function startExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices, "experience": document.getElementById("set_choices_dropdown").value }
+    var body = {"devices": devices, "experience": document.getElementById("set_choices_dropdown").value}
     send({
         body: body,
         start: function () {
@@ -148,7 +148,7 @@ function loadExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices, "experience": document.getElementById("load_choices_dropdown").value }
+    var body = {"devices": devices, "experience": document.getElementById("load_choices_dropdown").value}
     send({
         url: '/load',
         start: function () {
@@ -223,7 +223,7 @@ function stopExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices, "experience": document.getElementById("stop_choices_dropdown").value }
+    var body = {"devices": devices, "experience": document.getElementById("stop_choices_dropdown").value}
     send({
         url: '/stop',
         start: function () {
@@ -349,7 +349,7 @@ function getScreenshots() {
 class DeviceCard extends HTMLElement {
     constructor(image, deviceId, selected) {
         super();
-        this.attachShadow({ mode: 'open' });
+        this.attachShadow({mode: 'open'});
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
         bootstrapStyles.href = 'static/bootstrap-5.2.0-beta1-dist/css/bootstrap.css'
@@ -365,26 +365,30 @@ class DeviceCard extends HTMLElement {
             } else {
                 this.updateSelected(false)
             }
-
         })
+        var check_experiences = this.shadowRoot.getElementById('checkExperiences')
+        check_experiences.setAttribute('device_id', deviceId);
+
+        var check_battery_mins_wait = 5;
         this.getBatteryPercentage()
         setInterval(() => {
             this.getBatteryPercentage()
-        }, 100000);
+        }, check_battery_mins_wait * 60 * 1000);
 
     }
+
     updateSelected(selected) {
         if (selected === true) {
             this.selected = true;
             this.shadowRoot.getElementById("main-card").children[0].classList.add("shadow");
             checkSelected();
-        }
-        else {
+        } else {
             this.selected = false;
             this.shadowRoot.getElementById("main-card").children[0].classList.remove("shadow");
             checkSelected();
         }
     }
+
     getBatteryPercentage() {
         let result
         fetch("/battery/" + this.deviceId).then(response => {
@@ -398,8 +402,7 @@ class DeviceCard extends HTMLElement {
                 this.shadowRoot.getElementById("batteryBadge").classList.add("text-bg-warning")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-success")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-danger")
-            }
-            else {
+            } else {
                 this.shadowRoot.getElementById("batteryBadge").classList.add("text-bg-danger")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-success")
                 this.shadowRoot.getElementById("batteryBadge").classList.remove("text-bg-warning")
@@ -447,7 +450,7 @@ var devices_manager = function () {
 
     var card_map = {}; // {device_name: {'card': my_card, 'poll': my_poll}
 
-    var default_polling_rate = 2000 // ms
+    var default_polling_rate = 4000 // ms
     var image_height = 100;
 
     function screengrab_polling(device, on, rate) {
@@ -465,6 +468,7 @@ var devices_manager = function () {
             card_map[device]['poll'] = setInterval(poll, rate);
         }
         var lock = false;
+
         function poll() {
             if (lock) {
                 return
@@ -476,7 +480,7 @@ var devices_manager = function () {
                 })
                 .then(function (json) {
                     var b64_image = json['base64_image'];
-                    console.log(card_map[device].updateImage64(b64_image), 22)
+                    card_map[device].updateImage64(b64_image)
                     //console.log(b64_image, 22);
                 })
                 .catch(function () {
@@ -523,8 +527,7 @@ var checkSelected = () => {
         document.getElementById("navContainer").innerHTML = "";
         let navbarSelect = document.querySelector("#navbarSelect").content.cloneNode(true)
         document.getElementById("navContainer").appendChild(navbarSelect);
-    }
-    else {
+    } else {
         document.getElementById("navContainer").innerHTML = "";
         let navbar = document.querySelector("#navbarStandard").content.cloneNode(true)
         document.getElementById("navContainer").appendChild(navbar);
@@ -550,10 +553,9 @@ window.addEventListener('load', function () {
         var volume = parseInt(slider.val());
 
 
-
         send({
             url: 'volume',
-            body: { 'volume': volume },
+            body: {'volume': volume},
             success: function () {
                 showStatus('Changed volume to ' + volume);
             },
@@ -570,8 +572,28 @@ window.addEventListener('load', function () {
 var selectAllToggle = () => {
     if (selectedCards().length === cardList.length) {
         deselectAll();
-    }
-    else {
+    } else {
         selectAll();
     }
+}
+
+function gather_experiences(el) {
+    var device_id = el.getAttribute('device_id');
+    fetch('device-experiences/' + device_id, {
+        method: 'GET',
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.text()
+        })
+        .then(function (html) {
+            $('#experiences_modal_content').html(html);
+            console.log(html,11)
+            $('#experiencesModal').modal('show');
+        })
+        .catch(function (error) {
+            console.log(error);
+        })
 }

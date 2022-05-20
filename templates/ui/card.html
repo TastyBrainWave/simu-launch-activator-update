@@ -7,9 +7,10 @@
                 <img src="https://picsum.photos/200" class="card-img-top">
             </div>
             <div class="card-body">
-                <h5 id="device-name" class="card-text">Device ID unknown </h5><span id="batteryBadge" class="badge text-bg-primary">{% include "icons/battery-full.html" %} <span id="batteryPercent">Battery Unknown</span></span>
+                <h5 id="device-name" class="card-text">Device ID unknown </h5>
+              <span id="batteryBadge" class="badge text-bg-primary">{% include "icons/battery-full.html" %} <span id="batteryPercent">Battery Unknown</span></span>
+              <span id="checkExperiences" class="badge btn text-bg-primary float-end" onclick="gather_experiences(this)">{% include "icons/show-apps.html" %} Apps</span>
             </div>
-
         </div>
     </div>
 </template>

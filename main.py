@@ -447,7 +447,6 @@ async def screen_grab(request: Request):
 @app.post("/volume")
 @check_adb_running
 async def volume(payload: Volume):
-
     client_list = process_devices(client, payload)
 
     fails = []
@@ -459,7 +458,6 @@ async def volume(payload: Volume):
             fails.append(e)
 
     if fails:
-
         return {"success": False, "fails": str(fails)}
 
     return {"success": True}
@@ -470,15 +468,12 @@ screen_shots_cache = {}
 
 
 async def check_image(device_serial, refresh_ms, size):
-
     async def gen_image():
 
         my_width = 192
         my_height = 108
         device: DeviceAsync = await client_async.device(device_serial)
-        device_sync: Device = client.device(device_serial)
-        # device_sync.shell(f'adb shell setprop debug.oculus.capture.width {my_width}')
-        # device_sync.shell(f'adb shell setprop debug.oculus.capture.height {my_height}')
+
         im = await device.screencap()
         if im:
             image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
@@ -502,7 +497,7 @@ async def check_image(device_serial, refresh_ms, size):
     if device_serial not in screen_shots_cache:
         info = client.device(device_serial).list_features()
         screen_shots_cache[device_serial] = {'info': info,
-                                             'quest': 'oculus.hardware.standalone_vr' in info,}
+                                             'quest': 'oculus.hardware.standalone_vr' in info, }
 
     if size not in screen_shots_cache[device_serial]:
         ancient = datetime.datetime.now() - datetime.timedelta(hours=10)
@@ -523,7 +518,6 @@ async def check_image(device_serial, refresh_ms, size):
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
 @check_adb_running
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
-
     success = await check_image(device_serial, refresh_ms, size)
 
     if not success:
@@ -534,9 +528,34 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
 
     return {'base64_image': image}
 
+
 @app.get("/battery/{device_serial}")
 @check_adb_running
 async def battery(device_serial: str):
     device: Device = client.device(device_serial)
     return device.get_battery_level()
 
+
+@app.get("/device-experiences/{device_serial}")
+@check_adb_running
+async def device_experiences(request: Request, device_serial: str):
+    device: Device = client.device(device_serial)
+    # https://stackoverflow.com/a/53634311/960471
+
+    experiences = []
+    payload = device.shell('cmd package list packages -3').strip()
+
+    for package in payload.split('\n'):
+        package = package.replace('package:', '')
+        experiences.append({'package': package, 'name': package.split('.')[-1]})
+
+    experiences.sort(key=lambda el: el['name'])
+
+    return templates.TemplateResponse(
+        "experiences/device_experiences.html",
+        {
+            "request": request,
+            "device": device_serial,
+            "experiences": experiences,
+        },
+    )
