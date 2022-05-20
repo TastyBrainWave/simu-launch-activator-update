@@ -66,6 +66,12 @@ def check_adb_running(func):
 @app.get("/devices")
 @check_adb_running
 async def devices():
+    """
+        Gets a list of all devices connected via ADB.
+
+    :return: a dict object containing a list of devices and any errors.
+    """
+
     devices = []
     errs = []
 
@@ -83,8 +89,8 @@ async def devices():
 async def home(request: Request, db: Session = Depends(get_db)):
     """
         View mainly responsible for handling the front end, since nothing will happen on the backend at this endpoint.
-    :param db: the DB dependency
-    :param request: the Request() object
+    :param db: the database dependency
+    :param request: the Request object
     :return: a TemplateResponse object containing the homepage
     """
 
@@ -163,6 +169,16 @@ async def upload(
         command: str = Form(...),
         db: Session = Depends(get_db),
 ):
+    """
+        Upload an experience to the backend so that it can be later loaded on the device.
+        It also creates a new database object with the experience.
+
+    :param file: an UploadFile object containing the .apk file
+    :param command: a Form object containing a string for the command to launch the experience
+    :param db: the database dependency
+    :return: a success dictionary signifying the operation was successful
+    """
+
     try:
         contents = await file.read()
         save_file(file.filename, contents)
@@ -227,6 +243,14 @@ async def load(payload: Experience):
 @app.post("/remove-remote-experience")
 @check_adb_running
 async def remove_remote_experience(payload: Experience, db: Session = Depends(get_db)):
+    """
+        Removes an experience from the database.
+
+    :param payload: an Experience object containing the experience name.
+    :param db: the database dependency
+    :return: a success dictionary signifying the operation was successful
+    """
+
     try:
         if payload.experience:
             db.delete(get_apk_details(db, apk_name=payload.experience))
@@ -244,7 +268,7 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
     """
         Adds a new experience, which has either been previously installed or is available on the device already.
 
-    :param payload:
+    :param payload: a NewExperience object containing all necessary details for creating a new experience
     :param db: the database dependency
     :return: a success dictionary signifying the operation was successful
     """
@@ -275,7 +299,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
 
-    :param payload: a list of devices to stop the experience on
+    :param payload: an Experience object containing a list of devices and the experience to stop
     :param db: the database dependency
     :return: a dictionary containing the success flag of the operation and any errors
     """
@@ -402,7 +426,6 @@ async def exit_server():
         Kills the ADB server and all connections with devices. Essentially a system shutdown, where the FastAPI backend
         remains alive.
 
-
     :return: a dictionary containing the success flag
     """
 
@@ -416,7 +439,7 @@ async def exit_server():
 
 @app.get("/screen-grab")
 @check_adb_running
-async def screen_grab(request: Request):
+async def screen_grab():
     """
         Gets a screenshot from every device.
     :param request: the Request object
@@ -447,6 +470,13 @@ async def screen_grab(request: Request):
 @app.post("/volume")
 @check_adb_running
 async def volume(payload: Volume):
+    """
+        Sets the volume of a list of devices.
+
+    :param volume: a Volume object containing a list of devices and a volume
+    :return: a dictionary containing the success flag
+    """
+
     client_list = process_devices(client, payload)
 
     fails = []
