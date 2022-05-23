@@ -366,11 +366,13 @@ class DeviceCard extends HTMLElement {
                 this.updateSelected(false)
             }
         })
-        var check_experiences = this.shadowRoot.getElementById('checkExperiences')
-        check_experiences.setAttribute('device_id', deviceId);
 
-        var stop_some_experience_btn = this.shadowRoot.getElementById('stop_some_experience')
-        stop_some_experience_btn.setAttribute('device_id', deviceId);
+        // setting this attribute on the nodes themselves to avoid future breakage during UI redesign
+        for (var el_id of ['checkExperiences', 'stop_some_experience', 'setIcon']) {
+            var el = this.shadowRoot.getElementById(el_id);
+            // should really be setting data-device_id
+            el.setAttribute('device_id', deviceId)
+        }
 
         var check_battery_mins_wait = 5;
         this.getBatteryPercentage()
@@ -600,24 +602,61 @@ function gather_experiences(el) {
         })
 }
 
+function set_icon(el) {
+    var icon_modal = $('#setIconModal');
+    var device_id = el.getAttribute('device_id');
+    $(icon_modal).modal('show');
+    $(icon_modal).on("hidden.bs.modal", function () {
+        // put your default event here
+        var selected = $("input[type='radio'][name='icon-options']:checked");
+        if (selected) {
+            var col = $(selected[0]).data('col');
+            var icon = $(selected[0]).data('icon');
+            $(el).children('svg').remove();
+            var cloned_icon = $(selected.parent().find('svg')[0]).clone();
+            cloned_icon.css('color', col);
+            $(el).append(cloned_icon);
+
+            fetch('set-device-icon/' + device_id, {
+                method: 'POST',
+                body: JSON.stringify({'col': col, 'icon': icon}),
+                headers: {"Content-type": "application/json"}
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json();
+            }).then((response) => {
+                if (params['success']) params['success'](response);
+            }).catch(function (error) {
+                if (params['problem']) params['problem'](error);
+                showStatus("Error: " + error, true);
+
+            }).finally(function () {
+                if (params['finally']) params['finally']();
+            });
+        }
+    });
+}
+
 function stop_some_experience(el) {
 
     var device = el.getAttribute('device_id');
 
-            send({
-            body: { 'experience': '?'},
-            start: function () {
-            },
-            url: '/command/stop-some-experience/' + device,
-            success: function (data) {
-                showStatus(data['outcome']);
+    send({
+        body: {'experience': '?'},
+        start: function () {
+        },
+        url: '/command/stop-some-experience/' + device,
+        success: function (data) {
+            showStatus(data['outcome']);
 
-            },
-            problem: function (error) {
-                showStatus("Error stopping experience: " + error);
-            },
-            finally: function () {
+        },
+        problem: function (error) {
+            showStatus("Error stopping experience: " + error);
+        },
+        finally: function () {
 
-            }
-        })
+        }
+    })
 }

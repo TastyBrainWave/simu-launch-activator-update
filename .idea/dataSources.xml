@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:sqlite:C:\Users\obu30\PycharmProjects\simu-launch\sqlLite.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="sqlLite.db" uuid="c85894c7-3b4b-46cc-94fe-b45f54f565b7">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/sqlLite.db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

@@ -2,37 +2,39 @@
 
 {% block content %}
 
-  {% include "ui/navbar.html"%}
+  {% include "ui/navbar.html" %}
   {% include "load/upload_modal.html" %}
   {% include "load/load_modal.html" %}
   {% include "experiences/set_experience_modal.html" %}
+  {% include "icons/set_icon_modal.html" %}
   {% include "experiences/stop_experience_modal.html" %}
   {% include "experiences/add_experience_modal.html" %}
   {% include "experiences/remove_experience_modal.html" %}
   {% include "experiences/experiences_modal.html" %}
   {% include "ui/card.html" %}
 
-<div class="container align-self-center">
-  <div class="position-absolute end-0 me-2" style="z-index: 11">
-    <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="d-flex">
-        <div id="status" class="toast-body fs-5 text"></div>
-        <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+  <div class="container align-self-center">
+    <div class="position-absolute end-0 me-2" style="z-index: 11">
+      <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div id="status" class="toast-body fs-5 text"></div>
+          <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"
+                  aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+    <div id="main-container" class="row row-cols-1 row-cols-md-4 g-4 mt-3 float-center">
+    </div>
+    <div class="row justify-content-center mt-2" id="volumeDiv">
+      <div class="col-12 align-items-center justify-content-center border rounded p-4">
+        <label for="volume" class="form-label fs-3 text">Volume</label>
+        <input type="range" class="form-range" min="0" value="10" max="15" step="1" id="volume">
       </div>
     </div>
   </div>
-  <div id="main-container" class="row row-cols-1 row-cols-md-4 g-4 mt-3 float-center">
-  </div>
-  <div class="row justify-content-center mt-2" id="volumeDiv">
-    <div class="col-12 align-items-center justify-content-center border rounded p-4">
-      <label for="volume" class="form-label fs-3 text">Volume</label>
-      <input type="range" class="form-range"  min="0" value="10" max="15" step="1" id="volume">
-    </div>
-  </div>
-</div>
 
 {% endblock %}
 
 {% block javascript %}
-<script defer src="/static/main.js"></script>
+  <script defer src="/static/main.js"></script>
 {% endblock %}
