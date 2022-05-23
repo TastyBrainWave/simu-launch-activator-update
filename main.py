@@ -1,5 +1,6 @@
 import base64
 import datetime
+import multiprocessing
 import os
 from functools import partial, wraps
 import cv2
@@ -368,23 +369,24 @@ async def connect(request: Request):
         working = False
         i = 0
 
-        # Attempt connection 3 times
+        p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
+        p.start()
+        
+        p.join(5)
 
-        while not working or i < 3:
-            working = client.remote_connect(device_ip, port=BASE_PORT)
-            i += 1
 
-        connected_device = Device(client, device_ip)
-        connect_actions(connected_device)
+        if not p.is_alive():
+            connected_device = Device(client, device_ip)
+            connect_actions(connected_device)
 
-        if working:
             print(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
             )
 
             return {"success": True, "serial": device_ip}
 
-        return {"success": False}
+        print("alive")
+        raise RuntimeError("Could not connect device. Make sure the device is connected on the same router as the server!")
     except RuntimeError as e:
         return {"success": False, "error_log": e.__str__()}
 
