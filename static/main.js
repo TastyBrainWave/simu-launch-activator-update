@@ -157,7 +157,7 @@ function loadExperience() {
         body: body,
         success: function (data) {
             $('#loadModal').modal('hide');
-            showStatus("Experience has loaded on " + data.json()["device_count"] + " devices!");
+            showStatus("Experience has loaded on " + data["device_count"] + " devices!");
         },
         problem: function (error) {
             showStatus("Error loading experience: " + error);
