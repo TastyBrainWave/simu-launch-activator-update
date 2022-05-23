@@ -460,7 +460,7 @@ var devices_manager = function () {
 
     var card_map = {}; // {device_name: {'card': my_card, 'poll': my_poll}
 
-    var default_polling_rate = 4000 // ms
+    var default_polling_rate = 10000 // ms
     var image_height = 100;
 
     function screengrab_polling(device, on, rate) {
