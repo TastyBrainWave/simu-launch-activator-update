@@ -517,7 +517,7 @@ var devices_manager = function () {
         })
         .then(function (json) {
             for (var device of json['devices']) {
-                var card = new DeviceCard("https://picsum.photos/200", device, false);
+                var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
                 cardList.push(card);
                 document.querySelector("#main-container").appendChild(card);
                 card_map[device] = card
