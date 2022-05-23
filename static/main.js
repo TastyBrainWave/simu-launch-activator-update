@@ -181,7 +181,7 @@ function addRemoteExperience() {
     send({
         url: '/add-remote-experience',
         start: function () {
-            document.getElementById("addRemoteButton").classList.add("disabled");
+
         },
         body: {
             "apk_name": document.getElementById("apk_name").value,
@@ -192,7 +192,7 @@ function addRemoteExperience() {
             showStatus("Experience has been added! You may now set it as the active experience");
         },
         finally: function () {
-            document.getElementById("addRemoteButton").classList.remove("disabled");
+
         }
     })
 
