@@ -388,7 +388,7 @@ async def connect(request: Request):
         print("alive")
         raise RuntimeError("Could not connect device. Make sure the device is connected on the same router as the server!")
     except RuntimeError as e:
-        return {"success": False, "error_log": e.__str__()}
+        return {"success": False, "error": e.__str__()}
 
 
 @app.post("/disconnect")

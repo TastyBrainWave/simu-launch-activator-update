@@ -56,10 +56,13 @@ function send(params) {
         }
         return response.json();
     }).then((response) => {
+        if (response['success'] == false) {
+            throw Error(response['error']);
+        }
         if (params['success']) params['success'](response);
     }).catch(function (error) {
         if (params['problem']) params['problem'](error);
-        showStatus("Error: " + error, true);
+        showStatus(error, true);
 
     }).finally(function () {
         if (params['finally']) params['finally']();
