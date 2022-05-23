@@ -21,7 +21,7 @@ from starlette.templating import Jinja2Templates
 from helpers import launch_app, save_file, process_devices, connect_actions
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
-from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon
+from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetailsBase
 
@@ -65,14 +65,15 @@ def check_adb_running(func):
 
 @app.get("/devices")
 @check_adb_running
-async def devices():
+async def devices(db: Session = Depends(get_db)):
     devices = []
     errs = []
 
     try:
         device: Device
         for device in client.devices():
-            devices.append(str(device.serial))
+            my_device_icon = get_device_icon(db, device.serial)
+            devices.append({'id': str(device.serial), 'icon': my_device_icon})
     except RuntimeError as e:
         errs.append(str(e))
     return {'devices': devices, 'errs': errs}
@@ -105,6 +106,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "app_name": simu_application_name,
             "icons": icons,
             "cols": cols,
+            "icon_width": my_width,
         },
     )
 
@@ -470,12 +472,13 @@ async def volume(payload: Volume):
 my_devices = None
 screen_shots_cache = {}
 
+my_width = 192
+my_height = 108
 
 async def check_image(device_serial, refresh_ms, size):
     async def gen_image():
 
-        my_width = 192
-        my_height = 108
+
         device: DeviceAsync = await client_async.device(device_serial)
 
         im = await device.screencap()
@@ -486,8 +489,8 @@ async def check_image(device_serial, refresh_ms, size):
                 image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
             height = image.shape[0]
-            width = int(image.shape[1] / height * 320)
-            height = 320
+            width = int(image.shape[1] / height * my_height)
+            height = my_height
 
             dsize = (width, height)
             image = cv2.resize(image, dsize)

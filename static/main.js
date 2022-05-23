@@ -347,7 +347,7 @@ function getScreenshots() {
 
 //DEVICE CARDS
 class DeviceCard extends HTMLElement {
-    constructor(image, deviceId, selected) {
+    constructor(image, device, selected) {
         super();
         this.attachShadow({mode: 'open'});
         var bootstrapStyles = document.createElement('link')
@@ -356,7 +356,8 @@ class DeviceCard extends HTMLElement {
         this.shadowRoot.appendChild(bootstrapStyles);
         this.shadowRoot.appendChild(document.querySelector("#device-card").content.cloneNode(true));
         this.image = image;
-        this.deviceId = deviceId;
+        this.deviceId = device['id'];
+        this.device_icon = device['icon'];
         this.selected = selected;
         var checkbox = this.shadowRoot.getElementById("cardSelect");
         checkbox.addEventListener('change', () => {
@@ -367,11 +368,29 @@ class DeviceCard extends HTMLElement {
             }
         })
 
+        if (this.device_icon) {
+            var el = this.shadowRoot.getElementById('setIcon');
+            $(el).children('svg').remove();
+
+            var col = this.device_icon['col'];
+            var icon = this.device_icon['icon'];
+            var my_id = '#' + col + '-' + icon;
+
+            $('.icon-set').each(function () {
+                if ($(this).data('col') === col && $(this).data('icon') === icon) {
+                    var found= $(this).parent().find('svg')
+                    var cloned_icon = $(found).clone();
+                    cloned_icon.css('color', col);
+                    $(el).append(cloned_icon);
+                }
+            });
+        }
+
         // setting this attribute on the nodes themselves to avoid future breakage during UI redesign
         for (var el_id of ['checkExperiences', 'stop_some_experience', 'setIcon']) {
             var el = this.shadowRoot.getElementById(el_id);
             // should really be setting data-device_id
-            el.setAttribute('device_id', deviceId)
+            el.setAttribute('device_id', this.deviceId)
         }
 
         var check_battery_mins_wait = 5;
@@ -511,9 +530,10 @@ var devices_manager = function () {
             for (var device of json['devices']) {
                 var card = new DeviceCard("https://picsum.photos/200", device, false);
                 cardList.push(card);
+                var device_id = device['id'];
                 document.querySelector("#main-container").appendChild(card);
-                card_map[device] = card
-                screengrab_polling(device, true);
+                card_map[device_id] = card
+                screengrab_polling(device_id, true);
             }
         })
         .catch(function (error) {
@@ -627,14 +647,11 @@ function set_icon(el) {
                 }
                 return response.json();
             }).then((response) => {
-                if (params['success']) params['success'](response);
-            }).catch(function (error) {
-                if (params['problem']) params['problem'](error);
-                showStatus("Error: " + error, true);
 
-            }).finally(function () {
-                if (params['finally']) params['finally']();
-            });
+            }).catch(function (error) {
+
+
+            })
         }
     });
 }
