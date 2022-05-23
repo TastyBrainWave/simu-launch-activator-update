@@ -1,14 +1,11 @@
 import os
 from unittest import TestCase
-from fastapi import Depends
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import Session
 
 from main import app, get_db
-from sql_app import crud
 from sql_app.database import Base
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
