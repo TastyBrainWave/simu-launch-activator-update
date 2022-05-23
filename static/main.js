@@ -117,7 +117,7 @@ function startExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = {"devices": devices, "experience": document.getElementById("set_choices_dropdown").value}
+    var body = { "devices": devices, "experience": document.getElementById("set_choices_dropdown").value }
     send({
         body: body,
         start: function () {
@@ -148,7 +148,7 @@ function loadExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = {"devices": devices, "experience": document.getElementById("load_choices_dropdown").value}
+    var body = { "devices": devices, "experience": document.getElementById("load_choices_dropdown").value }
     send({
         url: '/load',
         start: function () {
@@ -223,22 +223,29 @@ function stopExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = {"devices": devices, "experience": document.getElementById("stop_choices_dropdown").value}
-    send({
-        url: '/stop',
-        start: function () {
-            document.getElementById("stopButton").classList.add("disabled");
-        },
-        body: body,
-        success: function () {
+    var body = { "devices": devices, "experience": document.getElementById("stop_choices_dropdown").value }
+    if (document.getElementById("stop_choices_dropdown").value == "current") {
+        selectedCards().forEach(device => {
+            stop_some_experience(device.shadowRoot.getElementById('checkExperiences'))
+        })
+    }
+    else {
+        send({
+            url: '/stop',
+            start: function () {
+                document.getElementById("stopButton").classList.add("disabled");
+            },
+            body: body,
+            success: function () {
 
-            showStatus("Experience has stopped on device(s)!");
-        },
-        finally: function () {
-            $('#stopExperienceModal').modal('hide');
-            document.getElementById("stopButton").classList.remove("disabled");
-        }
-    })
+                showStatus("Experience has stopped on device(s)!");
+            },
+            finally: function () {
+                $('#stopExperienceModal').modal('hide');
+                document.getElementById("stopButton").classList.remove("disabled");
+            }
+        })
+    }
 }
 
 function connectDevice() {
@@ -349,7 +356,7 @@ function getScreenshots() {
 class DeviceCard extends HTMLElement {
     constructor(image, deviceId, selected) {
         super();
-        this.attachShadow({mode: 'open'});
+        this.attachShadow({ mode: 'open' });
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
         bootstrapStyles.href = 'static/bootstrap-5.2.0-beta1-dist/css/bootstrap.css'
@@ -558,7 +565,7 @@ window.addEventListener('load', function () {
 
         send({
             url: 'volume',
-            body: {'volume': volume},
+            body: { 'volume': volume },
             success: function () {
                 showStatus('Changed volume to ' + volume);
             },
@@ -604,20 +611,20 @@ function stop_some_experience(el) {
 
     var device = el.getAttribute('device_id');
 
-            send({
-            body: { 'experience': '?'},
-            start: function () {
-            },
-            url: '/command/stop-some-experience/' + device,
-            success: function (data) {
-                showStatus(data['outcome']);
+    send({
+        body: { 'experience': '?' },
+        start: function () {
+        },
+        url: '/command/stop-some-experience/' + device,
+        success: function (data) {
+            showStatus(data['outcome']);
 
-            },
-            problem: function (error) {
-                showStatus("Error stopping experience: " + error);
-            },
-            finally: function () {
+        },
+        problem: function (error) {
+            showStatus("Error stopping experience: " + error);
+        },
+        finally: function () {
 
-            }
-        })
+        }
+    })
 }
