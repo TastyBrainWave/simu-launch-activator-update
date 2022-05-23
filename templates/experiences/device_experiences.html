@@ -1,12 +1,12 @@
 <div class="list-group list-group-flush" data-device="{{ device }}">
   {% for experience in experiences %}
-    <li class="list-group-item" data-experience="{{ experience.package }}">
+  <li class="list-group-item" data-experience="{{ experience.package }}">
     <div class="btn-group" role="group" aria-label="commands">
-      <button type="button" class="btn btn-lg fs-2" onclick="start_experience(this)">
-        {% include 'icons/play.html' %}</button>
-      <button type="button" class="btn btn-lg fs-2 text-danger" onclick="stop_experience(this)">{% include 'icons/stop.html' %}</button>
+      <button type="button" class="btn text-bg-success" onclick="start_experience(this)">
+        {% include 'icons/play-fill.html' %}</button>
+      <button type="button" class="btn text-bg-danger" onclick="stop_experience(this)">{% include 'icons/stop-fill.html' %}</button>
     </div>
-      {{ experience.name }}
-    </li>
+    {{ experience.name }}
+  </li>
   {% endfor %}
 </div>
