@@ -485,6 +485,10 @@ var devices_manager = function () {
 
     var image_height = defaults.screen_height;
 
+    api.refresh_devices = function(){
+        location.reload();
+    }
+
     function screengrab_polling(device, on, rate) {
         if (!rate) rate = defaults.screen_polling_ms;
         if (!on) on = true;
@@ -517,7 +521,7 @@ var devices_manager = function () {
                 })
                 .catch(function () {
                     console.log('error with polling for device ' + device)
-                    location.reload()
+                    api.refresh_devices()
                 })
                 .finally(function () {
                     lock = false;
@@ -537,9 +541,10 @@ var devices_manager = function () {
         .then(function (json) {
             for (var device of json['devices']) {
                 var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
+                card.classList.add('col')
                 cardList.push(card);
                 var device_id = device['id'];
-                document.querySelector("#main-container").appendChild(card);
+                document.querySelector("#main-container").prepend(card);
                 card_map[device_id] = card
                 screengrab_polling(device_id, true);
             }

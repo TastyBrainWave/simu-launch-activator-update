@@ -13,7 +13,7 @@
   {% include "experiences/experiences_modal.html" %}
   {% include "ui/card.html" %}
 
-  <div class="container align-self-center">
+  <div class="container align-self-center mt-4">
     <div class="position-absolute end-0 me-2" style="z-index: 11">
       <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
@@ -23,8 +23,12 @@
         </div>
       </div>
     </div>
-    <div id="main-container" class="row row-cols-1 row-cols-md-4 g-4 mt-3 float-center">
-
+    <div id="main-container" class="row">
+      <div class="col text-center">
+        <btn class="btn btn-outline-light" onclick="devices_manager.refresh_devices()">
+          <img src="/static/icons_set/arrow-repeat.svg" alt="refresh devices" class="img-fluid" width="64" height="64 ">
+        </btn>
+      </div>
     </div>
     <div class="row mt-2" id="volumeDiv">
       <div class="col-12 align-items-center justify-content-center border rounded p-4">
