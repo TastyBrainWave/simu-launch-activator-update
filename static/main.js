@@ -587,6 +587,9 @@ window.addEventListener('load', function () {
     slider.on('change', function (ev) {
         var volume = parseInt(slider.val());
 
+         $('.volume-label').text(volume);
+
+
 
         send({
             url: 'volume',
