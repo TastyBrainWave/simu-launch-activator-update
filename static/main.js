@@ -636,8 +636,10 @@ function set_icon(el) {
     var icon_modal = $('#setIconModal');
     var device_id = el.getAttribute('device_id');
     $(icon_modal).modal('show');
-    $(icon_modal).on("hidden.bs.modal", function () {
+
+    $('.icon-set').on("click", function () {
         // put your default event here
+        $(icon_modal).modal('hide');
         var selected = $("input[type='radio'][name='icon-options']:checked");
         if (selected) {
             var col = $(selected[0]).data('col');
