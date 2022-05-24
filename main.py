@@ -22,7 +22,7 @@ from starlette.templating import Jinja2Templates
 from helpers import launch_app, save_file, process_devices, connect_actions
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
-from sql_app.crud import get_all_apk_details, get_apk_details
+from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetailsBase
 
@@ -66,7 +66,7 @@ def check_adb_running(func):
 
 @app.get("/devices")
 @check_adb_running
-async def devices():
+async def devices(db: Session = Depends(get_db)):
     """
         Gets a list of all devices connected via ADB.
 
@@ -79,11 +79,14 @@ async def devices():
     try:
         device: Device
         for device in client.devices():
-            devices.append(str(device.serial))
+            my_device_icon = get_device_icon(db, device.serial)
+            devices.append({'id': str(device.serial), 'icon': my_device_icon})
     except RuntimeError as e:
         errs.append(str(e))
     return {'devices': devices, 'errs': errs}
 
+icons = ['3-bars', '2-bars', '1-bar', 'circle-fill', 'square-fill', 'plus-lg', 'heart-fill', 'triangle-fill']
+cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
 
 @app.get("/")
 @check_adb_running
@@ -108,6 +111,9 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "request": request,
             "choices": [item.apk_name for item in uploaded_experiences],
             "app_name": simu_application_name,
+            "icons": icons,
+            "cols": cols,
+            "icon_width": my_width,
         },
     )
 
@@ -371,7 +377,7 @@ async def connect(request: Request):
 
         p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
         p.start()
-        
+
         p.join(5)
 
 
@@ -498,12 +504,13 @@ async def volume(payload: Volume):
 my_devices = None
 screen_shots_cache = {}
 
+my_width = 192
+my_height = 108
 
 async def check_image(device_serial, refresh_ms, size):
     async def gen_image():
 
-        my_width = 192
-        my_height = 108
+
         device: DeviceAsync = await client_async.device(device_serial)
 
         im = await device.screencap()
@@ -514,8 +521,8 @@ async def check_image(device_serial, refresh_ms, size):
                 image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
             height = image.shape[0]
-            width = int(image.shape[1] / height * 320)
-            height = 320
+            width = int(image.shape[1] / height * my_height)
+            height = my_height
 
             dsize = (width, height)
             image = cv2.resize(image, dsize)
@@ -621,3 +628,14 @@ async def device_command(request: Request, command: str, device_serial: str):
             return {'success': True, 'outcome': outcome + ' successfully stopped!'}
         else:
             return {'success': False, 'outcome': 'No experience detected to be running'}
+
+
+@app.post("/set-device-icon/{device_serial}")
+async def device_icon(request: Request, device_serial: str, db: Session = Depends(get_db)):
+
+    json = await request.json()
+    col = json['col']
+    icon = json['icon']
+    set_device_icon(db=db, device_id=device_serial, icon=icon, col=col)
+    return {'success': True}
+

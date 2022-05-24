@@ -1,0 +1,36 @@
+<div class="modal fade" id="setIconModal" tabindex="-1" aria-labelledby="setIconModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="setIconModalLabel">Set label</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="setRemoteExperienceForm" action="/set-remote-experience" enctype="multipart/form-data" method="post">
+
+          <span class="text-danger">
+
+            {% for col in cols %}
+              <div>
+            {% for icon in icons %}
+              {% set icon = 'icons/' + icon + '.svg' %}
+              <span class="">
+                <input type="radio" class="btn-check icon-set" data-col="{{ col }}" data-icon="{{ icon }}"
+                       name="icon-options" id="{{ col }}-{{ icon }}" autocomplete="off">
+                <label class="btn btn-lg" style="color: {{ col }};"
+                       for="{{ col }}-{{ icon }}"><span>{% include icon %}</span></label>
+              </span>
+            {% endfor %}
+              </div>
+            {% endfor %}
+          </span>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

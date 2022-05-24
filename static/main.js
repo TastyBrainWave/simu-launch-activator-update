@@ -56,7 +56,7 @@ function send(params) {
         }
         return response.json();
     }).then((response) => {
-        if (response['success'] == false) {
+        if (response['success'] === false) {
             throw Error(response['error']);
         }
         if (params['success']) params['success'](response);
@@ -227,7 +227,7 @@ function stopExperience() {
         devices.push(element.deviceId)
     });
     var body = { "devices": devices, "experience": document.getElementById("stop_choices_dropdown").value }
-    if (document.getElementById("stop_choices_dropdown").value == "current") {
+    if (document.getElementById("stop_choices_dropdown").value === "current") {
         selectedCards().forEach(device => {
             stop_some_experience(device.shadowRoot.getElementById('checkExperiences'))
         })
@@ -357,7 +357,7 @@ function getScreenshots() {
 
 //DEVICE CARDS
 class DeviceCard extends HTMLElement {
-    constructor(image, deviceId, selected) {
+    constructor(image, device, selected) {
         super();
         this.attachShadow({ mode: 'open' });
         var bootstrapStyles = document.createElement('link')
@@ -366,7 +366,8 @@ class DeviceCard extends HTMLElement {
         this.shadowRoot.appendChild(bootstrapStyles);
         this.shadowRoot.appendChild(document.querySelector("#device-card").content.cloneNode(true));
         this.image = image;
-        this.deviceId = deviceId;
+        this.deviceId = device['id'];
+        this.device_icon = device['icon'];
         this.selected = selected;
         var checkbox = this.shadowRoot.getElementById("cardSelect");
         checkbox.addEventListener('change', () => {
@@ -376,11 +377,31 @@ class DeviceCard extends HTMLElement {
                 this.updateSelected(false)
             }
         })
-        var check_experiences = this.shadowRoot.getElementById('checkExperiences')
-        check_experiences.setAttribute('device_id', deviceId);
 
-        var stop_some_experience_btn = this.shadowRoot.getElementById('stop_some_experience')
-        stop_some_experience_btn.setAttribute('device_id', deviceId);
+        if (this.device_icon) {
+            var el = this.shadowRoot.getElementById('setIcon');
+            $(el).children('svg').remove();
+
+            var col = this.device_icon['col'];
+            var icon = this.device_icon['icon'];
+            var my_id = '#' + col + '-' + icon;
+
+            $('.icon-set').each(function () {
+                if ($(this).data('col') === col && $(this).data('icon') === icon) {
+                    var found= $(this).parent().find('svg')
+                    var cloned_icon = $(found).clone();
+                    cloned_icon.css('color', col);
+                    $(el).append(cloned_icon);
+                }
+            });
+        }
+
+        // setting this attribute on the nodes themselves to avoid future breakage during UI redesign
+        for (var el_id of ['checkExperiences', 'stop_some_experience', 'setIcon']) {
+            var el = this.shadowRoot.getElementById(el_id);
+            // should really be setting data-device_id
+            el.setAttribute('device_id', this.deviceId)
+        }
 
         var check_battery_mins_wait = 5;
         this.getBatteryPercentage()
@@ -519,9 +540,10 @@ var devices_manager = function () {
             for (var device of json['devices']) {
                 var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
                 cardList.push(card);
+                var device_id = device['id'];
                 document.querySelector("#main-container").appendChild(card);
-                card_map[device] = card
-                screengrab_polling(device, true);
+                card_map[device_id] = card
+                screengrab_polling(device_id, true);
             }
         })
         .catch(function (error) {
@@ -610,6 +632,40 @@ function gather_experiences(el) {
         })
 }
 
+function set_icon(el) {
+    var icon_modal = $('#setIconModal');
+    var device_id = el.getAttribute('device_id');
+    $(icon_modal).modal('show');
+    $(icon_modal).on("hidden.bs.modal", function () {
+        // put your default event here
+        var selected = $("input[type='radio'][name='icon-options']:checked");
+        if (selected) {
+            var col = $(selected[0]).data('col');
+            var icon = $(selected[0]).data('icon');
+            $(el).children('svg').remove();
+            var cloned_icon = $(selected.parent().find('svg')[0]).clone();
+            cloned_icon.css('color', col);
+            $(el).append(cloned_icon);
+
+            fetch('set-device-icon/' + device_id, {
+                method: 'POST',
+                body: JSON.stringify({'col': col, 'icon': icon}),
+                headers: {"Content-type": "application/json"}
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json();
+            }).then((response) => {
+
+            }).catch(function (error) {
+
+
+            })
+        }
+    });
+}
+
 function stop_some_experience(el) {
 
     var device = el.getAttribute('device_id');
@@ -622,12 +678,12 @@ function stop_some_experience(el) {
         success: function (data) {
             showStatus(data['outcome']);
 
-        },
-        problem: function (error) {
-            showStatus("Error stopping experience: " + error);
-        },
-        finally: function () {
+            },
+            problem: function (error) {
+                showStatus("Error stopping experience: " + error);
+            },
+            finally: function () {
 
-        }
-    })
+            }
+        })
 }
