@@ -31,8 +31,6 @@ function send(params) {
     if (!params['headers']["Content-type"]) params['headers']["Content-type"] = "application/json";
     if (!params['method']) params['method'] = 'POST';
 
-    console.log(params['body'])
-
     if (!params['body']) {
         if (params['method'].toLowerCase() === 'post') {
             params['body'] = {}
@@ -43,8 +41,6 @@ function send(params) {
     }
 
     if (params['start']) params['start']();
-
-    console.log(params)
 
     fetch(params['url'], {
         method: params['method'],
@@ -491,7 +487,8 @@ var devices_manager = function () {
     }
 
     function screengrab_polling(device, on) {
-        if (!on) on = true;
+
+        if (on === undefined) on = true;
 
         // let's always remove existing polling
         if (card_map[device]['poll']) {
@@ -524,44 +521,69 @@ var devices_manager = function () {
                 })
                 .catch(function () {
                     console.log('error with polling for device ' + device)
-                    api.refresh_devices()
+                    //api.refresh_devices()
                 })
                 .finally(function () {
-                    card_map[device]['poll'] = setTimeout(poll, rate);
+                    if(card_map[device]) {
+                        card_map[device]['poll'] = setTimeout(poll, rate);
+                    }
                     lock = false;
                 })
         }
     }
 
-    fetch('devices', {
-        method: 'GET',
-    })
-        .then(function (response) {
-            if (!response.ok) {
-                throw Error(response.statusText);
-            }
-            return response.json()
+    function get_devices() {
+        console.log('polling for new devices')
+        fetch('devices', {
+            method: 'GET',
         })
-        .then(function (json) {
-            var devices_count  = json['devices'].length;
-            if(devices_count>0){
-                document.getElementById('no-devices').remove();
-            }
+            .then(function (response) {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response.json()
+            })
+            .then(function (json) {
+                var devices_count = json['devices'].length;
+                if (devices_count > 0) {
+                    var found = document.getElementById('no-devices');
+                    if(found) found.remove();
+                }
+                var devices_here = [];
+                var devices_so_far = Object.keys(card_map);
 
-            for (var device of json['devices']) {
-                var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
-                card.classList.add('col')
-                cardList.push(card);
-                var device_id = device['id'];
+                for (var device of json['devices']) {
+                    var device_id = device['id'];
+                    devices_here.push(device_id);
+                    var found_at = devices_so_far.indexOf(device_id)
+                    if(found_at === -1) {
+                        var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
+                        card.classList.add('col')
+                        cardList.push(card);
+                        document.querySelector("#main-container").prepend(card);
+                        card_map[device_id] = card
+                        screengrab_polling(device_id, true);
+                    }
+                    else{
+                        devices_so_far.splice(found_at, 1);
+                    }
+                }
+                for(var d_missing of devices_so_far){
+                    screengrab_polling(d_missing, false);
+                    var card = card_map[d_missing];
+                    delete card_map[d_missing];
+                    var i = cardList.indexOf(d_missing);
+                    cardList.splice(i, 1);
+                    document.querySelector("#main-container").removeChild(card);
+                }
 
-                document.querySelector("#main-container").prepend(card);
-                card_map[device_id] = card
-                screengrab_polling(device_id, true);
-            }
-        })
-        .catch(function (error) {
-            console.log(error);
-        })
+            })
+            .catch(function (error) {
+                console.log(error);
+            })
+    }
+    get_devices();
+    setInterval(get_devices, defaults.check_for_new_devices_poll);
 
 
     api.devices = function () {
