@@ -38,3 +38,19 @@ def get_device_icon(db: Session, device_id: str):
     return {'col': instance.col, 'icon': instance.icon}
 
 
+def _get_settings(db: Session):
+    instance = db.query(models.Settings ).first()
+    if not instance:
+        instance = models.Settings()
+        db.add(instance)
+        db.commit()
+    return instance
+
+def update_settings(db, screen_updates: int):
+    instance = _get_settings(db)
+    instance.screen_updates = screen_updates
+    db.commit()
+
+def crud_defaults(db: Session, so_far):
+    instance = _get_settings(db)
+    so_far['screen_updates'] = instance.screen_updates

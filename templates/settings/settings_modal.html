@@ -1,0 +1,51 @@
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loadModalLabel">Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+
+        <form id="settingsForm" action="/load" enctype="multipart/form-data" method="post">
+          <div class="formbuilder-number form-group field-screen-updates">
+            <label for="screen-updates" class="formbuilder-number-label">Screen Polling (seconds)<span
+                class="formbuilder-required">*</span><span class="tooltip-element"
+                                                           tooltip="Time between screen updates (in seconds)">?</span></label>
+            <input type="number" class="form-control" name="screen_updates" value="{{ defaults.screen_updates }}" min="0" max="1000"
+                   id="screen-updates" title="Time between screen updates (in seconds)" required="required"
+                   aria-required="true">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="settings_modal()">Submit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    function settings_modal() {
+        const formElement = document.getElementById('settingsForm');
+        var formData = new FormData(formElement);
+        fetch('/settings', {
+            method: 'POST',
+            body: formData
+        }).then(function (response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+
+            $('#settingsModal').modal('hide')
+
+            return response.json();
+        }).then(function (data) {
+            showStatus("Settings have been uploaded. Refresh for changes to take effect.");
+        }).catch(function (error) {
+            console.log(error);
+            showStatus("Error updating settings: " + error);
+        })
+    }
+</script>

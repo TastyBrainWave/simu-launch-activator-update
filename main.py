@@ -22,7 +22,7 @@ from starlette.templating import Jinja2Templates
 from helpers import launch_app, save_file, process_devices, connect_actions
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
-from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon
+from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon, crud_defaults
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetailsBase
 
@@ -64,6 +64,14 @@ def check_adb_running(func):
     return wrapper
 
 
+@app.post("/settings")
+async def settings(screen_updates: int = Form(...),
+                   db: Session = Depends(get_db)):
+    crud.update_settings(db, screen_updates=screen_updates)
+    crud_defaults(SessionLocal(), defaults)
+    return {'success': True}
+
+
 @app.get("/devices")
 @check_adb_running
 async def devices(db: Session = Depends(get_db)):
@@ -90,10 +98,10 @@ icons = ['3-bars', '2-bars', '1-bar', 'circle-fill', 'square-fill', 'plus-lg', '
 cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
 
 defaults = {
-    "screen_polling_ms": 10000,
     "screen_width": 192,
     "screen_height": 108,
 }
+crud_defaults(SessionLocal(), defaults)
 
 
 @app.get("/")

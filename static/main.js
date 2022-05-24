@@ -484,25 +484,29 @@ var devices_manager = function () {
     var card_map = {}; // {device_name: {'card': my_card, 'poll': my_poll}
 
     var image_height = defaults.screen_height;
-
-    api.refresh_devices = function(){
+    var rate = defaults.screen_updates * 1000;
+    api.refresh_devices = function () {
         location.reload();
     }
 
-    function screengrab_polling(device, on, rate) {
-        if (!rate) rate = defaults.screen_polling_ms;
+    function screengrab_polling(device, on) {
+
         if (!on) on = true;
 
         // let's always remove existing polling
         if (card_map[device]['poll']) {
-            clearInterval(card_map[device]['poll'])
+            clearTimeout(card_map[device]['poll']);
             card_map[device]['poll'] = undefined;
         }
 
         if (on) {
-            poll();
-            card_map[device]['poll'] = setInterval(poll, rate);
+            setTimeout(function () {
+                poll();
+                card_map[device]['poll'] = setTimeout(poll, rate);
+            }, Math.random() * 1000);
+
         }
+
         var lock = false;
 
         function poll() {
@@ -516,14 +520,14 @@ var devices_manager = function () {
                 })
                 .then(function (json) {
                     var b64_image = json['base64_image'];
-                    card_map[device].updateImage64(b64_image)
-                    //console.log(b64_image, 22);
+                    card_map[device].updateImage64(b64_image);
                 })
                 .catch(function () {
                     console.log('error with polling for device ' + device)
                     api.refresh_devices()
                 })
                 .finally(function () {
+                    card_map[device]['poll'] = setTimeout(poll, rate);
                     lock = false;
                 })
         }
@@ -539,6 +543,7 @@ var devices_manager = function () {
             return response.json()
         })
         .then(function (json) {
+
             for (var device of json['devices']) {
                 var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
                 card.classList.add('col')
@@ -546,7 +551,10 @@ var devices_manager = function () {
                 var device_id = device['id'];
                 document.querySelector("#main-container").prepend(card);
                 card_map[device_id] = card
+
                 screengrab_polling(device_id, true);
+
+
             }
         })
         .catch(function (error) {

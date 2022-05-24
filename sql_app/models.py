@@ -26,3 +26,9 @@ class DeviceInfo(Base):
     device_id = Column(String, index=True)
     col = Column(String)
     icon = Column(String)
+
+
+class Settings(Base):
+    __tablename__ = 'settings'
+    id = Column(Integer, primary_key=True, index=True)
+    screen_updates = Column(Integer, index=True, default=8)
