@@ -120,7 +120,7 @@ function startExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices, "experience": document.getElementById("set_choices_dropdown").value }
+    var body = {"devices": devices, "experience": document.getElementById("set_choices_dropdown").value}
     send({
         body: body,
         start: function () {
@@ -151,7 +151,7 @@ function loadExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices, "experience": document.getElementById("load_choices_dropdown").value }
+    var body = {"devices": devices, "experience": document.getElementById("load_choices_dropdown").value}
     send({
         url: '/load',
         start: function () {
@@ -226,13 +226,12 @@ function stopExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = { "devices": devices, "experience": document.getElementById("stop_choices_dropdown").value }
+    var body = {"devices": devices, "experience": document.getElementById("stop_choices_dropdown").value}
     if (document.getElementById("stop_choices_dropdown").value === "current") {
         selectedCards().forEach(device => {
             stop_some_experience(device.shadowRoot.getElementById('checkExperiences'))
         })
-    }
-    else {
+    } else {
         send({
             url: '/stop',
             start: function () {
@@ -359,7 +358,7 @@ function getScreenshots() {
 class DeviceCard extends HTMLElement {
     constructor(image, device, selected) {
         super();
-        this.attachShadow({ mode: 'open' });
+        this.attachShadow({mode: 'open'});
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
         bootstrapStyles.href = 'static/bootstrap-5.2.0-beta1-dist/css/bootstrap.css'
@@ -388,7 +387,7 @@ class DeviceCard extends HTMLElement {
 
             $('.icon-set').each(function () {
                 if ($(this).data('col') === col && $(this).data('icon') === icon) {
-                    var found= $(this).parent().find('svg')
+                    var found = $(this).parent().find('svg')
                     var cloned_icon = $(found).clone();
                     cloned_icon.css('color', col);
                     $(el).append(cloned_icon);
@@ -484,11 +483,10 @@ var devices_manager = function () {
 
     var card_map = {}; // {device_name: {'card': my_card, 'poll': my_poll}
 
-    var default_polling_rate = 10000 // ms
-    var image_height = 100;
+    var image_height = defaults.screen_height;
 
     function screengrab_polling(device, on, rate) {
-        if (!rate) rate = default_polling_rate;
+        if (!rate) rate = defaults.screen_polling_ms;
         if (!on) on = true;
 
         // let's always remove existing polling
@@ -584,16 +582,18 @@ window.addEventListener('load', function () {
 
     var slider = $('#volume');
 
+
+    slider.on('input', function () {
+        var volume = parseInt(slider.val());
+        $('.volume-label').text(volume);
+    })
+
     slider.on('change', function (ev) {
         var volume = parseInt(slider.val());
 
-         $('.volume-label').text(volume);
-
-
-
         send({
             url: 'volume',
-            body: { 'volume': volume },
+            body: {'volume': volume},
             success: function () {
                 showStatus('Changed volume to ' + volume);
             },
@@ -676,19 +676,19 @@ function stop_some_experience(el) {
     var device = el.getAttribute('device_id');
 
     send({
-        body: { 'experience': '?' },
+        body: {'experience': '?'},
         start: function () {
         },
         url: '/command/stop-some-experience/' + device,
         success: function (data) {
             showStatus(data['outcome']);
 
-            },
-            problem: function (error) {
-                showStatus("Error stopping experience: " + error);
-            },
-            finally: function () {
+        },
+        problem: function (error) {
+            showStatus("Error stopping experience: " + error);
+        },
+        finally: function () {
 
-            }
-        })
+        }
+    })
 }

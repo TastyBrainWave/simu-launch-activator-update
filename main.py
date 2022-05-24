@@ -85,8 +85,16 @@ async def devices(db: Session = Depends(get_db)):
         errs.append(str(e))
     return {'devices': devices, 'errs': errs}
 
+
 icons = ['3-bars', '2-bars', '1-bar', 'circle-fill', 'square-fill', 'plus-lg', 'heart-fill', 'triangle-fill']
 cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
+
+defaults = {
+    "screen_polling_ms": 1000,
+    "screen_width": 192,
+    "screen_height": 108,
+}
+
 
 @app.get("/")
 @check_adb_running
@@ -113,7 +121,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
             "app_name": simu_application_name,
             "icons": icons,
             "cols": cols,
-            "icon_width": my_width,
+            "defaults": defaults
         },
     )
 
@@ -380,7 +388,6 @@ async def connect(request: Request):
 
         p.join(5)
 
-
         if not p.is_alive():
             connected_device = Device(client, device_ip)
             connect_actions(connected_device)
@@ -392,7 +399,8 @@ async def connect(request: Request):
             return {"success": True, "serial": device_ip}
 
         print("alive")
-        raise RuntimeError("Could not connect device. Make sure the device is connected on the same router as the server!")
+        raise RuntimeError(
+            "Could not connect device. Make sure the device is connected on the same router as the server!")
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
@@ -504,12 +512,9 @@ async def volume(payload: Volume):
 my_devices = None
 screen_shots_cache = {}
 
-my_width = 192
-my_height = 108
 
 async def check_image(device_serial, refresh_ms, size):
     async def gen_image():
-
 
         device: DeviceAsync = await client_async.device(device_serial)
 
@@ -521,8 +526,8 @@ async def check_image(device_serial, refresh_ms, size):
                 image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
             height = image.shape[0]
-            width = int(image.shape[1] / height * my_height)
-            height = my_height
+            width = int(image.shape[1] / height * defaults['screen_height'])
+            height = defaults['screen_height']
 
             dsize = (width, height)
             image = cv2.resize(image, dsize)
@@ -632,10 +637,8 @@ async def device_command(request: Request, command: str, device_serial: str):
 
 @app.post("/set-device-icon/{device_serial}")
 async def device_icon(request: Request, device_serial: str, db: Session = Depends(get_db)):
-
     json = await request.json()
     col = json['col']
     icon = json['icon']
     set_device_icon(db=db, device_id=device_serial, icon=icon, col=col)
     return {'success': True}
-

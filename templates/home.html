@@ -36,5 +36,8 @@
 {% endblock %}
 
 {% block javascript %}
+  <script>
+    var defaults = {{ defaults|safe }};
+  </script>
   <script defer src="/static/main.js"></script>
 {% endblock %}
