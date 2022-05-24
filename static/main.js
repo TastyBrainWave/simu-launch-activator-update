@@ -120,7 +120,7 @@ function startExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = {"devices": devices, "experience": document.getElementById("set_choices_dropdown").value}
+    var body = { "devices": devices, "experience": document.getElementById("set_choices_dropdown").value }
     send({
         body: body,
         start: function () {
@@ -151,7 +151,7 @@ function loadExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = {"devices": devices, "experience": document.getElementById("load_choices_dropdown").value}
+    var body = { "devices": devices, "experience": document.getElementById("load_choices_dropdown").value }
     send({
         url: '/load',
         start: function () {
@@ -226,7 +226,7 @@ function stopExperience() {
     selectedCards().forEach(element => {
         devices.push(element.deviceId)
     });
-    var body = {"devices": devices, "experience": document.getElementById("stop_choices_dropdown").value}
+    var body = { "devices": devices, "experience": document.getElementById("stop_choices_dropdown").value }
     if (document.getElementById("stop_choices_dropdown").value === "current") {
         selectedCards().forEach(device => {
             stop_some_experience(device.shadowRoot.getElementById('checkExperiences'))
@@ -358,7 +358,7 @@ function getScreenshots() {
 class DeviceCard extends HTMLElement {
     constructor(image, device, selected) {
         super();
-        this.attachShadow({mode: 'open'});
+        this.attachShadow({ mode: 'open' });
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
         bootstrapStyles.href = 'static/bootstrap-5.2.0-beta1-dist/css/bootstrap.css'
@@ -485,7 +485,7 @@ var devices_manager = function () {
 
     var image_height = defaults.screen_height;
 
-    api.refresh_devices = function(){
+    api.refresh_devices = function () {
         location.reload();
     }
 
@@ -544,6 +544,7 @@ var devices_manager = function () {
                 card.classList.add('col')
                 cardList.push(card);
                 var device_id = device['id'];
+                document.querySelector('#main-container').innerHTML = "";
                 document.querySelector("#main-container").prepend(card);
                 card_map[device_id] = card
                 screengrab_polling(device_id, true);
@@ -598,7 +599,7 @@ window.addEventListener('load', function () {
 
         send({
             url: 'volume',
-            body: {'volume': volume},
+            body: { 'volume': volume },
             success: function () {
                 showStatus('Changed volume to ' + volume);
             },
@@ -659,8 +660,8 @@ function set_icon(el) {
 
             fetch('set-device-icon/' + device_id, {
                 method: 'POST',
-                body: JSON.stringify({'col': col, 'icon': icon}),
-                headers: {"Content-type": "application/json"}
+                body: JSON.stringify({ 'col': col, 'icon': icon }),
+                headers: { "Content-type": "application/json" }
             }).then(function (response) {
                 if (!response.ok) {
                     throw Error(response.statusText);
@@ -681,7 +682,7 @@ function stop_some_experience(el) {
     var device = el.getAttribute('device_id');
 
     send({
-        body: {'experience': '?'},
+        body: { 'experience': '?' },
         start: function () {
         },
         url: '/command/stop-some-experience/' + device,
