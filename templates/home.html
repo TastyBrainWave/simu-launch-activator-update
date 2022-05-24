@@ -14,7 +14,8 @@
   {% include "ui/card.html" %}
 
   <div class="container align-self-center mt-4">
-    <div class="position-absolute end-0 me-2" style="z-index: 11">
+<!--    please leave below as position-fixed. Elsewise cannot see Toast when scrolled down screen-->
+    <div class="position-fixed end-0 me-2" style="z-index: 11">
       <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
           <div id="status" class="toast-body fs-5 text"></div>
@@ -23,7 +24,7 @@
         </div>
       </div>
     </div>
-    <div id="main-container" class="row">
+    <div id="main-container" class="row row-cols-auto">
       <div class="col text-center">
         <btn class="btn btn-outline-light" onclick="devices_manager.refresh_devices()">
           <img src="/static/icons_set/arrow-repeat.svg" alt="refresh devices" class="img-fluid" width="64" height="64 ">

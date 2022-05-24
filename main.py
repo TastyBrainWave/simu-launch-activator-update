@@ -90,7 +90,7 @@ icons = ['3-bars', '2-bars', '1-bar', 'circle-fill', 'square-fill', 'plus-lg', '
 cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
 
 defaults = {
-    "screen_polling_ms": 1000,
+    "screen_polling_ms": 10000,
     "screen_width": 192,
     "screen_height": 108,
 }
@@ -632,7 +632,7 @@ async def device_command(request: Request, command: str, device_serial: str):
             await device.shell(f"am force-stop {outcome}")
             return {'success': True, 'outcome': outcome + ' successfully stopped!'}
         else:
-            return {'success': False, 'outcome': 'No experience detected to be running'}
+            return {'success': True, 'outcome': 'No experience was running'}
 
 
 @app.post("/set-device-icon/{device_serial}")
