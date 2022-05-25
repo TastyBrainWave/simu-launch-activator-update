@@ -1,0 +1,36 @@
+<div>
+
+  {% for key, devices in combined.items() %}
+  <div class="p-1">
+    <button type="button" class="btn text-bg-success" data-devices="{{ devices }}"
+            data-experience="{{ key }}" onclick="start_experience_some(this)">
+      {% include 'icons/play-fill.html' %}
+    </button>
+    <button type="button" class="btn text-bg-danger" data-devices="{{ devices }}"
+            data-experience="{{ key }}" onclick="stop_experience_some(this)">
+      {% include 'icons/stop-fill.html' %}
+    </button>
+    <h4>{{key}}</h4>
+    {% for device in devices %}
+    <div class="ps-3">
+     {{device}}
+      </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+
+<script>
+    function start_experience_some(el) {
+        var experience = $(el).data('experience')
+        var devices = $(el).data('devices')
+        experience_command(el, 'start_experience_some', experience, devices, experience + " has started!")
+    }
+
+    function stop_experience_some(el) {
+        var experience = $(el).data('experience')
+        var devices = $(el).data('devices')
+        experience_command(el, 'stop_experience_some', experience, devices, experience + " has been stopped!")
+    }
+</script>

@@ -1,5 +1,6 @@
 import base64
 import datetime
+import json
 import multiprocessing
 import os
 from functools import partial, wraps
@@ -14,6 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from multiprocessing import Process, Pool, cpu_count
 from fastapi import FastAPI, UploadFile, File, Form, Depends
+from collections import Counter
 
 from ppadb import InstallError
 from starlette.requests import Request
@@ -100,6 +102,7 @@ cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
 defaults = {
     "screen_width": 192,
     "screen_height": 108,
+    "check_for_new_devices_poll": 8000
 }
 crud_defaults(SessionLocal(), defaults)
 
@@ -585,7 +588,26 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
 @check_adb_running
 async def battery(device_serial: str):
     device: Device = client.device(device_serial)
+    if device is None:  # issue with device being unplugged
+        return 0
     return device.get_battery_level()
+
+
+async def _experiences(device_serial: str = None, device: Device = None) -> []:
+    if device is None:
+        device: Device = client.device(device_serial)
+
+    payload = device.shell('cmd package list packages -3').strip()
+
+    experiences = []
+
+    for package in payload.split('\n'):
+        package = package.replace('package:', '')
+        experiences.append({'package': package, 'name': package.split('.')[-1]})
+
+    experiences.sort(key=lambda el: el['name'])
+    return experiences
+
 
 
 @app.get("/device-experiences/{device_serial}")
@@ -594,21 +616,47 @@ async def device_experiences(request: Request, device_serial: str):
     device: Device = client.device(device_serial)
     # https://stackoverflow.com/a/53634311/960471
 
-    experiences = []
-    payload = device.shell('cmd package list packages -3').strip()
-
-    for package in payload.split('\n'):
-        package = package.replace('package:', '')
-        experiences.append({'package': package, 'name': package.split('.')[-1]})
-
-    experiences.sort(key=lambda el: el['name'])
-
     return templates.TemplateResponse(
         "experiences/device_experiences.html",
         {
             "request": request,
             "device": device_serial,
-            "experiences": experiences,
+            "experiences": await _experiences(device_serial),
+        },
+    )
+
+
+@app.get("/devices-experiences")
+@check_adb_running
+async def devices_experiences(request: Request):
+
+    # https://stackoverflow.com/a/53634311/960471
+
+    devices = {}
+    counter = Counter()
+
+    for device in client.devices():
+        experiences = await _experiences(device=device)
+        experiences_map = {el['package']: el['name'] for el in experiences}
+        counter.update(experiences_map.keys())
+        devices[device.serial] = experiences_map
+
+    combined = {}
+    for experience in [key for key, val in counter.most_common()]:
+        row = []
+        for device_id, experience_map in devices.items():
+            if experience in experience_map:
+                row.append(device_id)
+            else:
+                row.append('')
+        combined[experience] = row
+
+
+    return templates.TemplateResponse(
+        "experiences/devices_experiences.html",
+        {
+            "request": request,
+            "combined": combined,
         },
     )
 
@@ -616,31 +664,53 @@ async def device_experiences(request: Request, device_serial: str):
 @app.post("/command/{command}/{device_serial}")
 @check_adb_running
 async def device_command(request: Request, command: str, device_serial: str):
-    device: DeviceAsync = await client_async.device(device_serial)
+    device = None
+    if device_serial != 'ALL':
+        device = await client_async.device(device_serial)
 
     json = await request.json()
+
     experience = json['experience']
+
+    async def get_exp_info(_d: Device):
+        my_info: str = await _d.shell(f'dumpsys package | grep {experience} | grep Activity')
+        my_info = my_info.strip().split('\n')[0]
+        if not my_info:
+            return ''
+        return my_info.split(' ')[1]
 
     if command == 'start':
         # https://stackoverflow.com/a/64241561/960471
-        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
-        info = info.strip().split('\n')[0]
-        info = info.split(' ')[1]
+        info = get_exp_info(device)
         outcome = await device.shell(f"am start -n {info}")
         return {'success': 'Starting' in outcome}
+    elif command == 'start_experience_some':
+        my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
+        devices_list = [x for x in my_devices.split(',') if len(x) > 0]
+
+        info = await get_exp_info(await client_async.device(devices_list[0]))
+        for d in devices_list:
+            d: DeviceAsync = await client_async.device(d)
+            outcome = await d.shell(f"am start -n {info}")
+        return {'success': 'Starting'}
     elif command == 'stop':
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
         return {'success': True}
-    elif command == 'stop-some-experience':
-        outcome = await device.shell("dumpsys activity | grep top-activity")
-        if outcome:
-            outcome = outcome.split(":")[-1]
-            outcome = outcome.split('/')[0]
-            await device.shell(f"am force-stop {outcome}")
-            return {'success': True, 'outcome': outcome + ' successfully stopped!'}
-        else:
-            return {'success': True, 'outcome': 'No experience was running'}
+    elif command == 'stop_experience_some':
+        my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
+        devices_list = [x for x in my_devices.split(',') if len(x) > 0]
+        for d in devices_list:
+            d: DeviceAsync = await client_async.device(d)
+            await d.shell(f"am force-stop {experience}")
+        return {'success': True}
+    elif command == 'stop_some_experience':
+
+        await device.shell(f"am force-stop {experience}")
+
+        return {'success': True, 'outcome': 'Successfully stopped!'}
+    else:
+        return {'success': True, 'outcome': 'No experience was running'}
 
 
 @app.post("/set-device-icon/{device_serial}")
