@@ -33,6 +33,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 simu_application_name = ""
+global_volume = 10
+HOME_APP_APK = "com.TrajectoryTheatre.SimuLaunchHome.apk"
 
 
 def get_db():
@@ -178,7 +180,7 @@ async def start(payload: StartExperience, db: Session = Depends(get_db)):
             d_type=item["device_type"],
             command=item["command"],
         )
-        results = pool.map(launch_func, client_list)
+        pool.map(launch_func, client_list)
         pool.close()
         pool.join()
     except RuntimeError as e:
@@ -350,6 +352,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
             print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
             device.shell(command)
+            launch_app(device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
@@ -389,8 +392,6 @@ async def connect(request: Request):
     try:
         if not remote_address:
             os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
-        working = False
-        i = 0
 
         p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
         p.start()
@@ -399,7 +400,7 @@ async def connect(request: Request):
 
         if not p.is_alive():
             connected_device = Device(client, device_ip)
-            connect_actions(connected_device)
+            connect_actions(connected_device, global_volume,)
 
             print(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
@@ -504,11 +505,14 @@ async def volume(payload: Volume):
 
     client_list = process_devices(client, payload)
 
+    global global_volume
+    global_volume = payload.volume
+
     fails = []
     for device in client_list:
         try:
-            outcome = device.shell(f'cmd media_session volume --stream 3 --set {payload.volume}')
-            outcome = device.shell(f'media volume --stream 3 --set {payload.volume}')
+            device.shell(f'cmd media_session volume --stream 3 --set {payload.volume}')
+            device.shell(f'media volume --stream 3 --set {payload.volume}')
         except RuntimeError as e:
             fails.append(e)
 
@@ -562,7 +566,7 @@ async def check_image(device_serial, refresh_ms, size):
             image = await gen_image()
             if image:
                 screen_shots_cache[device_serial][size]['file_id'] = image
-        except RuntimeError as e:
+        except RuntimeError:
             return False
 
     return True
@@ -577,7 +581,6 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
         return {'success': False}
 
     image = screen_shots_cache[device_serial][size]['file_id']
-    err = None
 
     return {'base64_image': image}
 
