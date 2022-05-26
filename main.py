@@ -100,6 +100,7 @@ cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
 defaults = {
     "screen_width": 192,
     "screen_height": 108,
+    "check_for_new_devices_poll": 8000
 }
 crud_defaults(SessionLocal(), defaults)
 
