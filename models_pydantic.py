@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 
 class Devices(BaseModel):
@@ -14,6 +14,7 @@ class Experience(Devices):
     experience: str
 
 class NewExperience(Devices):
+    experience_name: Optional[str] = None
     apk_name: str
     command: str
 

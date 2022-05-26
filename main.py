@@ -128,7 +128,7 @@ async def home(request: Request, db: Session = Depends(get_db)):
         "home.html",
         {
             "request": request,
-            "choices": [item.apk_name for item in uploaded_experiences],
+            "choices": [(item.apk_name, item.experience_name if item.experience_name is not None else item.apk_name) for item in uploaded_experiences],
             "app_name": simu_application_name,
             "icons": icons,
             "cols": cols,
@@ -303,6 +303,7 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
         device_type = 0 if payload.command == "android" else 1
 
         item = APKDetailsBase(
+            experience_name=payload.experience_name,
             apk_name=payload.apk_name,
             command="" if payload.command == "android" else payload.command,
             device_type=device_type,

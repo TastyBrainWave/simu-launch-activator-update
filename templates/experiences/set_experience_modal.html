@@ -12,7 +12,7 @@
             <label>
               <select id="set_choices_dropdown" name="set_choices" required class="form-select-lg" aria-label="Select Experience">
                 {% for choice in choices %}
-                <option value="{{ choice }}">{{ choice }}</option>
+                <option value="{{ choice.0 }}">{{ choice.1 }}</option>
                 {% endfor %}
               </select>
             </label>

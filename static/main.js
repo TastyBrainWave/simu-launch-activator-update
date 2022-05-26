@@ -180,6 +180,7 @@ function addRemoteExperience() {
 
         },
         body: {
+            "experience_name": document.getElementById("experience_name").value,
             "apk_name": document.getElementById("apk_name").value,
             "command": document.getElementById("command").value,
         },

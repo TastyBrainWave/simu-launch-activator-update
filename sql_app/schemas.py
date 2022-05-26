@@ -7,6 +7,7 @@ from sql_app.models import DeviceTypes
 
 
 class APKDetailsBase(BaseModel):
+    experience_name: Optional[str] = None
     apk_name: str
     command: Optional[str] = None
     device_type: DeviceTypes
