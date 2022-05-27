@@ -203,15 +203,16 @@ function removeRemoteExperience() {
     send({
         url: '/remove-remote-experience',
         start: function () {
-            document.getElementById("removeRemoteButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            "devices": [],
+            "experience": document.getElementById("remove_choices_dropdown").value,
+        },
         success: function () {
             $('#removeExperienceModal').modal('hide');
             showStatus("Experience has been removed!");
         },
         finally: function () {
-            document.getElementById("removeRemoteButton").classList.remove("disabled");
         }
     })
 

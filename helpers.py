@@ -1,4 +1,5 @@
 import os
+from turtle import up
 
 from ppadb.client import Client as AdbClient
 from ppadb.device import Device
@@ -6,6 +7,7 @@ from ppadb.device import Device
 from models_pydantic import Devices
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+HOME_APP_VERSION = "0.1"
 
 
 def process_devices(client: AdbClient, payload: Devices):
@@ -62,6 +64,10 @@ def connect_actions(device: Device = None, volume: int = None,):
 
         if "Unable to find" in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome"):
             print("Home app not installed on device. Installing now..")
+            device.install("apks/com.TrajectoryTheatre.SimuLaunchHome.apk")
+
+        if HOME_APP_VERSION not in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome | grep versionName"):
+            print("Installed Home app isn't the latest version. Updating now..")
             device.install("apks/com.TrajectoryTheatre.SimuLaunchHome.apk")
 
         device.shell("am start -n com.TrajectoryTheatre.SimuLaunchHome/com.unity3d.player.UnityPlayerActivity")

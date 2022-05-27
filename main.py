@@ -3,6 +3,7 @@ import datetime
 import multiprocessing
 import os
 from functools import partial, wraps
+import time
 import cv2
 import numpy as np
 from fastapi.encoders import jsonable_encoder
@@ -118,9 +119,6 @@ async def home(request: Request, db: Session = Depends(get_db)):
     """
 
     uploaded_experiences = get_all_apk_details(db)
-
-    for item in uploaded_experiences:
-        print(item.apk_name)
 
     global simu_application_name
 
@@ -277,6 +275,8 @@ async def remove_remote_experience(payload: Experience, db: Session = Depends(ge
     :return: a success dictionary signifying the operation was successful
     """
 
+    print(payload)
+
     try:
         if payload.experience:
             db.delete(get_apk_details(db, apk_name=payload.experience))
@@ -301,6 +301,9 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
 
     try:
         device_type = 0 if payload.command == "android" else 1
+
+        if payload.apk_name is None or payload.apk_name == '':
+            raise SQLAlchemyError("No APK name provided. Please make sure an APK name has been provided!")
 
         item = APKDetailsBase(
             experience_name=payload.experience_name,
@@ -636,6 +639,8 @@ async def device_command(request: Request, command: str, device_serial: str):
     elif command == 'stop':
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
+        sync_device = client.device(device_serial)
+        launch_app(sync_device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
         return {'success': True}
     elif command == 'stop-some-experience':
         outcome = await device.shell("dumpsys activity | grep top-activity")
@@ -643,6 +648,8 @@ async def device_command(request: Request, command: str, device_serial: str):
             outcome = outcome.split(":")[-1]
             outcome = outcome.split('/')[0]
             await device.shell(f"am force-stop {outcome}")
+            sync_device = client.device(device_serial)
+            launch_app(sync_device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
             return {'success': True, 'outcome': outcome + ' successfully stopped!'}
         else:
             return {'success': True, 'outcome': 'No experience was running'}
