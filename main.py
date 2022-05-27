@@ -692,7 +692,12 @@ async def device_command(request: Request, command: str, device_serial: str):
         for d in devices_list:
             d: DeviceAsync = await client_async.device(d)
             outcome = await d.shell(f"am start -n {info}")
-        return {'success': 'Starting'}
+            
+            if "Exception" in outcome:
+                print(f"An error occured at device {d.serial}: \n" + outcome)
+                return {"success": False, "error": "Couldn't start experience on device " + d.serial + "! Make sure a boundary is setup."}
+
+        return {'success': True}
     elif command == 'stop':
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
