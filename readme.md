@@ -49,7 +49,7 @@ Restart=on-failure
 RestartSec=5s
 
 [Install]
-WantedBy=muli-user.target```
+WantedBy=muli-user.target
 ```
 
 then 

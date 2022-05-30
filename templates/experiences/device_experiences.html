@@ -5,8 +5,10 @@
       <button type="button" class="btn text-bg-success" onclick="start_experience(this)">
         {% include 'icons/play-fill.html' %}</button>
       <button type="button" class="btn text-bg-danger" onclick="stop_experience(this)">{% include 'icons/stop-fill.html' %}</button>
+
     </div>
     {{ experience.name }}
+    <button class="btn float-end" onclick="copy_experience_info(this)">copy details to database</button>
   </li>
   {% endfor %}
 </div>

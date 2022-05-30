@@ -35,6 +35,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 simu_application_name = ""
+global_volume = 10
+HOME_APP_APK = "com.TrajectoryTheatre.SimuLaunchHome.apk"
 
 
 def get_db():
@@ -180,7 +182,7 @@ async def start(payload: StartExperience, db: Session = Depends(get_db)):
             d_type=item["device_type"],
             command=item["command"],
         )
-        results = pool.map(launch_func, client_list)
+        pool.map(launch_func, client_list)
         pool.close()
         pool.join()
     except RuntimeError as e:
@@ -352,6 +354,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
             print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
             device.shell(command)
+            # launch_app(device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
@@ -391,8 +394,6 @@ async def connect(request: Request):
     try:
         if not remote_address:
             os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
-        working = False
-        i = 0
 
         p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
         p.start()
@@ -401,7 +402,7 @@ async def connect(request: Request):
 
         if not p.is_alive():
             connected_device = Device(client, device_ip)
-            connect_actions(connected_device)
+            connect_actions(connected_device, global_volume,)
 
             print(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
@@ -506,11 +507,14 @@ async def volume(payload: Volume):
 
     client_list = process_devices(client, payload)
 
+    global global_volume
+    global_volume = payload.volume
+
     fails = []
     for device in client_list:
         try:
-            outcome = device.shell(f'cmd media_session volume --stream 3 --set {payload.volume}')
-            outcome = device.shell(f'media volume --stream 3 --set {payload.volume}')
+            device.shell(f'cmd media_session volume --stream 3 --set {payload.volume}')
+            device.shell(f'media volume --stream 3 --set {payload.volume}')
         except RuntimeError as e:
             fails.append(e)
 
@@ -564,7 +568,7 @@ async def check_image(device_serial, refresh_ms, size):
             image = await gen_image()
             if image:
                 screen_shots_cache[device_serial][size]['file_id'] = image
-        except RuntimeError as e:
+        except RuntimeError:
             return False
 
     return True
@@ -579,7 +583,6 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
         return {'success': False}
 
     image = screen_shots_cache[device_serial][size]['file_id']
-    err = None
 
     return {'base64_image': image}
 
@@ -601,14 +604,15 @@ async def _experiences(device_serial: str = None, device: Device = None) -> []:
 
     experiences = []
 
+    payload = device.shell('cmd package list packages -3').strip()
+    print(payload)
     for package in payload.split('\n'):
         package = package.replace('package:', '')
         experiences.append({'package': package, 'name': package.split('.')[-1]})
 
     experiences.sort(key=lambda el: el['name'])
+
     return experiences
-
-
 
 @app.get("/device-experiences/{device_serial}")
 @check_adb_running
@@ -661,6 +665,21 @@ async def devices_experiences(request: Request):
     )
 
 
+@app.get("/device-experiences/{device_serial}")
+@check_adb_running
+async def device_experiences(request: Request, device_serial: str):
+    device: Device = client.device(device_serial)
+    # https://stackoverflow.com/a/53634311/960471
+
+    return templates.TemplateResponse(
+        "experiences/device_experiences.html",
+        {
+            "request": request,
+            "device": device_serial,
+            "experiences": await _experiences(device_serial),
+        },
+    )
+
 @app.post("/command/{command}/{device_serial}")
 @check_adb_running
 async def device_command(request: Request, command: str, device_serial: str):
@@ -669,7 +688,6 @@ async def device_command(request: Request, command: str, device_serial: str):
         device = await client_async.device(device_serial)
 
     json = await request.json()
-
     experience = json['experience']
 
     async def get_exp_info(_d: Device):
@@ -692,7 +710,7 @@ async def device_command(request: Request, command: str, device_serial: str):
         for d in devices_list:
             d: DeviceAsync = await client_async.device(d)
             outcome = await d.shell(f"am start -n {info}")
-            
+
             if "Exception" in outcome:
                 print(f"An error occured at device {d.serial}: \n" + outcome)
                 return {"success": False, "error": "Couldn't start experience on device " + d.serial + "! Make sure a boundary is setup."}
@@ -701,6 +719,22 @@ async def device_command(request: Request, command: str, device_serial: str):
     elif command == 'stop':
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
+        return {'success': True}
+    elif command == 'copy-details':
+        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
+        print(info,22)
+        info = info.strip().split('\n')[0]
+        info = info.split(' ')[1]
+        print(info)
+        # item = APKDetailsBase(
+        #     apk_name=file.filename,
+        #     command="" if command == "android" else command,
+        #     device_type=device_type,
+        # )
+        #
+        # crud.create_apk_details_item(
+        #     db=db, item=APKDetailsCreate.parse_obj(item.dict())
+        # )
         return {'success': True}
     elif command == 'stop_experience_some':
         my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
