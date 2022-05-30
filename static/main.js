@@ -180,6 +180,7 @@ function addRemoteExperience() {
 
         },
         body: {
+            "experience_name": document.getElementById("experience_name").value,
             "apk_name": document.getElementById("apk_name").value,
             "command": document.getElementById("command").value,
         },
@@ -202,15 +203,16 @@ function removeRemoteExperience() {
     send({
         url: '/remove-remote-experience',
         start: function () {
-            document.getElementById("removeRemoteButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            "devices": [],
+            "experience": document.getElementById("remove_choices_dropdown").value,
+        },
         success: function () {
             $('#removeExperienceModal').modal('hide');
             showStatus("Experience has been removed!");
         },
         finally: function () {
-            document.getElementById("removeRemoteButton").classList.remove("disabled");
         }
     })
 
