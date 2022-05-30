@@ -29,3 +29,31 @@ Find out the ip address of the raspberry pi, perhaps via this command:
 `ifconfig wlan0 | grep inet | awk '{ print $2 }'`
 
 To access the server from other devices, just enter this ip address into your browser
+
+### Auto-loading on device start
+
+`sudo nano/etc/systemd/system/simulaunch.service`
+
+Save below contents into file (via Control+s then Control-q to quit)
+
+```[Unit]
+Description=Simulaunch
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/simu-launch
+ExecStart=/home/simu-launch/venv/bin/uvicorn main:app --port 8000 --host "0.0.0.0"
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=muli-user.target```
+```
+
+then 
+```
+sudo systemctl enable simulaunch.service
+sudo systemctl start simulaunch.service
+```
