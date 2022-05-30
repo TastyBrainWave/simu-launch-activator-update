@@ -25,6 +25,10 @@
         experience_command(el, 'stop')
     }
 
+    function copy_experience_info(el) {
+        experience_command(el, 'copy-details')
+    }
+
     function experience_command(el, cmd) {
         var experience = $(el).closest('li').data('experience');
         var device = $(el).closest('.list-group').data('device');

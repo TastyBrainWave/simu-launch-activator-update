@@ -600,7 +600,7 @@ async def device_experiences(request: Request, device_serial: str):
 
     experiences = []
     payload = device.shell('cmd package list packages -3').strip()
-
+    print(payload)
     for package in payload.split('\n'):
         package = package.replace('package:', '')
         experiences.append({'package': package, 'name': package.split('.')[-1]})
@@ -619,7 +619,7 @@ async def device_experiences(request: Request, device_serial: str):
 
 @app.post("/command/{command}/{device_serial}")
 @check_adb_running
-async def device_command(request: Request, command: str, device_serial: str):
+async def device_command(request: Request, command: str, device_serial: str, db: Session = Depends(get_db)):
     device: DeviceAsync = await client_async.device(device_serial)
 
     json = await request.json()
@@ -635,6 +635,22 @@ async def device_command(request: Request, command: str, device_serial: str):
     elif command == 'stop':
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
+        return {'success': True}
+    elif command == 'copy-details':
+        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
+        print(info,22)
+        info = info.strip().split('\n')[0]
+        info = info.split(' ')[1]
+        print(info)
+        # item = APKDetailsBase(
+        #     apk_name=file.filename,
+        #     command="" if command == "android" else command,
+        #     device_type=device_type,
+        # )
+        #
+        # crud.create_apk_details_item(
+        #     db=db, item=APKDetailsCreate.parse_obj(item.dict())
+        # )
         return {'success': True}
     elif command == 'stop-some-experience':
         outcome = await device.shell("dumpsys activity | grep top-activity")
