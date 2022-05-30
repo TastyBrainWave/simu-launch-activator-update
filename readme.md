@@ -36,7 +36,8 @@ To access the server from other devices, just enter this ip address into your br
 
 Save below contents into file (via Control+s then Control-q to quit)
 
-```[Unit]
+```
+[Unit]
 Description=Simulaunch
 After=network.target
 
