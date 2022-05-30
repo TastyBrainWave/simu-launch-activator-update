@@ -749,7 +749,7 @@ function stop_some_experience(el) {
             },
             problem: function (error) {
                 if(!error_message) error_message = "Error " + cmd + "ing experience: " + error;
-                showStatus(error);
+                showStatus(error_message);
             },
             finally: function () {
 
