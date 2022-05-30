@@ -111,7 +111,7 @@ crud_defaults(SessionLocal(), defaults)
 
 @app.get("/")
 @check_adb_running
-async def home(request: Request, db: Session = Depends(get_db)):
+async def home(request: Request):
     """
         View mainly responsible for handling the front end, since nothing will happen on the backend at this endpoint.
     :param db: the database dependency
@@ -119,22 +119,27 @@ async def home(request: Request, db: Session = Depends(get_db)):
     :return: a TemplateResponse object containing the homepage
     """
 
-    uploaded_experiences = get_all_apk_details(db)
-
-    for item in uploaded_experiences:
-        print(item.apk_name)
-
     global simu_application_name
 
     return templates.TemplateResponse(
         "home.html",
         {
             "request": request,
-            "choices": [item.apk_name for item in uploaded_experiences],
             "app_name": simu_application_name,
             "icons": icons,
             "cols": cols,
             "defaults": defaults
+        },
+    )
+
+@app.get('/experiences')
+async def experiences(request: Request, db: Session = Depends(get_db)):
+
+    return templates.TemplateResponse(
+        "experiences/set_experience_content.html",
+        {
+            "request": request,
+            "choices": [item.apk_name for item in get_all_apk_details(db)],
         },
     )
 
@@ -604,11 +609,10 @@ async def _experiences(device_serial: str = None, device: Device = None) -> []:
 
     experiences = []
 
-    payload = device.shell('cmd package list packages -3').strip()
     print(payload)
     for package in payload.split('\n'):
         package = package.replace('package:', '')
-        experiences.append({'package': package, 'name': package.split('.')[-1]})
+        experiences.append({'package': package, 'name': package})
 
     experiences.sort(key=lambda el: el['name'])
 
@@ -682,7 +686,7 @@ async def device_experiences(request: Request, device_serial: str):
 
 @app.post("/command/{command}/{device_serial}")
 @check_adb_running
-async def device_command(request: Request, command: str, device_serial: str):
+async def device_command(request: Request, command: str, device_serial: str, db: Session = Depends(get_db)):
     device = None
     if device_serial != 'ALL':
         device = await client_async.device(device_serial)
@@ -699,7 +703,7 @@ async def device_command(request: Request, command: str, device_serial: str):
 
     if command == 'start':
         # https://stackoverflow.com/a/64241561/960471
-        info = get_exp_info(device)
+        info = await get_exp_info(device)
         outcome = await device.shell(f"am start -n {info}")
         return {'success': 'Starting' in outcome}
     elif command == 'start_experience_some':
@@ -726,15 +730,15 @@ async def device_command(request: Request, command: str, device_serial: str):
         info = info.strip().split('\n')[0]
         info = info.split(' ')[1]
         print(info)
-        # item = APKDetailsBase(
-        #     apk_name=file.filename,
-        #     command="" if command == "android" else command,
-        #     device_type=device_type,
-        # )
-        #
-        # crud.create_apk_details_item(
-        #     db=db, item=APKDetailsCreate.parse_obj(item.dict())
-        # )
+        item = APKDetailsBase(
+            apk_name=info,
+            device_type=2,
+            command='',
+        )
+
+        crud.create_apk_details_item(
+            db=db, item=APKDetailsCreate.parse_obj(item.dict())
+        )
         return {'success': True}
     elif command == 'stop_experience_some':
         my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')

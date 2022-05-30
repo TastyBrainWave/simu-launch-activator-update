@@ -1,0 +1,13 @@
+<form id="setRemoteExperienceForm" action="/set-remote-experience" encType="multipart/form-data" method="post">
+  <fieldset>
+    <legend>Choose the experience to be started on the devices</legend>
+    <label>
+      <select id="set_choices_dropdown" name="set_choices" required className="form-select form-select-lg mb-3"
+              aria-label="Select Experience">
+        {% for choice in choices %}
+        <option value="{{ choice }}">{{ choice }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </fieldset>
+</form>

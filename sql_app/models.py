@@ -9,6 +9,7 @@ from .database import Base
 class DeviceTypes(enum.IntEnum):
     android = 0
     quest = 1
+    retrieved_from_system = 2
 
 
 class APKDetails(Base):

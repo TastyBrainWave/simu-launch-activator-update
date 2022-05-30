@@ -5,19 +5,8 @@
         <h5 class="modal-title" id="setExperienceModalLabel">Start Experience</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <form id="setRemoteExperienceForm" action="/set-remote-experience" enctype="multipart/form-data" method="post">
-          <fieldset>
-            <legend>Choose the experience to be started on the devices</legend>
-            <label>
-              <select id="set_choices_dropdown" name="set_choices" required class="form-select-lg" aria-label="Select Experience">
-                {% for choice in choices %}
-                <option value="{{ choice }}">{{ choice }}</option>
-                {% endfor %}
-              </select>
-            </label>
-          </fieldset>
-        </form>
+      <div class="modal-body" id="set_experience_modal_content">
+        <h1>loading data...</h1>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -26,3 +15,27 @@
     </div>
   </div>
 </div>
+
+<script>
+    $('#setExperienceModal').on('show.bs.modal', function(){
+
+    fetch('experiences', {
+        method: 'GET',
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.text()
+        })
+        .then(function (html) {
+            console.log(html)
+            $('#set_experience_modal_content').html(html);
+        })
+        .catch(function (error) {
+            console.log(error);
+        })
+
+    })
+
+</script>

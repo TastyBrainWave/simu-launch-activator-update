@@ -27,11 +27,15 @@ def launch_app(device, app_name, d_type: bool = False, command: str = None):
     if ".apk" in app_name:
         app_name = app_name[:-4]
 
-    command = "am start -n " + app_name + "/" + command if d_type else "monkey -p " + app_name \
-                                                                       + " -v 1"
+    if d_type == 1:
+        command = "am start -n " + app_name + "/" + command
+    elif d_type == 2:
+        command = "am start -n " + app_name
+    else:
+        command = "monkey -p " + app_name + " -v 1"
     print(command)
 
-    device.shell(command)
+    print(device.shell(command),22)
 
 
 def save_file(filename, data):
