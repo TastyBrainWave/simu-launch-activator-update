@@ -71,7 +71,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+
 
 # PyBuilder
 .pybuilder/
@@ -165,7 +165,7 @@ Terms
 Privacy
 Security
 Status
-Docs
+
 Contact GitHub
 Pricing
 API
@@ -176,3 +176,7 @@ Loading complete
 .idea/simu-launch.iml
 test.db
 .idea/simu-launch.iml
+apks/com.amazon.calculator.apk
+apks/com.NoGhost.Benedict.apk
+apks/com.Shroomstudio.Promenade.apk
+apks/com.Visualise.GetPunked.apk
