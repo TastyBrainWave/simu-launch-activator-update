@@ -115,6 +115,20 @@ async def devices(db: Session = Depends(get_db)):
     return {'devices': devices, 'errs': errs}
 
 
+@app.get("/d")
+@check_adb_running
+async def devices_page(request: Request):
+    return templates.TemplateResponse(
+        "pages/devices_page.html",
+        {
+            "request": request,
+            "app_name": simu_application_name,
+            "icons": icons,
+            "cols": cols,
+            "defaults": defaults
+        },
+    )
+
 @app.get("/")
 @check_adb_running
 async def home(request: Request):
@@ -128,7 +142,7 @@ async def home(request: Request):
     global simu_application_name
 
     return templates.TemplateResponse(
-        "home.html",
+        "devices_page.html",
         {
             "request": request,
             "app_name": simu_application_name,
