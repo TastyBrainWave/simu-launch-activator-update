@@ -1,5 +1,6 @@
 import base64
 import datetime
+import json
 import multiprocessing
 import os
 from functools import partial, wraps
@@ -7,6 +8,7 @@ import time
 import cv2
 import numpy as np
 from fastapi.encoders import jsonable_encoder
+from fastapi_cache.backends.inmemory import InMemoryBackend
 from ppadb.client import Client as AdbClient
 from ppadb.client_async import ClientAsync as AdbClientAsync
 from ppadb.device import Device
@@ -15,6 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from multiprocessing import Process, Pool, cpu_count
 from fastapi import FastAPI, UploadFile, File, Form, Depends
+from collections import Counter
 
 from ppadb import InstallError
 from starlette.requests import Request
@@ -26,6 +29,8 @@ from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon, crud_defaults
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetailsBase
+from fastapi_cache import FastAPICache
+from fastapi_cache.decorator import cache
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -37,6 +42,19 @@ simu_application_name = ""
 global_volume = 10
 HOME_APP_APK = "com.TrajectoryTheatre.SimuLaunchHome.apk"
 
+
+icons = ['3-bars', '2-bars', '1-bar', 'circle-fill', 'square-fill', 'plus-lg', 'heart-fill', 'triangle-fill']
+cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
+
+check_for_new_devices_poll_s = 8
+defaults = {
+    "screen_width": 192,
+    "screen_height": 108,
+    "check_for_new_devices_poll": check_for_new_devices_poll_s * 1000
+}
+crud_defaults(SessionLocal(), defaults)
+
+FastAPICache.init(InMemoryBackend())
 
 def get_db():
     db = SessionLocal()
@@ -74,8 +92,8 @@ async def settings(screen_updates: int = Form(...),
     crud_defaults(SessionLocal(), defaults)
     return {'success': True}
 
-
 @app.get("/devices")
+@cache(expire=check_for_new_devices_poll_s)
 @check_adb_running
 async def devices(db: Session = Depends(get_db)):
     """
@@ -97,20 +115,9 @@ async def devices(db: Session = Depends(get_db)):
     return {'devices': devices, 'errs': errs}
 
 
-icons = ['3-bars', '2-bars', '1-bar', 'circle-fill', 'square-fill', 'plus-lg', 'heart-fill', 'triangle-fill']
-cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
-
-defaults = {
-    "screen_width": 192,
-    "screen_height": 108,
-    "check_for_new_devices_poll": 8000
-}
-crud_defaults(SessionLocal(), defaults)
-
-
 @app.get("/")
 @check_adb_running
-async def home(request: Request, db: Session = Depends(get_db)):
+async def home(request: Request):
     """
         View mainly responsible for handling the front end, since nothing will happen on the backend at this endpoint.
     :param db: the database dependency
@@ -118,19 +125,27 @@ async def home(request: Request, db: Session = Depends(get_db)):
     :return: a TemplateResponse object containing the homepage
     """
 
-    uploaded_experiences = get_all_apk_details(db)
-
     global simu_application_name
 
     return templates.TemplateResponse(
         "home.html",
         {
             "request": request,
-            "choices": [(item.apk_name, item.experience_name if item.experience_name is not None else item.apk_name) for item in uploaded_experiences],
             "app_name": simu_application_name,
             "icons": icons,
             "cols": cols,
             "defaults": defaults
+        },
+    )
+
+@app.get('/experiences')
+async def experiences(request: Request, db: Session = Depends(get_db)):
+
+    return templates.TemplateResponse(
+        "experiences/set_experience_content.html",
+        {
+            "request": request,
+            "choices": [item.apk_name for item in get_all_apk_details(db)],
         },
     )
 
@@ -275,8 +290,6 @@ async def remove_remote_experience(payload: Experience, db: Session = Depends(ge
     :return: a success dictionary signifying the operation was successful
     """
 
-    print(payload)
-
     try:
         if payload.experience:
             db.delete(get_apk_details(db, apk_name=payload.experience))
@@ -356,7 +369,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
             print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
             device.shell(command)
-            launch_app(device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
+            # launch_app(device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
@@ -593,7 +606,77 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
 @check_adb_running
 async def battery(device_serial: str):
     device: Device = client.device(device_serial)
+    if device is None:  # issue with device being unplugged
+        return 0
     return device.get_battery_level()
+
+
+async def _experiences(device_serial: str = None, device: Device = None) -> []:
+    if device is None:
+        device: Device = client.device(device_serial)
+
+    payload = device.shell('cmd package list packages -3').strip()
+
+    experiences = []
+
+    print(payload)
+    for package in payload.split('\n'):
+        package = package.replace('package:', '')
+        experiences.append({'package': package, 'name': package})
+
+    experiences.sort(key=lambda el: el['name'])
+
+    return experiences
+
+@app.get("/device-experiences/{device_serial}")
+@check_adb_running
+async def device_experiences(request: Request, device_serial: str):
+    device: Device = client.device(device_serial)
+    # https://stackoverflow.com/a/53634311/960471
+
+    return templates.TemplateResponse(
+        "experiences/device_experiences.html",
+        {
+            "request": request,
+            "device": device_serial,
+            "experiences": await _experiences(device_serial),
+        },
+    )
+
+
+@app.get("/devices-experiences")
+@check_adb_running
+async def devices_experiences(request: Request):
+
+    # https://stackoverflow.com/a/53634311/960471
+
+    devices = {}
+    counter = Counter()
+
+    for device in client.devices():
+        experiences = await _experiences(device=device)
+        experiences_map = {el['package']: el['name'] for el in experiences}
+        counter.update(experiences_map.keys())
+        devices[device.serial] = experiences_map
+
+    combined = {}
+    for experience in [key for key, val in counter.most_common()]:
+        row = []
+        for device_id, experience_map in devices.items():
+            if experience in experience_map:
+                row.append(device_id)
+            else:
+                row.append('')
+        combined[experience] = row
+
+
+    return templates.TemplateResponse(
+        "experiences/devices_experiences.html",
+        {
+            "request": request,
+            "combined": combined,
+        },
+    )
 
 
 @app.get("/device-experiences/{device_serial}")
@@ -602,57 +685,86 @@ async def device_experiences(request: Request, device_serial: str):
     device: Device = client.device(device_serial)
     # https://stackoverflow.com/a/53634311/960471
 
-    experiences = []
-    payload = device.shell('cmd package list packages -3').strip()
-
-    for package in payload.split('\n'):
-        package = package.replace('package:', '')
-        experiences.append({'package': package, 'name': package.split('.')[-1]})
-
-    experiences.sort(key=lambda el: el['name'])
-
     return templates.TemplateResponse(
         "experiences/device_experiences.html",
         {
             "request": request,
             "device": device_serial,
-            "experiences": experiences,
+            "experiences": await _experiences(device_serial),
         },
     )
 
-
 @app.post("/command/{command}/{device_serial}")
 @check_adb_running
-async def device_command(request: Request, command: str, device_serial: str):
-    device: DeviceAsync = await client_async.device(device_serial)
+async def device_command(request: Request, command: str, device_serial: str, db: Session = Depends(get_db)):
+    device = None
+    if device_serial != 'ALL':
+        device = await client_async.device(device_serial)
 
     json = await request.json()
     experience = json['experience']
 
+    async def get_exp_info(_d: Device):
+        my_info: str = await _d.shell(f'dumpsys package | grep {experience} | grep Activity')
+        my_info = my_info.strip().split('\n')[0]
+        if not my_info:
+            return ''
+        return my_info.split(' ')[1]
+
     if command == 'start':
         # https://stackoverflow.com/a/64241561/960471
-        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
-        info = info.strip().split('\n')[0]
-        info = info.split(' ')[1]
+        info = await get_exp_info(device)
         outcome = await device.shell(f"am start -n {info}")
+        print(111, outcome)
         return {'success': 'Starting' in outcome}
+    elif command == 'start_experience_some':
+        my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
+        devices_list = [x for x in my_devices.split(',') if len(x) > 0]
+
+        info = await get_exp_info(await client_async.device(devices_list[0]))
+        for d in devices_list:
+            d: DeviceAsync = await client_async.device(d)
+            outcome = await d.shell(f"am start -n {info}")
+
+            if "Exception" in outcome:
+                print(f"An error occured at device {d.serial}: \n" + outcome)
+                return {"success": False, "error": "Couldn't start experience on device " + d.serial + "! Make sure a boundary is setup."}
+
+        return {'success': True}
     elif command == 'stop':
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
-        sync_device = client.device(device_serial)
-        launch_app(sync_device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
         return {'success': True}
-    elif command == 'stop-some-experience':
-        outcome = await device.shell("dumpsys activity | grep top-activity")
-        if outcome:
-            outcome = outcome.split(":")[-1]
-            outcome = outcome.split('/')[0]
-            await device.shell(f"am force-stop {outcome}")
-            sync_device = client.device(device_serial)
-            launch_app(sync_device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
-            return {'success': True, 'outcome': outcome + ' successfully stopped!'}
-        else:
-            return {'success': True, 'outcome': 'No experience was running'}
+    elif command == 'copy-details':
+        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
+        print(info,22)
+        info = info.strip().split('\n')[0]
+        info = info.split(' ')[1]
+        print(info)
+        item = APKDetailsBase(
+            apk_name=info,
+            device_type=2,
+            command='',
+        )
+
+        crud.create_apk_details_item(
+            db=db, item=APKDetailsCreate.parse_obj(item.dict())
+        )
+        return {'success': True}
+    elif command == 'stop_experience_some':
+        my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
+        devices_list = [x for x in my_devices.split(',') if len(x) > 0]
+        for d in devices_list:
+            d: DeviceAsync = await client_async.device(d)
+            await d.shell(f"am force-stop {experience}")
+        return {'success': True}
+    elif command == 'stop_some_experience':
+
+        await device.shell(f"am force-stop {experience}")
+
+        return {'success': True, 'outcome': 'Successfully stopped!'}
+    else:
+        return {'success': True, 'outcome': 'No experience was running'}
 
 
 @app.post("/set-device-icon/{device_serial}")

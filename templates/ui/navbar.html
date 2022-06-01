@@ -1,81 +1,123 @@
 <div id="navContainer">
-    <div id="navbar" class="navbar navbar-expand-md navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand " style="font-family: monospace" href="#">{% include "icons/headset-vr.html" %} simu-launch</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse d-md-none" style="flex-basis: 100%;flex-grow: 1;align-items: center;" id="navbarToggler">
-            
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="connectDevice()">Connect Device</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="disconnectDevice()">Disconnect All</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="stopServer()">Stop Server</a>
-                    </li>
-                    <hr class="divider">    
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="modal" data-bs-target="#uploadModal">Upload APK</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="modal" data-bs-target="#addExperienceModal">Add New Experience</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">Remove Experience</a>
-                    </li>
-                </ul>
+  <div id="navbar" class="navbar navbar-expand-md navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand " style="font-family: monospace" href="#">{% include "icons/headset-vr.html" %}
+        simu-launch</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler"
+              aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse d-md-none" style="flex-basis: 100%;flex-grow: 1;align-items: center;" id="navbarToggler">
 
-            </div>
-            <div class="d-flex d-none d-md-flex">
-                <a id="addButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">{% include "icons/cloud-minus.html" %}</a>
-                <a id="removeButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#addExperienceModal">{% include "icons/cloud-plus.html" %}</a>
-                <a id="uploadButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2 " data-bs-toggle="modal" data-bs-target="#uploadModal">{% include "icons/file-earmark-arrow-up-fill.html" %}</a>
-                <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
-                <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
-                <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
-                <a class="btn btn-outline-light d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#settingsModal"><img src="/static/icons_set/gear-fill.svg" alt="refresh devices" class="img-fluid" width="32" height="32"></a>
-            </div>
-        </div>
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" onclick="connectDevice()">Connect Device</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" onclick="disconnectDevice()">Disconnect All</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" onclick="stopServer()">Stop Server</a>
+          </li>
+          <hr class="divider">
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="modal" data-bs-target="#uploadModal">Upload APK</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="modal" data-bs-target="#addExperienceModal">Add New Experience</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">Remove Experience</a>
+          </li>
+          <li>
+            <a class="nav-link" data-bs-toggle="modal"
+               data-bs-target="#devicesExperiencesModal">Devices x Experiences</a>
+          </li>
+        </ul>
+
+      </div>
+      <div class="d-flex d-none d-md-flex">
+        <a id="addButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#removeExperienceModal">{% include "icons/cloud-minus.html" %}</a>
+        <a id="removeButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#addExperienceModal">{% include "icons/cloud-plus.html" %}</a>
+        <a id="uploadButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2 "
+           data-bs-toggle="modal" data-bs-target="#uploadModal">{% include "icons/file-earmark-arrow-up-fill.html"
+          %}</a>
+        <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2"
+           onclick="connectDevice()">Connect Device</a>
+        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2"
+           onclick="disconnectDevice()">Disconnect All</a>
+        <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2"
+           onclick="stopServer()">Stop Server</a>
+        <a class="btn btn-secondary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal"
+           data-bs-target="#devicesExperiencesModal">Devices x Experiences</a>
+        <a class="btn btn-outline-light d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal"
+           data-bs-target="#settingsModal"><img src="/static/icons_set/gear-fill.svg" alt="refresh devices"
+                                                class="img-fluid" width="32" height="32"></a>
+      </div>
     </div>
+  </div>
 </div>
 
 <template id="navbarStandard">
-    <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" style="font-family: monospace" href="#">{% include "icons/headset-vr.html" %} simu-launch</a>
-            <div class="d-flex">
-                <a id="addButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#removeExperienceModal">{% include "icons/cloud-minus.html" %}</a>
-                <a id="removeButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#addExperienceModal">{% include "icons/cloud-plus.html" %}</a>
-                <a id="uploadButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2 " data-bs-toggle="modal" data-bs-target="#uploadModal">{% include "icons/file-earmark-arrow-up-fill.html" %}</a>
-                <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" onclick="connectDevice()">Connect Device</a>
-                <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect All</a>
-                <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" onclick="stopServer()">Stop Server</a>
-                <a class="btn btn-outline-light d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#settingsModal">{% include "icons/cloud-minus.html" %}</a>
-            </div>
-        </div>
+  <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" style="font-family: monospace" href="#">{% include "icons/headset-vr.html" %}
+        simu-launch</a>
+      <div class="d-flex">
+        <a id="addButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#removeExperienceModal">{% include "icons/cloud-minus.html" %}</a>
+        <a id="removeButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#addExperienceModal">{% include "icons/cloud-plus.html" %}</a>
+        <a id="uploadButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2 "
+           data-bs-toggle="modal" data-bs-target="#uploadModal">{% include "icons/file-earmark-arrow-up-fill.html"
+          %}</a>
+        <a id="connectButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2"
+           onclick="connectDevice()">Connect Device</a>
+        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2"
+           onclick="disconnectDevice()">Disconnect All</a>
+        <a id="stopServerButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2"
+           onclick="stopServer()">Stop Server</a>
+        <a class="btn btn-secondary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal"
+           data-bs-target="#devicesExperiencesModal">Devices x Experiences</a>
+        <a class="btn btn-outline-light d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal"
+           data-bs-target="#settingsModal">{% include "icons/cloud-minus.html" %}</a>
+      </div>
     </div>
+  </div>
 </template>
 <template id="navbarSelect">
-    <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light shadow">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#"><button id="selectClose" type="button" class="btn-close m-auto" aria-label="Close" onclick="deselectAll()"></button></a>
-            <div class="d-flex 	d-none d-sm-flex">
-                <a id='selectAllToggleButton' class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" title='select all' onclick="selectAllToggle()">{% include "icons/check-all.html"%}</a>
-                <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">Disconnect</a>
-                <a id="startButton" class="btn btn-success d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#setExperienceModal">Start</a>
-                <a id="loadButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#loadModal">Load</a>
-                <a id="stopButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#stopExperienceModal">Stop</a>
-            </div>
-            <div class=" d-flex d-sm-none">
-                    <a id="disconnectButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" onclick="selectAllToggle()">{% include "icons/check-all.html"%}</a>
-                    <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2" onclick="disconnectDevice()">{% include "icons/eject-fill.html" %}</a>
-                    <a id="startButton" class="btn btn-success d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#setExperienceModal">{% include "icons/play-fill.html" %}</a>
-                    <a id="loadButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#loadModal">{% include "icons/caret-up-square-fill.html" %}</a>
-                    <a id="stopButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2" data-bs-toggle="modal" data-bs-target="#stopExperienceModal">{% include "icons/stop-fill.html" %}</a>
-            </div>
-        </div>
+  <div id="navbar" class="navbar navbar-expand-lg navbar-light bg-light shadow">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <button id="selectClose" type="button" class="btn-close m-auto" aria-label="Close"
+                onclick="deselectAll()"></button>
+      </a>
+      <div class="d-flex 	d-none d-sm-flex">
+        <a id='selectAllToggleButton'
+           class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2" title='select all'
+           onclick="selectAllToggle()">{% include "icons/check-all.html"%}</a>
+        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2"
+           onclick="disconnectDevice()">Disconnect</a>
+        <a id="startButton" class="btn btn-success d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#setExperienceModal">Start</a>
+        <a id="loadButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#loadModal">Load</a>
+        <a id="stopButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#stopExperienceModal">Stop</a>
+      </div>
+      <div class=" d-flex d-sm-none">
+        <a id="disconnectButton" class="btn btn-outline-primary d-flex align-items-center justify-content-center ms-2"
+           onclick="selectAllToggle()">{% include "icons/check-all.html"%}</a>
+        <a id="disconnectButton" class="btn btn-warning d-flex align-items-center justify-content-center ms-2"
+           onclick="disconnectDevice()">{% include "icons/eject-fill.html" %}</a>
+        <a id="startButton" class="btn btn-success d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#setExperienceModal">{% include "icons/play-fill.html" %}</a>
+        <a id="loadButton" class="btn btn-primary d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#loadModal">{% include "icons/caret-up-square-fill.html" %}</a>
+        <a id="stopButton" class="btn btn-danger d-flex align-items-center justify-content-center ms-2"
+           data-bs-toggle="modal" data-bs-target="#stopExperienceModal">{% include "icons/stop-fill.html" %}</a>
+      </div>
+    </div>
 </template>

@@ -1,25 +1,24 @@
-<div class="modal fade" id="setExperienceModal" tabindex="-1" aria-labelledby="setExperienceModalLabel" aria-hidden="true">
+<div class="modal fade" id="devicesExperiencesModal" tabindex="-1" aria-labelledby="devicesExperiencesModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="setExperienceModalLabel">Start Experience</h5>
+        <h5 class="modal-title" id="devicesExperiencesModalLabel">Installed experiences x devices</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body" id="set_experience_modal_content">
+      <div class="modal-body" id="devices_experiences_modal_content">
         <h1>loading data...</h1>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-success" onclick="startExperience()">Start</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-    $('#setExperienceModal').on('show.bs.modal', function(){
+    $('#devicesExperiencesModal').on('show.bs.modal', function(){
 
-    fetch('experiences', {
+    fetch('devices-experiences', {
         method: 'GET',
     })
         .then(function (response) {
@@ -29,8 +28,7 @@
             return response.text()
         })
         .then(function (html) {
-            console.log(html)
-            $('#set_experience_modal_content').html(html);
+            $('#devices_experiences_modal_content').html(html);
         })
         .catch(function (error) {
             console.log(error);
@@ -38,4 +36,11 @@
 
     })
 
+    function start_experience_all(el) {
+        experience_command(el, 'start')
+    }
+
+    function stop_experience(el) {
+        experience_command(el, 'stop')
+    }
 </script>
