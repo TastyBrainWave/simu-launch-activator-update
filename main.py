@@ -142,7 +142,7 @@ async def home(request: Request):
     global simu_application_name
 
     return templates.TemplateResponse(
-        "devices_page.html",
+        "home.html",
         {
             "request": request,
             "app_name": simu_application_name,
@@ -561,24 +561,27 @@ async def check_image(device_serial, refresh_ms, size):
     async def gen_image():
 
         device: DeviceAsync = await client_async.device(device_serial)
+        if device is None:
+            return None
 
         im = await device.screencap()
-        if im:
-            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        if im is None:
+            return None
 
-            if screen_shots_cache[device_serial]['quest']:
-                image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
+        image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
 
-            height = image.shape[0]
-            width = int(image.shape[1] / height * defaults['screen_height'])
-            height = defaults['screen_height']
+        if screen_shots_cache[device_serial]['quest']:
+            image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
-            dsize = (width, height)
-            image = cv2.resize(image, dsize)
+        height = image.shape[0]
+        width = int(image.shape[1] / height * defaults['screen_height'])
+        height = defaults['screen_height']
 
-            _, encoded_img = cv2.imencode('.png', image)
-            return base64.b64encode(encoded_img).decode("utf-8")
-        return None
+        dsize = (width, height)
+        image = cv2.resize(image, dsize)
+
+        _, encoded_img = cv2.imencode('.png', image)
+        return base64.b64encode(encoded_img).decode("utf-8")
 
     timestamp = datetime.datetime.now()
 

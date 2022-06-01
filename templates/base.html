@@ -21,6 +21,10 @@
 </head>
 
 <body>
+{% block menu %}
+
+{% endblock %}
+
 <div class="container align-self-center mt-4">
   <!--    please leave below as position-fixed. Elsewise cannot see Toast when scrolled down screen-->
 <div class="position-fixed end-0 me-2" style="z-index: 11">
@@ -35,6 +39,16 @@
   {% block content %}
   {% endblock %}
 </div>
+<script>
+    var defaults = {
+    {
+        defaults | safe
+    }
+    }
+    ;
+</script>
+<script defer src="/static/main.js"></script>
+
   {% block javascript %}
 
   {% endblock %}

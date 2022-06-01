@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 
+{% block menu %}
+{% include "ui/navbar.html" %}
+{% endblock %}
+
 {% block content %}
 
-{% include "ui/navbar.html" %}
+
 {% include "load/upload_modal.html" %}
 {% include "load/load_modal.html" %}
 {% include "experiences/set_experience_modal.html" %}
@@ -36,13 +40,4 @@
 {% endblock %}
 
 {% block javascript %}
-<script>
-    var defaults = {
-    {
-        defaults | safe
-    }
-    }
-    ;
-</script>
-<script defer src="/static/main.js"></script>
 {% endblock %}
