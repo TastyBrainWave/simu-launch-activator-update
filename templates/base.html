@@ -21,6 +21,10 @@
 </head>
 
 <body>
+<script>
+    var defaults = {{ defaults | safe }};
+
+</script>
 {% block menu %}
 
 {% endblock %}
@@ -39,14 +43,7 @@
   {% block content %}
   {% endblock %}
 </div>
-<script>
-    var defaults = {
-    {
-        defaults | safe
-    }
-    }
-    ;
-</script>
+
 <script defer src="/static/main.js"></script>
 
   {% block javascript %}

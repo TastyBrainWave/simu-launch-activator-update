@@ -569,6 +569,8 @@ async def check_image(device_serial, refresh_ms, size):
             return None
 
         image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        if image is None:
+            return None
 
         if screen_shots_cache[device_serial]['quest']:
             image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
