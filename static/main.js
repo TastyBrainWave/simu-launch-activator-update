@@ -516,8 +516,13 @@ var devices_manager = function () {
                     return response.json()
                 })
                 .then(function (json) {
-                    var b64_image = json['base64_image'];
-                    card_map[device].updateImage64(b64_image);
+                    if(json['base64_image']) {
+                        var b64_image = json['base64_image'];
+                        card_map[device].updateImage64(b64_image);
+                    }
+                    else if(json['device-offline']){
+                        remove_card(device);
+                    }
                 })
                 .catch(function () {
                     console.log('error with polling for device ' + device)
@@ -530,6 +535,15 @@ var devices_manager = function () {
                     lock = false;
                 })
         }
+    }
+
+    function remove_card(card_id){
+        screengrab_polling(card_id, false);
+        var card = card_map[card_id];
+        delete card_map[card_id];
+        var i = cardList.indexOf(card_id);
+        cardList.splice(i, 1);
+        document.querySelector("#main-container").removeChild(card);
     }
 
     function get_devices() {
@@ -569,12 +583,7 @@ var devices_manager = function () {
                     }
                 }
                 for(var d_missing of devices_so_far){
-                    screengrab_polling(d_missing, false);
-                    var card = card_map[d_missing];
-                    delete card_map[d_missing];
-                    var i = cardList.indexOf(d_missing);
-                    cardList.splice(i, 1);
-                    document.querySelector("#main-container").removeChild(card);
+                    remove_card(d_missing)
                 }
 
             })

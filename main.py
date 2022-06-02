@@ -25,11 +25,11 @@ from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon, crud_defaults
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetailsBase
-
+import platform
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-location = "/home/simu-launch/"
+location = "/home/simu-launch/" if 'Linux' in platform.system().lower() else ''
 app.mount("/static", StaticFiles(directory=location + 'static'), name="static")
 templates = Jinja2Templates(directory= location + 'templates')
 
@@ -85,13 +85,14 @@ async def devices(db: Session = Depends(get_db)):
     devices = []
     errs = []
 
-    try:
-        device: Device
-        for device in client.devices():
+    device: Device
+    for device in client.devices():
+        try:
+            device.serial, device.get_state()
             my_device_icon = get_device_icon(db, device.serial)
             devices.append({'id': str(device.serial), 'icon': my_device_icon})
-    except RuntimeError as e:
-        errs.append(str(e))
+        except RuntimeError as e:
+            errs.append(str(e))
     return {'devices': devices, 'errs': errs}
 
 
@@ -525,25 +526,27 @@ screen_shots_cache = {}
 
 async def check_image(device_serial, refresh_ms, size):
     async def gen_image():
-
         device: DeviceAsync = await client_async.device(device_serial)
-
+        if device is None:
+            return None
         im = await device.screencap()
-        if im:
-            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        if im is None:
+            return None
+        image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        if image is None or image.shape is None :
+            return None
+        if screen_shots_cache[device_serial]['quest']:
+            image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
 
-            if screen_shots_cache[device_serial]['quest']:
-                image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
+        height = image.shape[0]
+        width = int(image.shape[1] / height * defaults['screen_height'])
+        height = defaults['screen_height']
 
-            height = image.shape[0]
-            width = int(image.shape[1] / height * defaults['screen_height'])
-            height = defaults['screen_height']
+        dsize = (width, height)
+        image = cv2.resize(image, dsize)
 
-            dsize = (width, height)
-            image = cv2.resize(image, dsize)
-
-            _, encoded_img = cv2.imencode('.png', image)
-            return base64.b64encode(encoded_img).decode("utf-8")
+        _, encoded_img = cv2.imencode('.png', image)
+        return base64.b64encode(encoded_img).decode("utf-8")
         return None
 
     timestamp = datetime.datetime.now()
@@ -572,7 +575,11 @@ async def check_image(device_serial, refresh_ms, size):
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
 @check_adb_running
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
-    success = await check_image(device_serial, refresh_ms, size)
+    try:
+        success = await check_image(device_serial, refresh_ms, size)
+    except RuntimeError as e:
+        if 'device offline' in str(e):
+            return {'success': False, 'device-offline': device_serial}
 
     if not success:
         return {'success': False}
@@ -586,8 +593,14 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
 @app.get("/battery/{device_serial}")
 @check_adb_running
 async def battery(device_serial: str):
-    device: Device = client.device(device_serial)
-    return device.get_battery_level()
+    try:
+        device: Device = client.device(device_serial)
+        return device.get_battery_level()
+    except RuntimeError as e:
+        if 'device offline' in str(e):
+            return 0
+    return 0
+
 
 
 @app.get("/device-experiences/{device_serial}")
