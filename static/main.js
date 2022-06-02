@@ -180,6 +180,7 @@ function addRemoteExperience() {
 
         },
         body: {
+            "experience_name": document.getElementById("experience_name").value,
             "apk_name": document.getElementById("apk_name").value,
             "command": document.getElementById("command").value,
         },
@@ -202,15 +203,16 @@ function removeRemoteExperience() {
     send({
         url: '/remove-remote-experience',
         start: function () {
-            document.getElementById("removeRemoteButton").classList.add("disabled");
         },
-        body: formData,
+        body: {
+            "devices": [],
+            "experience": document.getElementById("remove_choices_dropdown").value,
+        },
         success: function () {
             $('#removeExperienceModal').modal('hide');
             showStatus("Experience has been removed!");
         },
         finally: function () {
-            document.getElementById("removeRemoteButton").classList.remove("disabled");
         }
     })
 
@@ -604,7 +606,8 @@ var devices_manager = function () {
 
 var checkSelected = () => {
     if (selectedCards().length !== 0) {
-        document.getElementById("navContainer").innerHTML = "";
+        var el = document.getElementById("navContainer");
+        if(el) document.getElementById("navContainer").innerHTML = "";
         let navbarSelect = document.querySelector("#navbarSelect").content.cloneNode(true)
         document.getElementById("navContainer").appendChild(navbarSelect);
     } else {
@@ -739,3 +742,28 @@ function stop_some_experience(el) {
         }
     })
 }
+
+   function experience_command(el, cmd, experience, devices, success_message, error_message) {
+        if(!experience) experience = $(el).closest('li').data('experience');
+        var device = $(el).closest('.list-group').data('device');
+        if(device === undefined || device.length===0) device = 'ALL'
+
+        send({
+            body: { 'experience': experience, 'devices': devices},
+            start: function () {
+            },
+            url: '/command/' + cmd +'/' + device,
+            success: function (data) {
+                if(!success_message) success_message = "Experience has " + cmd + "ed!"
+                showStatus(success_message);
+
+            },
+            problem: function (error) {
+                if(!error_message) error_message = "Error " + cmd + "ing experience: " + error;
+                showStatus(error_message);
+            },
+            finally: function () {
+
+            }
+        })
+    }

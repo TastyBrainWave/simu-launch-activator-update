@@ -1,51 +1,43 @@
 {% extends "base.html" %}
 
+{% block menu %}
+{% include "ui/navbar.html" %}
+{% endblock %}
+
 {% block content %}
 
-  {% include "ui/navbar.html" %}
-  {% include "load/upload_modal.html" %}
-  {% include "load/load_modal.html" %}
-  {% include "experiences/set_experience_modal.html" %}
-  {% include "icons/set_icon_modal.html" %}
-  {% include "experiences/stop_experience_modal.html" %}
-  {% include "experiences/add_experience_modal.html" %}
-  {% include "experiences/remove_experience_modal.html" %}
-  {% include "experiences/experiences_modal.html" %}
-  {% include "settings/settings_modal.html" %}
-  {% include "ui/card.html" %}
 
-  <div class="container align-self-center mt-4">
-<!--    please leave below as position-fixed. Elsewise cannot see Toast when scrolled down screen-->
-    <div class="position-fixed end-0 me-2" style="z-index: 11">
-      <div id="statusToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div id="status" class="toast-body fs-5 text"></div>
-          <button id="toastClose" type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"
-                  aria-label="Close"></button>
-        </div>
-      </div>
-    </div>
-    <div id="main-container" class="row row-cols-auto">
-      <h2 class="w-100 text-center p-3" id="no-devices">No Devices Connected.</h2>
-      <div class="col text-center">
-        <btn class="btn btn-outline-light" onclick="devices_manager.refresh_devices()">
-          <img src="/static/icons_set/arrow-repeat.svg" alt="refresh devices" class="img-fluid" width="64" height="64 ">
-        </btn>
-      </div>
-    </div>
-    <div class="row mt-2" id="volumeDiv">
-      <div class="col-12 align-items-center justify-content-center border rounded p-4">
-        <label for="volume" class="form-label fs-3 text">Volume <span class="badge rounded-pill bg-secondary small"><span class="volume-label">10</span>/15</span></label>
-        <input type="range" class="form-range" min="0" value="10" max="15" step="1" id="volume">
-      </div>
-    </div>
+{% include "load/upload_modal.html" %}
+{% include "load/load_modal.html" %}
+{% include "experiences/set_experience_modal.html" %}
+{% include "icons/set_icon_modal.html" %}
+{% include "experiences/stop_experience_modal.html" %}
+{% include "experiences/add_experience_modal.html" %}
+{% include "experiences/remove_experience_modal.html" %}
+{% include "experiences/experiences_modal.html" %}
+{% include "experiences/devices_experiences_modal.html" %}
+{% include "settings/settings_modal.html" %}
+{% include "ui/card.html" %}
+
+
+<div id="main-container" class="row row-cols-auto">
+  <h2 class="w-100 text-center p-3" id="no-devices">No Devices Connected.</h2>
+  <div class="col text-center">
+    <btn class="btn btn-outline-light" onclick="devices_manager.refresh_devices()">
+      <img src="/static/icons_set/arrow-repeat.svg" alt="refresh devices" class="img-fluid" width="64" height="64 ">
+    </btn>
   </div>
+</div>
+<div class="row mt-2" id="volumeDiv">
+  <div class="col-12 align-items-center justify-content-center border rounded p-4">
+    <label for="volume" class="form-label fs-3 text">Volume <span class="badge rounded-pill bg-secondary small"><span
+        class="volume-label">10</span>/15</span></label>
+    <input type="range" class="form-range" min="0" value="10" max="15" step="1" id="volume">
+  </div>
+</div>
+
 
 {% endblock %}
 
 {% block javascript %}
-  <script>
-    var defaults = {{ defaults|safe }};
-  </script>
-  <script defer src="/static/main.js"></script>
 {% endblock %}

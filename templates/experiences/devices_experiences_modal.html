@@ -1,0 +1,46 @@
+<div class="modal fade" id="devicesExperiencesModal" tabindex="-1" aria-labelledby="devicesExperiencesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="devicesExperiencesModalLabel">Installed experiences x devices</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="devices_experiences_modal_content">
+        <h1>loading data...</h1>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    $('#devicesExperiencesModal').on('show.bs.modal', function(){
+
+    fetch('devices-experiences', {
+        method: 'GET',
+    })
+        .then(function (response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.text()
+        })
+        .then(function (html) {
+            $('#devices_experiences_modal_content').html(html);
+        })
+        .catch(function (error) {
+            console.log(error);
+        })
+
+    })
+
+    function start_experience_all(el) {
+        experience_command(el, 'start')
+    }
+
+    function stop_experience(el) {
+        experience_command(el, 'stop')
+    }
+</script>

@@ -29,3 +29,19 @@ Find out the ip address of the raspberry pi, perhaps via this command:
 `ifconfig wlan0 | grep inet | awk '{ print $2 }'`
 
 To access the server from other devices, just enter this ip address into your browser
+
+### Auto-loading on device start
+note that systemd approach failed to work on pi4
+
+`sudo nano /etc/rc.local`
+
+Save below contents above line 'exit 0' (via Control+s then Control-q to quit). Note ending '&' critical elsewise you cant access your pi again!
+
+```
+sudo /home/simu-launch/venv/bin/uvicorn main:app --port 8000 --host "0.0.0.0" --app-dir /home/simu-launch &
+```
+
+then 
+```
+sudo reboot
+```

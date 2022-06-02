@@ -1,6 +1,5 @@
 # Specific to this project:
-screenshots/  
-apks/
+screenshots/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -28,7 +27,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
+sqlLite.db
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -72,7 +71,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+
 
 # PyBuilder
 .pybuilder/
@@ -166,7 +165,7 @@ Terms
 Privacy
 Security
 Status
-Docs
+
 Contact GitHub
 Pricing
 API
@@ -177,3 +176,7 @@ Loading complete
 .idea/simu-launch.iml
 test.db
 .idea/simu-launch.iml
+apks/com.amazon.calculator.apk
+apks/com.NoGhost.Benedict.apk
+apks/com.Shroomstudio.Promenade.apk
+apks/com.Visualise.GetPunked.apk
