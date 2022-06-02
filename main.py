@@ -570,7 +570,11 @@ async def check_image(device_serial, refresh_ms, size):
         if im is None:
             return None
 
-        image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        try:
+            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        except cv2.error:
+            return None
+
         if image is None:
             return None
 
