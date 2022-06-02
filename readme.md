@@ -31,30 +31,17 @@ Find out the ip address of the raspberry pi, perhaps via this command:
 To access the server from other devices, just enter this ip address into your browser
 
 ### Auto-loading on device start
+note that systemd approach failed to work on pi4
 
-`sudo nano/etc/systemd/system/simulaunch.service`
+`sudo nano /etc/rc.local`
 
-Save below contents into file (via Control+s then Control-q to quit)
+Save below contents above line 'exit 0' (via Control+s then Control-q to quit). Note ending '&' critical elsewise you cant access your pi again!
 
 ```
-[Unit]
-Description=Simulaunch
-After=network.target
-
-[Service]
-User=root
-WorkingDirectory=/home/simu-launch
-ExecStart=/home/simu-launch/venv/bin/uvicorn main:app --port 8000 --host "0.0.0.0"
-
-Restart=on-failure
-RestartSec=5s
-
-[Install]
-WantedBy=muli-user.target
+sudo /home/simu-launch/venv/bin/uvicorn main:app --port 8000 --host "0.0.0.0" --app-dir /home/simu-launch &
 ```
 
 then 
 ```
-sudo systemctl enable simulaunch.service
-sudo systemctl start simulaunch.service
+sudo reboot
 ```
