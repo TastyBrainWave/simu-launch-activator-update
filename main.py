@@ -1,8 +1,10 @@
+import asyncio
 import base64
 import datetime
 import json
 import multiprocessing
 import os
+import socket
 from functools import partial, wraps
 import time
 import cv2
@@ -72,11 +74,55 @@ client: AdbClient = AdbClient(host="127.0.0.1", port=5037)
 client_async: AdbClientAsync = AdbClientAsync(host="127.0.0.1", port=5037)
 
 
+async def wait_host_port(host, port, duration=10, delay=2):
+    """Repeatedly try if a port on a host is open until duration seconds passed
+
+    Parameters
+    ----------
+    host : str
+        host ip address or hostname
+    port : int
+        port number
+    duration : int, optional
+        Total duration in seconds to wait, by default 10
+    delay : int, optional
+        delay in seconds between each try, by default 2
+
+    Returns
+    -------
+    awaitable bool
+    """
+    tmax = time.time() + duration
+    while time.time() < tmax:
+        try:
+            _reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=5)
+            writer.close()
+            await writer.wait_closed()
+            return True
+        except:
+            if delay:
+                await asyncio.sleep(delay)
+    return False
+
 def check_adb_running(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
-            client.devices()
+            device: Device
+            for device in client.devices():
+                device_serial = str(device.serial)
+
+                if '.' in device_serial:
+
+                    ip_port = device_serial.split(':')
+                    ip = ip_port[0]
+                    port = int(ip_port[1])
+                    is_open = await wait_host_port(host=ip, port=port, duration=1, delay=1)
+
+                    if not is_open:
+                        outcome = client.remote_disconnect(ip, port)
+                        print(outcome)
+
         except RuntimeError as e:
             if e.__str__().find("Is adb running on your computer?"):
                 print("ADB Server not running, starting it now!")
@@ -575,13 +621,6 @@ devices_info = {}
 
 
 async def check_image(device_serial, refresh_ms, size):
-
-    if device_serial not in devices_info:
-        info = client.device(device_serial).list_features()
-        devices_info[device_serial] = {
-            'info': info,
-            'quest': 'oculus.hardware.standalone_vr' in info,
-        }
 
     device: DeviceAsync = await client_async.device(device_serial)
     if device is None:
