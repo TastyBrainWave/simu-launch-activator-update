@@ -104,7 +104,7 @@ async def devices(db: Session = Depends(get_db)):
     :return: a dict object containing a list of devices and any errors.
     """
 
-    devices = []
+    _devices = []
     errs = []
 
     device: Device
@@ -112,8 +112,10 @@ async def devices(db: Session = Depends(get_db)):
         device_info = {'message': '', 'id': '', 'icon': '', }
         try:
             my_device_icon = get_device_icon(db, device.serial)
-            device_info['id'] = str(device.serial)
+            serial = str(device.serial)
+            device_info['id'] = serial
             device_info['icon'] = my_device_icon
+            device_info['ip'] = len('.'.split(serial)) >= 2
 
         except RuntimeError as e:
             errs.append(str(e))
@@ -125,9 +127,9 @@ async def devices(db: Session = Depends(get_db)):
             if 'disconnected' in str(e):
                 device_info['message'] = 'Disconnected'
 
-        devices.append(device_info)
+        _devices.append(device_info)
 
-    return {'devices': devices, 'errs': errs}
+    return {'devices': _devices, 'errs': errs}
 
 
 @app.get("/d")

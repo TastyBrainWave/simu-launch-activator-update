@@ -360,6 +360,7 @@ class DeviceCard extends HTMLElement {
 
             var col = this.device_icon['col'];
             var icon = this.device_icon['icon'];
+            var has_ip = this.device_icon['icon'];
             var my_id = '#' + col + '-' + icon;
 
             $('.icon-set').each(function () {
@@ -377,6 +378,11 @@ class DeviceCard extends HTMLElement {
             var el = this.shadowRoot.getElementById(el_id);
             // should really be setting data-device_id
             el.setAttribute('device_id', this.deviceId)
+        }
+
+        if(has_ip){
+            var el = this.shadowRoot.getElementById('wifi-connect');
+            el.hidden = true;
         }
 
         var check_battery_mins_wait = 5;
