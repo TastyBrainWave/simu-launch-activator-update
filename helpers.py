@@ -1,5 +1,4 @@
 import os
-from turtle import up
 
 from ppadb.client import Client as AdbClient
 from ppadb.device import Device
