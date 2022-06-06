@@ -491,7 +491,11 @@ async def connect(request: Request, device_serial: str):
     print("device ", device_serial, device)
 
     if not remote_address:
-        device_ip = device.shell("ip addr show wlan0")
+        try:
+            device_ip = device.shell("ip addr show wlan0")
+        except RuntimeError:
+            return {"success": False, "error": "Via a popup box within the headset you have not specified that this "
+                                               "device can have appropriate permissions@"}
         device_ip = device_ip[device_ip.find("inet "):]
         device_ip = device_ip[: device_ip.find("/")]
         device_ip = device_ip[device_ip.find(" ") + 1:]
