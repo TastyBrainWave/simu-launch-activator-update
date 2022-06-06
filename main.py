@@ -405,30 +405,32 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 
-@app.post("/connect")
+@app.get("/connect/{device_serial}")
 @check_adb_running
-async def connect(request: Request):
+async def connect(request: Request, device_serial: str):
     """
         Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
         the USB.
 
+    :param device_serial:
     :param request: The Request parameter which is used to receive the device data.
     :return: a dictionary containing the success flag of the operation and any errors
     """
-
+    print(device_serial)
     global BASE_PORT
 
     json = await request.json() if len((await request.body()).decode()) > 0 else {}
 
-    remote_address = json["remote_address"] if "remote_address" in json else ""
+    remote_address = ""
 
-    devices = client.devices()
+    device: Device = client.device(device_serial)
 
     print("json ", json)
     print("address ", remote_address)
+    print("device ", device_serial, device)
 
     if not remote_address:
-        device_ip = devices[0].shell("ip addr show wlan0")
+        device_ip = device.shell("ip addr show wlan0")
         device_ip = device_ip[device_ip.find("inet "):]
         device_ip = device_ip[: device_ip.find("/")]
         device_ip = device_ip[device_ip.find(" ") + 1:]
@@ -437,7 +439,7 @@ async def connect(request: Request):
 
     try:
         if not remote_address:
-            os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
+            os.system("adb -s" + device.serial + " tcpip " + str(BASE_PORT))
 
         p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
         p.start()

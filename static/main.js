@@ -65,7 +65,7 @@ function send(params) {
     });
 }
 
-var showStatus = (text = "The showStatus function was used incoorrectly and status text was not defined", isError = false) => {
+var showStatus = (text = "The showStatus function was used incorrectly and status text was not defined", isError = false) => {
     if (isError === true) {
         document.getElementById("statusToast").classList.add("bg-danger");
         document.getElementById("toastClose").classList.add("btn-close-white");
@@ -396,7 +396,7 @@ class DeviceCard extends HTMLElement {
         }
 
         // setting this attribute on the nodes themselves to avoid future breakage during UI redesign
-        for (var el_id of ['checkExperiences', 'stop_some_experience', 'setIcon', 'refresh-screen']) {
+        for (var el_id of ['checkExperiences', 'stop_some_experience', 'setIcon', 'refresh-screen', 'wifi-connect']) {
             var el = this.shadowRoot.getElementById(el_id);
             // should really be setting data-device_id
             el.setAttribute('device_id', this.deviceId)
@@ -502,6 +502,33 @@ var devices_manager = function () {
 
     api.refresh_devices = function () {
         location.reload();
+    }
+
+    api.wifi_connect = function (el) {
+        var device_id = el.getAttribute('device_id');
+        var orig_text = el.innerHTML;
+        el.innerHTML = 'please wait';
+        el.classList.add('disabled');
+        fetch("connect/" + device_id)
+            .then(function (response) {
+                return response.json()
+            })
+            .then(function (json) {
+                console.log(json,222)
+                if (json['success']) {
+                    remove_card(device_id);
+                }
+                else{
+                    showStatus(json['error']);
+                }
+            })
+            .catch(function () {
+                console.log('error with wifi connecting device ' + device_id);
+            })
+            .finally(function(){
+                el.innerHTML = orig_text;
+                el.classList.remove('disabled');
+            });
     }
 
     api.refresh_image = function (el) {
