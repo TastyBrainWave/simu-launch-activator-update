@@ -248,29 +248,6 @@ function stopExperience() {
     }
 }
 
-function connectDevice() {
-
-
-    send({
-        url: '/connect',
-        start: function () {
-            document.getElementById("connectButton").classList.add("disabled");
-        },
-
-        success: function (data) {
-            showStatus("Device connected with serial ID: " + data["serial"]);
-            setTimeout(function () {
-                location.reload();
-            }, 3000);
-        },
-        problem: function (error) {
-            showStatus("Error connecting device: " + error, true);
-        },
-        finally: function () {
-            document.getElementById("connectButton").classList.remove("disabled");
-        }
-    })
-}
 
 function disconnectDevice() {
 

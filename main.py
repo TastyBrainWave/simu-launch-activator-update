@@ -482,7 +482,6 @@ async def disconnect(payload: Devices):
             print("Disconnecting device " + device.serial + " from server!")
             working = client.remote_disconnect(device.serial)
             if not working:
-                print(1)
                 return {
                     "success": False,
                     "error": "Encountered an error disconnecting device with ID/IP: "
