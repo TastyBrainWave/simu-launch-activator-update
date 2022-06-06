@@ -506,7 +506,6 @@ var devices_manager = function () {
 
     api.refresh_image = function (el) {
         var device = el.getAttribute('device_id');
-        console.log(device,22, el)
         fetch("device-screen/" + rate + "/" + image_height + "/" + device)
             .then(function (response) {
                 return response.json()
