@@ -40,7 +40,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 location = "/home/simu-launch/" if 'Linux' in platform.system().lower() else ''
 app.mount("/static", StaticFiles(directory=location + 'static'), name="static")
-templates = Jinja2Templates(directory= location + 'templates')
+templates = Jinja2Templates(directory=location + 'templates')
 
 simu_application_name = ""
 global_volume = 10
@@ -59,6 +59,7 @@ defaults = {
 crud_defaults(SessionLocal(), defaults)
 
 FastAPICache.init(InMemoryBackend())
+
 
 def get_db():
     db = SessionLocal()
@@ -104,24 +105,38 @@ async def wait_host_port(host, port, duration=10, delay=2):
                 await asyncio.sleep(delay)
     return False
 
+
+async def scan_devices():
+    my_devices = []
+
+    device: Device
+    for device in client.devices():
+        device_serial = str(device.serial)
+
+        if '.' not in device_serial:
+            my_devices.append(device)
+        else:
+            try:
+                ip_port = device_serial.split(':')
+                ip = ip_port[0]
+                port = int(ip_port[1])
+                is_open = await wait_host_port(host=ip, port=port, duration=1, delay=1)
+
+                if is_open:
+                    my_devices.append(device)
+
+            except RuntimeError as e:
+                err = e.__str__()
+                print('issue disconnecting disconnected wifi device (caution): ' + err)
+    return my_devices
+
+
 def check_adb_running(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         try:
             device: Device
-            for device in client.devices():
-                device_serial = str(device.serial)
-
-                if '.' in device_serial:
-
-                    ip_port = device_serial.split(':')
-                    ip = ip_port[0]
-                    port = int(ip_port[1])
-                    is_open = await wait_host_port(host=ip, port=port, duration=1, delay=1)
-
-                    if not is_open:
-                        outcome = client.remote_disconnect(ip, port)
-                        print(outcome)
+            client.devices()
 
         except RuntimeError as e:
             err = e.__str__()
@@ -143,9 +158,9 @@ async def settings(screen_updates: int = Form(...),
     crud_defaults(SessionLocal(), defaults)
     return {'success': True}
 
+
 @app.get("/devices")
 @cache(expire=check_for_new_devices_poll_s)
-@check_adb_running
 async def devices(db: Session = Depends(get_db)):
     """
         Gets a list of all devices connected via ADB.
@@ -157,7 +172,7 @@ async def devices(db: Session = Depends(get_db)):
     errs = []
 
     device: Device
-    for device in client.devices():
+    for device in await scan_devices():
         device_info = {'message': '', 'id': '', 'icon': '', }
         try:
             my_device_icon = get_device_icon(db, device.serial)
@@ -195,6 +210,7 @@ async def devices_page(request: Request):
         },
     )
 
+
 @app.get("/")
 @check_adb_running
 async def home(request: Request):
@@ -218,9 +234,9 @@ async def home(request: Request):
         },
     )
 
+
 @app.get('/experiences')
 async def experiences(request: Request, db: Session = Depends(get_db)):
-
     return templates.TemplateResponse(
         "experiences/set_experience_content.html",
         {
@@ -231,7 +247,6 @@ async def experiences(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post("/start")
-@check_adb_running
 async def start(payload: StartExperience, db: Session = Depends(get_db)):
     """
         Starts the experience on all devices through the adb shell commands.
@@ -323,7 +338,6 @@ async def upload(
 
 
 @app.post("/load")
-@check_adb_running
 async def load(payload: Experience):
     """
         Installs the experience on selected or all devices.
@@ -360,7 +374,6 @@ async def load(payload: Experience):
 
 
 @app.post("/remove-remote-experience")
-@check_adb_running
 async def remove_remote_experience(payload: Experience, db: Session = Depends(get_db)):
     """
         Removes an experience from the database.
@@ -382,7 +395,6 @@ async def remove_remote_experience(payload: Experience, db: Session = Depends(ge
 
 
 @app.post("/add-remote-experience")
-@check_adb_running
 async def add_remote_experience(payload: NewExperience, db: Session = Depends(get_db)):
     """
         Adds a new experience, which has either been previously installed or is available on the device already.
@@ -417,7 +429,6 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
 
 
 @app.post("/stop")
-@check_adb_running
 async def stop(payload: Experience, db: Session = Depends(get_db)):
     """
         Stops the experience on all devices through ADB shell commands
@@ -457,7 +468,6 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
 
 
 @app.get("/connect/{device_serial}")
-@check_adb_running
 async def connect(request: Request, device_serial: str):
     """
         Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
@@ -499,7 +509,7 @@ async def connect(request: Request, device_serial: str):
 
         if not p.is_alive():
             connected_device = Device(client, device_ip)
-            connect_actions(connected_device, global_volume,)
+            connect_actions(connected_device, global_volume, )
 
             print(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
@@ -515,7 +525,6 @@ async def connect(request: Request, device_serial: str):
 
 
 @app.post("/disconnect")
-@check_adb_running
 async def disconnect(payload: Devices):
     """
         Disconnects devices from the server.
@@ -562,7 +571,6 @@ async def exit_server():
 
 
 @app.get("/screen-grab")
-@check_adb_running
 async def screen_grab():
     """
         Gets a screenshot from every device.
@@ -570,7 +578,7 @@ async def screen_grab():
     :return: a dictionary containing the success flag
     """
 
-    devices = client.devices()
+    my_devices = await scan_devices()
 
     screen_caps_folder = "screenshots/"
 
@@ -580,7 +588,7 @@ async def screen_grab():
         )
         os.makedirs(folder)
         i = 0
-        for device in devices:
+        for device in my_devices:
             result = device.screencap()
             with open(folder + "screen" + str(i) + ".png", "wb") as fp:
                 fp.write(result)
@@ -592,7 +600,6 @@ async def screen_grab():
 
 
 @app.post("/volume")
-@check_adb_running
 async def volume(payload: Volume):
     """
         Sets the volume of a list of devices.
@@ -624,7 +631,6 @@ devices_info = {}
 
 
 async def check_image(device_serial, refresh_ms, size):
-
     device: DeviceAsync = await client_async.device(device_serial)
     if device is None:
         return None
@@ -656,7 +662,6 @@ async def check_image(device_serial, refresh_ms, size):
 
 
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
-@check_adb_running
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
     try:
         image = await check_image(device_serial, refresh_ms, size)
@@ -671,7 +676,6 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
 
 
 @app.get("/battery/{device_serial}")
-@check_adb_running
 async def battery(device_serial: str):
     try:
         device: Device = client.device(device_serial)
@@ -703,8 +707,8 @@ async def _experiences(device_serial: str = None, device: Device = None) -> []:
 
     return experiences
 
+
 @app.get("/device-experiences/{device_serial}")
-@check_adb_running
 async def device_experiences(request: Request, device_serial: str):
     device: Device = client.device(device_serial)
     # https://stackoverflow.com/a/53634311/960471
@@ -720,30 +724,28 @@ async def device_experiences(request: Request, device_serial: str):
 
 
 @app.get("/devices-experiences")
-@check_adb_running
 async def devices_experiences(request: Request):
-
     # https://stackoverflow.com/a/53634311/960471
 
-    devices = {}
+    devices_lookup = {}
     counter = Counter()
 
-    for device in client.devices():
+    for device in await scan_devices():
         experiences = await _experiences(device=device)
+        print(experiences,222)
         experiences_map = {el['package']: el['name'] for el in experiences}
         counter.update(experiences_map.keys())
-        devices[device.serial] = experiences_map
+        devices_lookup[device.serial] = experiences_map
 
     combined = {}
     for experience in [key for key, val in counter.most_common()]:
         row = []
-        for device_id, experience_map in devices.items():
+        for device_id, experience_map in devices_lookup.items():
             if experience in experience_map:
                 row.append(device_id)
             else:
                 row.append('')
         combined[experience] = row
-
 
     return templates.TemplateResponse(
         "experiences/devices_experiences.html",
@@ -755,7 +757,6 @@ async def devices_experiences(request: Request):
 
 
 @app.get("/device-experiences/{device_serial}")
-@check_adb_running
 async def device_experiences(request: Request, device_serial: str):
     device: Device = client.device(device_serial)
     # https://stackoverflow.com/a/53634311/960471
@@ -769,6 +770,7 @@ async def device_experiences(request: Request, device_serial: str):
         },
     )
 
+
 async def get_running_app(device: DeviceAsync):
     current_app = await device.shell("dumpsys activity activities | grep ResumedActivity")
     current_app = current_app.split(' ')[-2]
@@ -776,7 +778,6 @@ async def get_running_app(device: DeviceAsync):
 
 
 @app.post("/command/{command}/{device_serial}")
-@check_adb_running
 async def device_command(request: Request, command: str, device_serial: str, db: Session = Depends(get_db)):
     device = None
     if device_serial != 'ALL':
@@ -796,7 +797,6 @@ async def device_command(request: Request, command: str, device_serial: str, db:
         # https://stackoverflow.com/a/64241561/960471
         info = await get_exp_info(device)
         outcome = await device.shell(f"am start -n {info}")
-        print(outcome,33)
         return {'success': 'Starting' in outcome, 'message': outcome}
 
     elif command == 'stop':
@@ -841,13 +841,17 @@ async def device_command(request: Request, command: str, device_serial: str, db:
         devices_list = [x for x in my_devices.split(',') if len(x) > 0]
 
         info = await get_exp_info(await client_async.device(devices_list[0]))
+        errs = []
         for d in devices_list:
             d: DeviceAsync = await client_async.device(d)
             outcome = await d.shell(f"am start -n {info}")
 
             if "Exception" in outcome:
-                print(f"An error occured at device {d.serial}: \n" + outcome)
-                return {"success": False, "error": "Couldn't start experience on device " + d.serial + "! Make sure a boundary is setup."}
+                errs.append(f"An error occurred at device {d.serial}: \n" + outcome)
+        if errs:
+            return {"success": False,
+                    "error": "Couldn't start experience on device. Make sure boundaries set up. " + ' '.join(errs)}
+
         return {'success': True}
 
     ########### devices experiences menu

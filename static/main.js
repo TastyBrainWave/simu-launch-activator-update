@@ -360,7 +360,6 @@ class DeviceCard extends HTMLElement {
 
             var col = this.device_icon['col'];
             var icon = this.device_icon['icon'];
-            var has_ip = this.device_icon['icon'];
             var my_id = '#' + col + '-' + icon;
 
             $('.icon-set').each(function () {
@@ -380,7 +379,7 @@ class DeviceCard extends HTMLElement {
             el.setAttribute('device_id', this.deviceId)
         }
 
-        if(has_ip){
+        if(this.deviceId.split('.').length > 2){
             var el = this.shadowRoot.getElementById('wifi-connect');
             el.hidden = true;
         }
@@ -497,7 +496,6 @@ var devices_manager = function () {
                 return response.json()
             })
             .then(function (json) {
-                console.log(json,222)
                 if (json['success']) {
                     remove_card(device_id);
                 }
@@ -803,7 +801,8 @@ function experience_command(el, cmd, experience, devices, success_message, error
             if (data['message']) showStatus(data['message'])
             else {
                 if (!success_message) success_message = "Experience has " + cmd + "ed!"
-                showStatus(success_message + data['message']);
+                if(data['message']) success_message += ' ' + data['message']
+                showStatus(success_message);
             }
 
 
