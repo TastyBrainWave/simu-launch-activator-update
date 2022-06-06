@@ -556,78 +556,61 @@ async def volume(payload: Volume):
     return {"success": True}
 
 
-my_devices = None
-screen_shots_cache = {}
+devices_info = {}
 
 
 async def check_image(device_serial, refresh_ms, size):
-    async def gen_image():
-        device: DeviceAsync = await client_async.device(device_serial)
-        if device is None:
-            return None
 
-        im = await device.screencap()
-        if im is None:
-            return None
-
-        try:
-            image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
-        except cv2.error:
-            return None
-
-        if image is None:
-            return None
-
-        if screen_shots_cache[device_serial]['quest']:
-            image = image[0:image.shape[0], 0: int(image.shape[1] * .5)]
-
-            height = image.shape[0]
-            width = int(image.shape[1] / height * defaults['screen_height'])
-            height = defaults['screen_height']
-
-            dsize = (width, height)
-            image = cv2.resize(image, dsize)
-
-        _, encoded_img = cv2.imencode('.png', image)
-        return base64.b64encode(encoded_img).decode("utf-8")
-
-    timestamp = datetime.datetime.now()
-
-    if device_serial not in screen_shots_cache:
+    if device_serial not in devices_info:
         info = client.device(device_serial).list_features()
-        screen_shots_cache[device_serial] = {'info': info,
-                                             'quest': 'oculus.hardware.standalone_vr' in info, }
+        devices_info[device_serial] = {
+            'info': info,
+            'quest': 'oculus.hardware.standalone_vr' in info,
+        }
 
-    if size not in screen_shots_cache[device_serial]:
-        ancient = datetime.datetime.now() - datetime.timedelta(hours=10)
-        screen_shots_cache[device_serial][size] = {'timestamp': ancient, 'file_id': None}
-    if screen_shots_cache[device_serial][size]['timestamp'] + datetime.timedelta(
-            milliseconds=refresh_ms) < timestamp:
-        screen_shots_cache[device_serial][size]['timestamp'] = timestamp
-        try:
-            image = await gen_image()
-            if image:
-                screen_shots_cache[device_serial][size]['file_id'] = image
-        except RuntimeError:
-            return False
+    device: DeviceAsync = await client_async.device(device_serial)
+    if device is None:
+        return None
 
-    return True
+    im = await device.screencap()
+    if im is None:
+        return None
+
+    _image = None
+    try:
+        _image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+    except cv2.error:
+        return None
+
+    if _image is None:
+        return None
+
+    _image = _image[0:_image.shape[0], 0: int(_image.shape[1] * .5)]
+
+    height = _image.shape[0]
+    width = int(_image.shape[1] / height * defaults['screen_height'])
+    height = defaults['screen_height']
+
+    dsize = (width, height)
+    image = cv2.resize(_image, dsize)
+
+    _, encoded_img = cv2.imencode('.png', image)
+    return base64.b64encode(encoded_img).decode("utf-8")
 
 
 @app.get("/device-screen/{refresh_ms}/{size}/{device_serial}")
 @check_adb_running
 async def devicescreen(request: Request, refresh_ms: int, size: str, device_serial: str):
     try:
-        success = await check_image(device_serial, refresh_ms, size)
-        if not success:
+        image = await check_image(device_serial, refresh_ms, size)
+        if not image:
             return {'success': False}
+        return {'base64_image': image}
     except RuntimeError as e:
         if 'device offline' in str(e):
             return {'success': False, 'device-offline': device_serial}
 
-    image = screen_shots_cache[device_serial][size]['file_id']
-
-    return {'base64_image': image}
+    return {'success': False}
 
 
 @app.get("/battery/{device_serial}")
@@ -642,7 +625,6 @@ async def battery(device_serial: str):
     return 0
 
 
-
 async def _experiences(device_serial: str = None, device: Device = None) -> []:
     if device is None:
         device: Device = client.device(device_serial)
@@ -651,7 +633,6 @@ async def _experiences(device_serial: str = None, device: Device = None) -> []:
 
     experiences = []
 
-    print(payload)
     for package in payload.split('\n'):
         package = package.replace('package:', '')
         experiences.append({'package': package, 'name': package})
