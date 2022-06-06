@@ -124,7 +124,10 @@ def check_adb_running(func):
                         print(outcome)
 
         except RuntimeError as e:
-            if e.__str__().find("Is adb running on your computer?"):
+            err = e.__str__()
+            if 'no such device' in err:
+                print('issue disconnecting disconnected wifi device (caution)')
+            elif e.__str__().find("Is adb running on your computer?"):
                 print("ADB Server not running, starting it now!")
                 command = os.system("adb start-server")
                 print(command)
