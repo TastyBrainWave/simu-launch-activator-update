@@ -495,7 +495,7 @@ async def connect(request: Request, device_serial: str):
             device_ip = device.shell("ip addr show wlan0")
         except RuntimeError:
             return {"success": False, "error": "Via a popup box within the headset you have not specified that this "
-                                               "device can have appropriate permissions@"}
+                                               "device can have permission to access the headset."}
         device_ip = device_ip[device_ip.find("inet "):]
         device_ip = device_ip[: device_ip.find("/")]
         device_ip = device_ip[device_ip.find(" ") + 1:]
@@ -512,16 +512,30 @@ async def connect(request: Request, device_serial: str):
         p.join(5)
 
         if not p.is_alive():
+            cmd = "adb -s " + device.serial + " tcpip " + str(BASE_PORT)
+            os.system(cmd)
+
+        p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
+        p.start()
+
+        p.join(5)
+
+        if not p.is_alive():
             connected_device = Device(client, device_ip)
             connect_actions(connected_device, global_volume, )
 
-            print(
-                "Established connection with client " + device_ip + ":" + str(BASE_PORT)
-            )
+            connected = await wait_host_port(device_ip, BASE_PORT, duration=5, delay=2)
+            print(connected,22)
+            if connected:
+                print(
+                    "Established connection with client " + device_ip + ":" + str(BASE_PORT)
+                )
 
-            return {"success": True, "serial": device_ip}
+                return {"success": True, "serial": device_ip}
+            else:
+                return {"success": False, "error": "Your device is on a different wifi network"}
 
-        print("alive")
+
         raise RuntimeError(
             "Could not connect device. Make sure the device is connected on the same router as the server!")
     except RuntimeError as e:
