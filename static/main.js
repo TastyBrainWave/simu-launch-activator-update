@@ -366,7 +366,9 @@ class DeviceCard extends HTMLElement {
         this.deviceId = device['id'];
         this.device_icon = device['icon'];
         this.selected = selected;
+        this.updateMessage(device['message']);
         var checkbox = this.shadowRoot.getElementById("cardSelect");
+
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
                 this.updateSelected(true)
@@ -394,7 +396,7 @@ class DeviceCard extends HTMLElement {
         }
 
         // setting this attribute on the nodes themselves to avoid future breakage during UI redesign
-        for (var el_id of ['checkExperiences', 'stop_some_experience', 'setIcon']) {
+        for (var el_id of ['checkExperiences', 'stop_some_experience', 'setIcon', 'refresh-screen']) {
             var el = this.shadowRoot.getElementById(el_id);
             // should really be setting data-device_id
             el.setAttribute('device_id', this.deviceId)
@@ -402,10 +404,14 @@ class DeviceCard extends HTMLElement {
 
         var check_battery_mins_wait = 5;
         this.getBatteryPercentage()
-        setInterval(() => {
+        this.batteryInterval = setInterval(() => {
             this.getBatteryPercentage()
         }, check_battery_mins_wait * 60 * 1000);
 
+    }
+
+    kill() {
+        clearInterval(this.batteryInterval);
     }
 
     updateSelected(selected) {
@@ -421,7 +427,7 @@ class DeviceCard extends HTMLElement {
     }
 
     getBatteryPercentage() {
-        let result
+
         fetch("/battery/" + this.deviceId).then(response => {
             return response.json()
         }).then(data => {
@@ -446,6 +452,16 @@ class DeviceCard extends HTMLElement {
     updateImage(image) {
         this.image = image;
         this.shadowRoot.querySelector("img").src = image;
+    }
+
+    updateMessage(str) {
+        var el = this.shadowRoot.getElementById("message");
+        if (str.length > 0) {
+            el.hidden = false;
+        } else {
+            el.hidden = true;
+        }
+        el.innerHTML = str;
     }
 
     updateImage64(image64) {
@@ -488,6 +504,25 @@ var devices_manager = function () {
         location.reload();
     }
 
+    api.refresh_image = function (el) {
+        var device = el.getAttribute('device_id');
+        console.log(device,22, el)
+        fetch("device-screen/" + rate + "/" + image_height + "/" + device)
+            .then(function (response) {
+                return response.json()
+            })
+            .then(function (json) {
+                if (json['base64_image']) {
+                    var b64_image = json['base64_image'];
+                    card_map[device].updateImage64(b64_image);
+                }
+            })
+            .catch(function () {
+                console.log('error with polling for device ' + device)
+            });
+
+    }
+
     function screengrab_polling(device, on) {
 
         if (on === undefined) on = true;
@@ -508,7 +543,8 @@ var devices_manager = function () {
 
         var lock = false;
 
-        function poll() {
+        function poll(do_timeout) {
+            if (do_timeout === undefined) do_timeout = true;
             if (lock) {
                 return
             }
@@ -518,11 +554,10 @@ var devices_manager = function () {
                     return response.json()
                 })
                 .then(function (json) {
-                    if(json['base64_image']) {
+                    if (json['base64_image']) {
                         var b64_image = json['base64_image'];
                         card_map[device].updateImage64(b64_image);
-                    }
-                    else if(json['device-offline']){
+                    } else if (json['device-offline']) {
                         remove_card(device);
                     }
                 })
@@ -531,17 +566,18 @@ var devices_manager = function () {
                     //api.refresh_devices()
                 })
                 .finally(function () {
-                    if(card_map[device]) {
-                        card_map[device]['poll'] = setTimeout(poll, rate);
+                    if (card_map[device]) {
+                        if (do_timeout) card_map[device]['poll'] = setTimeout(poll, rate);
                     }
                     lock = false;
                 })
         }
     }
 
-    function remove_card(card_id){
+    function remove_card(card_id) {
         screengrab_polling(card_id, false);
         var card = card_map[card_id];
+        card.kill();
         delete card_map[card_id];
         var i = cardList.indexOf(card_id);
         cardList.splice(i, 1);
@@ -563,28 +599,26 @@ var devices_manager = function () {
                 var devices_count = json['devices'].length;
                 if (devices_count > 0) {
                     var found = document.getElementById('no-devices');
-                    if(found) found.remove();
+                    if (found) found.remove();
                 }
-                var devices_here = [];
                 var devices_so_far = Object.keys(card_map);
 
                 for (var device of json['devices']) {
                     var device_id = device['id'];
-                    devices_here.push(device_id);
                     var found_at = devices_so_far.indexOf(device_id)
-                    if(found_at === -1) {
+                    if (found_at === -1) {
                         var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
                         card.classList.add('col')
                         cardList.push(card);
                         document.querySelector("#main-container").prepend(card);
                         card_map[device_id] = card
                         screengrab_polling(device_id, true);
-                    }
-                    else{
+                    } else {
+                        card_map[device_id].updateMessage(device['message']);
                         devices_so_far.splice(found_at, 1);
                     }
                 }
-                for(var d_missing of devices_so_far){
+                for (var d_missing of devices_so_far) {
                     remove_card(d_missing)
                 }
 
@@ -593,6 +627,7 @@ var devices_manager = function () {
                 console.log(error);
             })
     }
+
     get_devices();
     setInterval(get_devices, defaults.check_for_new_devices_poll);
 
@@ -602,12 +637,13 @@ var devices_manager = function () {
     }
 
     return api;
-}();
+}
+();
 
 var checkSelected = () => {
     if (selectedCards().length !== 0) {
         var el = document.getElementById("navContainer");
-        if(el) document.getElementById("navContainer").innerHTML = "";
+        if (el) document.getElementById("navContainer").innerHTML = "";
         let navbarSelect = document.querySelector("#navbarSelect").content.cloneNode(true)
         document.getElementById("navContainer").appendChild(navbarSelect);
     } else {
@@ -743,27 +779,35 @@ function stop_some_experience(el) {
     })
 }
 
-   function experience_command(el, cmd, experience, devices, success_message, error_message) {
-        if(!experience) experience = $(el).closest('li').data('experience');
-        var device = $(el).closest('.list-group').data('device');
-        if(device === undefined || device.length===0) device = 'ALL'
+function experience_command(el, cmd, experience, devices, success_message, error_message) {
+    if (!experience) experience = $(el).closest('li').data('experience');
+    var device = $(el).closest('.list-group').data('device');
+    if (device === undefined || device.length === 0) device = 'ALL'
 
-        send({
-            body: { 'experience': experience, 'devices': devices},
-            start: function () {
-            },
-            url: '/command/' + cmd +'/' + device,
-            success: function (data) {
-                if(!success_message) success_message = "Experience has " + cmd + "ed!"
-                showStatus(success_message);
+    send({
+        body: {'experience': experience, 'devices': devices},
+        start: function () {
+        },
+        url: '/command/' + cmd + '/' + device,
+        success: function (data) {
 
-            },
-            problem: function (error) {
-                if(!error_message) error_message = "Error " + cmd + "ing experience: " + error;
-                showStatus(error_message);
-            },
-            finally: function () {
-
+            if (data['message']) showStatus(data['message'])
+            else {
+                if (!success_message) success_message = "Experience has " + cmd + "ed!"
+                showStatus(success_message + data['message']);
             }
-        })
-    }
+
+
+        },
+        problem: function (error) {
+            if (data['message']) showStatus(data['message'])
+            else {
+                if (!error_message) error_message = "Error " + cmd + "ing experience: " + error;
+                showStatus(error_message + error['message']);
+            }
+        },
+        finally: function () {
+
+        }
+    })
+}

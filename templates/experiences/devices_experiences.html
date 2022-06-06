@@ -25,12 +25,12 @@
     function start_experience_some(el) {
         var experience = $(el).data('experience')
         var devices = $(el).data('devices')
-        experience_command(el, 'start_experience_some', experience, devices, experience + " has started!")
+        experience_command(el, 'devices_experiences__start_experience_some', experience, devices, experience + " has started!")
     }
 
     function stop_experience_some(el) {
         var experience = $(el).data('experience')
         var devices = $(el).data('devices')
-        experience_command(el, 'stop_experience_some', experience, devices, experience + " has been stopped!")
+        experience_command(el, 'devices_experiences__stop_experience_some', experience, devices, experience + " has been stopped!")
     }
 </script>

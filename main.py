@@ -109,12 +109,24 @@ async def devices(db: Session = Depends(get_db)):
 
     device: Device
     for device in client.devices():
+        device_info = {'message': '', 'id': '', 'icon': '', }
         try:
-            device.serial, device.get_state()
             my_device_icon = get_device_icon(db, device.serial)
-            devices.append({'id': str(device.serial), 'icon': my_device_icon})
+            device_info['id'] = str(device.serial)
+            device_info['icon'] = my_device_icon
+
         except RuntimeError as e:
             errs.append(str(e))
+        try:
+            device.get_state()
+        except RuntimeError as e:
+            if 'unauthorized' in str(e):
+                device_info['message'] = 'Unauthorised'
+            if 'disconnected' in str(e):
+                device_info['message'] = 'Disconnected'
+
+        devices.append(device_info)
+
     return {'devices': devices, 'errs': errs}
 
 
@@ -618,7 +630,12 @@ async def devicescreen(request: Request, refresh_ms: int, size: str, device_seri
 async def battery(device_serial: str):
     try:
         device: Device = client.device(device_serial)
-        return device.get_battery_level()
+        if not device:
+            return 'Device does not exist'
+        battery_level = device.get_battery_level()
+        if str(battery_level) == 'null':
+            return '?'
+        return battery_level
     except RuntimeError as e:
         if 'device offline' in str(e):
             return 0
@@ -707,6 +724,12 @@ async def device_experiences(request: Request, device_serial: str):
         },
     )
 
+async def get_running_app(device: DeviceAsync):
+    current_app = await device.shell("dumpsys activity activities | grep ResumedActivity")
+    current_app = current_app.split(' ')[-2]
+    return current_app.split('/')[0]
+
+
 @app.post("/command/{command}/{device_serial}")
 @check_adb_running
 async def device_command(request: Request, command: str, device_serial: str, db: Session = Depends(get_db)):
@@ -728,9 +751,47 @@ async def device_command(request: Request, command: str, device_serial: str, db:
         # https://stackoverflow.com/a/64241561/960471
         info = await get_exp_info(device)
         outcome = await device.shell(f"am start -n {info}")
-        print(111, outcome)
-        return {'success': 'Starting' in outcome}
-    elif command == 'start_experience_some':
+        print(outcome,33)
+        return {'success': 'Starting' in outcome, 'message': outcome}
+
+    elif command == 'stop':
+        # https://stackoverflow.com/a/56078766/960471
+        await device.shell(f"am force-stop {experience}")
+        return {'success': True}
+    elif command == 'copy-details':
+        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
+        info = info.strip().split('\n')[0]
+        info = info.split(' ')[1]
+        item = APKDetailsBase(
+            apk_name=info,
+            device_type=2,
+            command='',
+        )
+
+        crud.create_apk_details_item(
+            db=db, item=APKDetailsCreate.parse_obj(item.dict())
+        )
+        return {'success': True}
+
+    elif command == 'stop-some-experience':
+        current_app = await get_running_app(device)
+        if current_app == 'com.oculus.shellenv':
+            return {'success': True, 'outcome': 'No app to stop!'}
+        outcome = await device.shell(f"am force-stop {current_app}")
+        return {'success': True, 'outcome': 'Successfully stopped!'}
+
+    ########### devices experiences menu
+    elif command == 'devices_experiences__stop_experience_some':
+        my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
+        devices_list = [x for x in my_devices.split(',') if len(x) > 0]
+        outcome = ''
+        for d in devices_list:
+            d: DeviceAsync = await client_async.device(d)
+            print(experience)
+            outcome = await d.shell(f"am force-stop {experience}")
+        return {'success': True, 'message': outcome}
+
+    elif command == 'devices_experiences__start_experience_some':
         my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
         devices_list = [x for x in my_devices.split(',') if len(x) > 0]
 
@@ -742,42 +803,11 @@ async def device_command(request: Request, command: str, device_serial: str, db:
             if "Exception" in outcome:
                 print(f"An error occured at device {d.serial}: \n" + outcome)
                 return {"success": False, "error": "Couldn't start experience on device " + d.serial + "! Make sure a boundary is setup."}
-
         return {'success': True}
-    elif command == 'stop':
-        # https://stackoverflow.com/a/56078766/960471
-        await device.shell(f"am force-stop {experience}")
-        return {'success': True}
-    elif command == 'copy-details':
-        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
-        print(info,22)
-        info = info.strip().split('\n')[0]
-        info = info.split(' ')[1]
-        print(info)
-        item = APKDetailsBase(
-            apk_name=info,
-            device_type=2,
-            command='',
-        )
 
-        crud.create_apk_details_item(
-            db=db, item=APKDetailsCreate.parse_obj(item.dict())
-        )
-        return {'success': True}
-    elif command == 'stop_experience_some':
-        my_devices = json['devices'].replace('[', "").replace(']', "").replace("'", "").replace(' ', '')
-        devices_list = [x for x in my_devices.split(',') if len(x) > 0]
-        for d in devices_list:
-            d: DeviceAsync = await client_async.device(d)
-            await d.shell(f"am force-stop {experience}")
-        return {'success': True}
-    elif command == 'stop_some_experience':
+    ########### devices experiences menu
 
-        await device.shell(f"am force-stop {experience}")
-
-        return {'success': True, 'outcome': 'Successfully stopped!'}
-    else:
-        return {'success': True, 'outcome': 'No experience was running'}
+    return {'success': True, 'outcome': 'Unknown command:' + command}
 
 
 @app.post("/set-device-icon/{device_serial}")
