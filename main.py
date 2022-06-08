@@ -556,9 +556,10 @@ async def disconnect(payload: Devices):
     client_list = process_devices(client, payload)
 
     try:
+        device: Device
         for device in client_list:
             print("Disconnecting device " + device.serial + " from server!")
-            working = client.remote_disconnect(device.serial)
+            working = device.reboot()
             if not working:
                 return {
                     "success": False,

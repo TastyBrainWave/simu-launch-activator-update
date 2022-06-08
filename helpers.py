@@ -65,6 +65,12 @@ def connect_actions(device: Device = None, volume: int = None,):
 
         print(f'Device volume set to {volume}!')
 
+        timeout_hours = 4
+        timeout = 60000 * 60 * timeout_hours  # 4 hours
+        device.shell(f'settings put system screen_off_timeout {timeout}')
+
+        print(f'Device screen timout set to {timeout_hours} hours!')
+
         if "Unable to find" in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome"):
             print("Home app not installed on device. Installing now..")
             device.install("apks/com.TrajectoryTheatre.SimuLaunchHome.apk")
