@@ -379,7 +379,7 @@ class DeviceCard extends HTMLElement {
             el.setAttribute('device_id', this.deviceId)
         }
 
-        if(this.deviceId.split('.').length > 2){
+        if (this.deviceId.split('.').length > 2) {
             var el = this.shadowRoot.getElementById('wifi-connect');
             el.hidden = true;
         }
@@ -394,6 +394,13 @@ class DeviceCard extends HTMLElement {
 
     kill() {
         clearInterval(this.batteryInterval);
+    }
+
+    update_icon(icon) {
+        var find_icon = this.shadowRoot.getElementById("setIcon");
+        var svg_parent = $(find_icon).find('svg').parent()
+        $(svg_parent).children('svg').remove();
+        $(svg_parent).append(icon);
     }
 
     updateSelected(selected) {
@@ -486,6 +493,11 @@ var devices_manager = function () {
         location.reload();
     }
 
+    api.set_icon = function (device_id, icon) {
+        var device = card_map[device_id];
+        device.update_icon(icon);
+    }
+
     api.wifi_connect = function (el) {
         var device_id = el.getAttribute('device_id');
         var orig_text = el.innerHTML;
@@ -498,15 +510,14 @@ var devices_manager = function () {
             .then(function (json) {
                 if (json['success']) {
                     remove_card(device_id);
-                }
-                else{
+                } else {
                     showStatus(json['error']);
                 }
             })
             .catch(function () {
                 console.log('error with wifi connecting device ' + device_id);
             })
-            .finally(function(){
+            .finally(function () {
                 el.innerHTML = orig_text;
                 el.classList.remove('disabled');
             });
@@ -733,17 +744,16 @@ function set_icon(el) {
     var device_id = el.getAttribute('device_id');
     $(icon_modal).modal('show');
 
-    $('.icon-set').on("click", function () {
+    function icon_modal_helper() {
         // put your default event here
         $(icon_modal).modal('hide');
         var selected = $("input[type='radio'][name='icon-options']:checked");
         if (selected) {
             var col = $(selected[0]).data('col');
             var icon = $(selected[0]).data('icon');
-            $(el).children('svg').remove();
             var cloned_icon = $(selected.parent().find('svg')[0]).clone();
             cloned_icon.css('color', col);
-            $(el).append(cloned_icon);
+            devices_manager.set_icon(device_id, cloned_icon);
 
             fetch('set-device-icon/' + device_id, {
                 method: 'POST',
@@ -758,10 +768,13 @@ function set_icon(el) {
 
             }).catch(function (error) {
 
-
+            }).finally(function () {
+                $('.icon-set').off("click", icon_modal_helper);
             })
         }
-    });
+    }
+
+    $('.icon-set').on("click", icon_modal_helper);
 }
 
 function stop_some_experience(el) {
@@ -801,7 +814,7 @@ function experience_command(el, cmd, experience, devices, success_message, error
             if (data['message']) showStatus(data['message'])
             else {
                 if (!success_message) success_message = "Experience has " + cmd + "ed!"
-                if(data['message']) success_message += ' ' + data['message']
+                if (data['message']) success_message += ' ' + data['message']
                 showStatus(success_message);
             }
 

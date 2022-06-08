@@ -15,12 +15,10 @@
         </btn>
       </div>
       <div class="card-body">
-        <div class="mb-2">
-          <span id="setIcon" class="badge btn text-secondary" onclick="set_icon(this)">
+        <btn class="mb-2 btn" id="setIcon" onclick="set_icon(this)">
             {% include "icons/paintbrush.html" %}
-          </span>
-          <h5 id="device-name" class="card-text d-inline-block">Device ID unknown </h5>
-        </div>
+          <h5 id="device-name" class="card-text d-inline-block ms-2 float-end">Device ID unknown </h5>
+        </btn>
         <span id="batteryBadge" class="badge text-bg-primary">{% include "icons/battery-full.html" %}
                 <span id="batteryPercent">Battery Unknown</span></span>
         <span class="badge btn text-bg-danger float-end ms-2" id="stop_some_experience"
