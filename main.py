@@ -232,7 +232,7 @@ async def home(request: Request):
     global simu_application_name
 
     return templates.TemplateResponse(
-        "home.html",
+        "home-basic.html",
         {
             "request": request,
             "app_name": simu_application_name,
@@ -242,7 +242,28 @@ async def home(request: Request):
         },
     )
 
+@app.get("/monitor")
+@check_adb_running
+async def home(request: Request):
+    """
+        View mainly responsible for handling the front end, since nothing will happen on the backend at this endpoint.
+    :param db: the database dependency
+    :param request: the Request object
+    :return: a TemplateResponse object containing the homepage
+    """
 
+    global simu_application_name
+
+    return templates.TemplateResponse(
+        "home.html",
+        {
+            "request": request,
+            "app_name": simu_application_name,
+            "icons": icons,
+            "cols": cols,
+            "defaults": defaults
+        },
+    )
 @app.get('/experiences')
 async def experiences(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(

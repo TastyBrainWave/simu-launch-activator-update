@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block menu %}
+{% include "ui/navbar-basic.html" %}
+{% endblock %}
+
+{% block content %}
+{% include "icons/set_icon_modal.html" %}
+<div id="main-container" class="row row-cols-auto">
+    <h2 class="w-100 text-center p-3" id="no-devices">No Devices Connected.</h2>
+    <table id="devices-table" class="table d-none">
+        <thead>
+            <tr>
+                <th scope="col"><input class="form-check-input" type="checkbox"></th>
+                <th scope="col">Headset</th>
+                <th scope="col">Connection</th>
+                <th scope="col">Battery</th>
+                <th scope="col">Experiences</th>
+                <th scope="col">Currently Playing</th>
+            </tr>
+        </thead>
+        <tbody id="device-table-body">
+
+
+        </tbody>
+    </table>
+</div>
+
+
+
+{% endblock %}
+
+{% block javascript %}
+
+{% endblock %}
