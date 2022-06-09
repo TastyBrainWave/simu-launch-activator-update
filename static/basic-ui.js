@@ -1,5 +1,8 @@
-
-class DeviceItem extends HTMLElement {
+var itemList = []
+//class DeviceTable extends HTMLElement {
+//    constructor(devices)
+//}
+class DeviceItem extends HTMLTableRowElement {
     constructor(device, selected) {
         super();
         this.attachShadow({ mode: 'open' });
@@ -117,7 +120,7 @@ var selectAll = function () {
         item.shadowRoot.querySelector("input").checked = true
     })
 }
-window.customElements.define('device-element', DeviceElement);
+window.customElements.define('device-element', DeviceItem);
 
 testingarr = ["42345325", "654645", "65476", "746535", "23432432", "12315465"]
 
@@ -265,7 +268,7 @@ var devices_manager = function () {
                     var device_id = device['id'];
                     var found_at = devices_so_far.indexOf(device_id)
                     if (found_at === -1) {
-                        var item = new Deviceitem("/static/images/placeholder.jpg", device, false);
+                        var item = new DeviceItem(device, false);
                         item.classList.add('col')
                         itemList.push(item);
                         document.querySelector("#main-container").prepend(item);
