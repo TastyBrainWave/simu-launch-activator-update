@@ -22,6 +22,7 @@ from fastapi import FastAPI, UploadFile, File, Form, Depends
 from collections import Counter
 
 from ppadb import InstallError
+from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
@@ -468,16 +469,16 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
 
 
 @app.get("/connect/{device_serial}")
-async def connect(request: Request, device_serial: str):
+async def connect(request: Request, device_serial: str, background_tasks: BackgroundTasks):
     """
         Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
         the USB.
 
+    :param background_tasks:
     :param device_serial:
     :param request: The Request parameter which is used to receive the device data.
     :return: a dictionary containing the success flag of the operation and any errors
     """
-    print(device_serial)
     global BASE_PORT
 
     json = await request.json() if len((await request.body()).decode()) > 0 else {}
@@ -522,10 +523,9 @@ async def connect(request: Request, device_serial: str):
 
         if not p.is_alive():
             connected_device = Device(client, device_ip)
-            connect_actions(connected_device, global_volume, )
+            background_tasks.add_task(connect_actions, connected_device, global_volume, )
 
             connected = await wait_host_port(device_ip, BASE_PORT, duration=5, delay=2)
-            print(connected,22)
             if connected:
                 print(
                     "Established connection with client " + device_ip + ":" + str(BASE_PORT)
