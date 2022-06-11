@@ -23,6 +23,8 @@ from collections import Counter
 
 from ppadb import InstallError
 from starlette.background import BackgroundTasks
+from fastapi_utils.tasks import repeat_every
+
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
@@ -108,8 +110,17 @@ async def wait_host_port(host, port, duration=10, delay=2):
 
 
 async def scan_devices():
-    my_devices = []
+    return my_devices
 
+
+# below should really be stored in redis as storing it as below limits us to one thread
+my_devices = []
+
+@app.on_event("startup")
+@repeat_every(seconds=check_for_new_devices_poll_s)
+async def _scan_devices():
+    global my_devices
+    my_devices.clear()
     device: Device
     for device in client.devices():
         device_serial = str(device.serial)
@@ -129,7 +140,6 @@ async def scan_devices():
             except RuntimeError as e:
                 err = e.__str__()
                 print('issue disconnecting disconnected wifi device (caution): ' + err)
-    return my_devices
 
 
 def check_adb_running(func):
@@ -535,7 +545,6 @@ async def connect(request: Request, device_serial: str, background_tasks: Backgr
             else:
                 return {"success": False, "error": "Your device is on a different wifi network"}
 
-
         raise RuntimeError(
             "Could not connect device. Make sure the device is connected on the same router as the server!")
     except RuntimeError as e:
@@ -751,7 +760,7 @@ async def devices_experiences(request: Request):
 
     for device in await scan_devices():
         experiences = await _experiences(device=device)
-        print(experiences,222)
+
         experiences_map = {el['package']: el['name'] for el in experiences}
         counter.update(experiences_map.keys())
         devices_lookup[device.serial] = experiences_map
