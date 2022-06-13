@@ -116,6 +116,7 @@ async def scan_devices():
 # below should really be stored in redis as storing it as below limits us to one thread
 my_devices = []
 
+
 @app.on_event("startup")
 @repeat_every(seconds=check_for_new_devices_poll_s)
 async def _scan_devices():
@@ -892,5 +893,6 @@ async def device_icon(request: Request, device_serial: str, db: Session = Depend
     json = await request.json()
     col = json['col']
     icon = json['icon']
-    set_device_icon(db=db, device_id=device_serial, icon=icon, col=col)
+    text = json['text']
+    set_device_icon(db=db, device_id=device_serial, icon=icon, col=col, text=text)
     return {'success': True}

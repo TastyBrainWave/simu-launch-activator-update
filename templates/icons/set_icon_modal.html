@@ -2,14 +2,12 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="setIconModalLabel">Set label</h5>
+        <input class="modal-title h5" id="setIconModalLabel" value="Set label">
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form id="setRemoteExperienceForm" action="/set-remote-experience" enctype="multipart/form-data" method="post">
-
           <span class="text-danger">
-
             {% for col in cols %}
               <div>
             {% for icon in icons %}
@@ -27,7 +25,7 @@
         </form>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" id='close-set-icon-modal' class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

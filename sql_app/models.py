@@ -28,6 +28,7 @@ class DeviceInfo(Base):
     device_id = Column(String, index=True)
     col = Column(String)
     icon = Column(String)
+    text = Column(String)
 
 
 class Settings(Base):

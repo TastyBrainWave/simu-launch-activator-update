@@ -350,22 +350,25 @@ class DeviceCard extends HTMLElement {
             }
         })
 
-        if (this.device_icon) {
+        if (this.device_icon['col']) {
             var el = this.shadowRoot.getElementById('setIcon');
             $(el).children('svg').remove();
 
             var col = this.device_icon['col'];
             var icon = this.device_icon['icon'];
-            var my_id = '#' + col + '-' + icon;
 
-            $('.icon-set').each(function () {
-                if ($(this).data('col') === col && $(this).data('icon') === icon) {
-                    var found = $(this).parent().find('svg')
-                    var cloned_icon = $(found).clone();
-                    cloned_icon.css('color', col);
-                    $(el).append(cloned_icon);
-                }
-            });
+
+            if (col) {
+                var my_id = '#' + col + '-' + icon;
+                $('.icon-set').each(function () {
+                    if ($(this).data('col') === col && $(this).data('icon') === icon) {
+                        var found = $(this).parent().find('svg')
+                        var cloned_icon = $(found).clone();
+                        cloned_icon.css('color', col);
+                        $(el).append(cloned_icon);
+                    }
+                });
+            }
         }
 
         // setting this attribute on the nodes themselves to avoid future breakage during UI redesign
@@ -392,11 +395,15 @@ class DeviceCard extends HTMLElement {
         clearInterval(this.batteryInterval);
     }
 
-    update_icon(icon) {
-        var find_icon = this.shadowRoot.getElementById("setIcon");
-        var svg_parent = $(find_icon).find('svg').parent()
-        $(svg_parent).children('svg').remove();
-        $(svg_parent).append(icon);
+    update_icon(icon, text) {
+        if (icon) {
+            var find_icon = this.shadowRoot.getElementById("setIcon");
+            var svg_parent = $(find_icon).find('svg').parent()
+            $(svg_parent).children('svg').remove();
+            $(svg_parent).append(icon);
+        }
+        var el_text = this.shadowRoot.getElementById('device-name');
+        $(el_text).text(text);
     }
 
     updateSelected(selected) {
@@ -456,7 +463,14 @@ class DeviceCard extends HTMLElement {
 
     connectedCallback() {
         this.shadowRoot.querySelector("img").src = this.image;
-        this.shadowRoot.querySelector("#device-name").innerHTML = this.deviceId;
+        var device_name = this.shadowRoot.querySelector("#device-name");
+        var text = this.device_icon['text'];
+        if (text && text.length > 0) {
+            device_name.innerHTML = text;
+
+        }else{
+            device_name.innerHTML = this.deviceId;
+        }
 
     }
 }
@@ -489,9 +503,9 @@ var devices_manager = function () {
         location.reload();
     }
 
-    api.set_icon = function (device_id, icon) {
+    api.set_icon = function (device_id, icon, text) {
         var device = card_map[device_id];
-        device.update_icon(icon);
+        device.update_icon(icon, text);
     }
 
     api.wifi_connect = function (el) {
@@ -738,39 +752,49 @@ function gather_experiences(el) {
 function set_icon(el) {
     var icon_modal = $('#setIconModal');
     var device_id = el.getAttribute('device_id');
+    var el_name = $(el).find('#device-name').text();
+    $('#setIconModalLabel').val(el_name);
     $(icon_modal).modal('show');
 
     function icon_modal_helper() {
         // put your default event here
         $(icon_modal).modal('hide');
         var selected = $("input[type='radio'][name='icon-options']:checked");
-        if (selected) {
-            var col = $(selected[0]).data('col');
-            var icon = $(selected[0]).data('icon');
-            var cloned_icon = $(selected.parent().find('svg')[0]).clone();
+        var col = 'none';
+        var icon = 'none';
+        var cloned_icon = '';
+
+        if (selected.length > 0) {
+            col = $(selected[0]).data('col');
+            icon = $(selected[0]).data('icon');
+            cloned_icon = $(selected.parent().find('svg')[0]).clone();
             cloned_icon.css('color', col);
-            devices_manager.set_icon(device_id, cloned_icon);
-
-            fetch('set-device-icon/' + device_id, {
-                method: 'POST',
-                body: JSON.stringify({'col': col, 'icon': icon}),
-                headers: {"Content-type": "application/json"}
-            }).then(function (response) {
-                if (!response.ok) {
-                    throw Error(response.statusText);
-                }
-                return response.json();
-            }).then((response) => {
-
-            }).catch(function (error) {
-
-            }).finally(function () {
-                $('.icon-set').off("click", icon_modal_helper);
-            })
         }
+        var el_text = $('#setIconModalLabel').val();
+        if (el_text.length < 3) el_text += 'name too short'
+        devices_manager.set_icon(device_id, cloned_icon, el_text);
+        if (!col) col = 'none'
+        if (!icon) icon = 'none'
+        fetch('set-device-icon/' + device_id, {
+            method: 'POST',
+            body: JSON.stringify({'col': col, 'icon': icon, 'text': el_text}),
+            headers: {"Content-type": "application/json"}
+        }).then(function (response) {
+            if (!response.ok) {
+                throw Error(response.statusText);
+            }
+            return response.json();
+        }).then((response) => {
+
+        }).catch(function (error) {
+
+        }).finally(function () {
+            $('.icon-set').off("click", icon_modal_helper);
+        })
+
     }
 
-    $('.icon-set').on("click", icon_modal_helper);
+    $('.icon-set, #close-set-icon-modal').on("click", icon_modal_helper);
 }
 
 function stop_some_experience(el) {

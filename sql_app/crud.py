@@ -22,20 +22,24 @@ def create_apk_details_item(db: Session, item: schemas.APKDetailsCreate):
     return db_item
 
 
-def set_device_icon(db: Session, device_id: str, col: str, icon: str):
+def set_device_icon(db: Session, device_id: str, col: str, icon: str, text: str):
     instance = db.query(models.DeviceInfo).filter_by(device_id=device_id).first()
     if not instance:
         instance = models.DeviceInfo(device_id=device_id)
         db.add(instance)
-    instance.col = col
-    instance.icon = icon
+    if col != 'none':
+        instance.col = col
+    if col != 'none':
+        instance.icon = icon
+    instance.text = text
     db.commit()
+
 
 def get_device_icon(db: Session, device_id: str):
     instance = db.query(models.DeviceInfo).filter_by(device_id=device_id).first()
     if not instance:
         return None
-    return {'col': instance.col, 'icon': instance.icon}
+    return {'col': instance.col, 'icon': instance.icon, 'text': instance.text}
 
 
 def _get_settings(db: Session):
