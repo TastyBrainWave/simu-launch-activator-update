@@ -479,7 +479,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 
-@app.get("/connect}")
+@app.get("/connect")
 async def connect_raw(request: Request):
     """
            Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
@@ -501,6 +501,7 @@ async def connect_raw(request: Request):
     print("address ", remote_address)
 
     if not remote_address:
+        print(request.client.host,111)
         device_ip = devices[0].shell("ip addr show wlan0")
         device_ip = device_ip[device_ip.find("inet "):]
         device_ip = device_ip[: device_ip.find("/")]
