@@ -501,11 +501,14 @@ async def connect_raw(request: Request):
     print("address ", remote_address)
 
     if not remote_address:
-        print(request.client.host,111)
-        device_ip = devices[0].shell("ip addr show wlan0")
-        device_ip = device_ip[device_ip.find("inet "):]
-        device_ip = device_ip[: device_ip.find("/")]
-        device_ip = device_ip[device_ip.find(" ") + 1:]
+        try:
+            print(request.client.host,111)
+            device_ip = devices[0].shell("ip addr show wlan0")
+            device_ip = device_ip[device_ip.find("inet "):]
+            device_ip = device_ip[: device_ip.find("/")]
+            device_ip = device_ip[device_ip.find(" ") + 1:]
+        except IndexError:
+            device_ip = request.client.host
     else:
         device_ip = remote_address
 
