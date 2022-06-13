@@ -496,8 +496,6 @@ async def connect_raw(request: Request):
 
     remote_address = json["remote_address"] if "remote_address" in json else ""
 
-    devices = client.devices()
-
     print("json ", json)
     print("address ", remote_address)
 
