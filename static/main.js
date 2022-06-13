@@ -350,7 +350,7 @@ class DeviceCard extends HTMLElement {
             }
         })
 
-        if (this.device_icon['col']) {
+        if (this.device_icon && this.device_icon['col']) {
             var el = this.shadowRoot.getElementById('setIcon');
             $(el).children('svg').remove();
 
@@ -464,9 +464,10 @@ class DeviceCard extends HTMLElement {
     connectedCallback() {
         this.shadowRoot.querySelector("img").src = this.image;
         var device_name = this.shadowRoot.querySelector("#device-name");
-        var text = this.device_icon['text'];
-        if (text && text.length > 0) {
-            device_name.innerHTML = text;
+
+        if (this.device_icon && this.device_icon['text']) {
+            var text = this.device_icon['text'];
+            if(text.length>0) device_name.innerHTML = text;
 
         }else{
             device_name.innerHTML = this.deviceId;
