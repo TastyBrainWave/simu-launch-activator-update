@@ -479,6 +479,61 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 
+@app.get("/connect}")
+async def connect_raw(request: Request):
+    """
+           Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
+           the USB.
+
+       :param request: The Request parameter which is used to receive the device data.
+       :return: a dictionary containing the success flag of the operation and any errors
+       """
+
+    global BASE_PORT
+
+    json = await request.json() if len((await request.body()).decode()) > 0 else {}
+
+    remote_address = json["remote_address"] if "remote_address" in json else ""
+
+    devices = client.devices()
+
+    print("json ", json)
+    print("address ", remote_address)
+
+    if not remote_address:
+        device_ip = devices[0].shell("ip addr show wlan0")
+        device_ip = device_ip[device_ip.find("inet "):]
+        device_ip = device_ip[: device_ip.find("/")]
+        device_ip = device_ip[device_ip.find(" ") + 1:]
+    else:
+        device_ip = remote_address
+
+    try:
+        if not remote_address:
+            os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
+
+        p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
+        p.start()
+
+        p.join(5)
+
+        if not p.is_alive():
+            connected_device = Device(client, device_ip)
+            connect_actions(connected_device, global_volume, )
+
+            print(
+                "Established connection with client " + device_ip + ":" + str(BASE_PORT)
+            )
+
+            return {"success": True, "serial": device_ip}
+
+        print("alive")
+        raise RuntimeError(
+            "Could not connect device. Make sure the device is connected on the same router as the server!")
+    except RuntimeError as e:
+        return {"success": False, "error": e.__str__()}
+
+
 @app.get("/connect/{device_serial}")
 async def connect(request: Request, device_serial: str, background_tasks: BackgroundTasks):
     """
