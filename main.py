@@ -232,7 +232,7 @@ async def home(request: Request):
     global simu_application_name
 
     return templates.TemplateResponse(
-        "home-basic.html",
+        "home-basic-template.html",
         {
             "request": request,
             "app_name": simu_application_name,
