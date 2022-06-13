@@ -479,6 +479,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
     return {"success": True, "stopped_app": app_name}
 
 
+@app.post("/connect")
 @app.get("/connect")
 async def connect_raw(request: Request):
     """
@@ -501,20 +502,13 @@ async def connect_raw(request: Request):
     print("address ", remote_address)
 
     if not remote_address:
-        try:
-            print(request.client.host,111)
-            device_ip = devices[0].shell("ip addr show wlan0")
-            device_ip = device_ip[device_ip.find("inet "):]
-            device_ip = device_ip[: device_ip.find("/")]
-            device_ip = device_ip[device_ip.find(" ") + 1:]
-        except IndexError:
-            device_ip = request.client.host
+        device_ip = request.client.host
     else:
         device_ip = remote_address
 
     try:
         if not remote_address:
-            os.system("adb -s" + devices[0].serial + " tcpip " + str(BASE_PORT))
+            os.system("adb -s" + device_ip + " tcpip " + str(BASE_PORT))
 
         p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
         p.start()
