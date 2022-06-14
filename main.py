@@ -116,12 +116,6 @@ my_devices = []
 
 
 @app.on_event("startup")
-async def startup():
-    # startup adb
-    client.devices()
-
-
-@app.on_event("startup")
 @repeat_every(seconds=check_for_new_devices_poll_s)
 async def _scan_devices():
     global my_devices
@@ -165,6 +159,12 @@ def check_adb_running(func):
         return await func(*args, **kwargs)
 
     return wrapper
+
+@check_adb_running
+@app.on_event("startup")
+async def startup():
+    # startup adb
+    pass
 
 
 @app.post("/settings")
@@ -732,7 +732,11 @@ async def check_image(device_serial, refresh_ms, size):
     if _image is None:
         return None
 
-    _image = _image[0:_image.shape[0], 0: int(_image.shape[1] * .5)]
+    height = _image.shape[0]
+    width = _image.shape[1]
+
+    if height < width: # assume Quest so cut screen in half
+        _image = _image[0:height, 0: int(width * .5)]
 
     height = _image.shape[0]
     width = int(_image.shape[1] / height * defaults['screen_height'])
