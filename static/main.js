@@ -277,6 +277,28 @@ function disconnectDevice() {
     })
 }
 
+function restartDevice() {
+
+    send({
+        url: '/restart',
+        start: function () {
+            document.getElementById("restartButton").classList.add("disabled");
+        },
+        success: function () {
+            showStatus("Device(s) have been restarted");
+            setTimeout(function () {
+                location.reload();
+            }, 3000);
+        },
+        problem: function (error) {
+            showStatus("Error restarting devices: " + error);
+        },
+        finally: function () {
+            document.getElementById("restartButton").classList.remove("disabled");
+        }
+    })
+}
+
 function stopServer() {
 
     send({

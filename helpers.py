@@ -7,7 +7,7 @@ from models_pydantic import Devices
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 HOME_APP_VERSION = "0.1"
-
+HOME_APP_APK = "com.TrajectoryTheatre.SimuLaunchHome.apk"
 
 def process_devices(client: AdbClient, payload: Devices):
     if payload.devices:
@@ -34,9 +34,8 @@ def launch_app(device, app_name, d_type: bool = False, command: str = None):
         command = "am start -n " + app_name
     else:
         command = "monkey -p " + app_name + " -v 1"
-    print(command)
 
-    print(device.shell(command),22)
+    return device.shell(command)
 
 
 def save_file(filename, data):
@@ -68,16 +67,15 @@ def connect_actions(device: Device = None, volume: int = None,):
         timeout_hours = 4
         timeout = 60000 * 60 * timeout_hours  # 4 hours
         device.shell(f'settings put system screen_off_timeout {timeout}')
-
         print(f'Device screen timout set to {timeout_hours} hours!')
 
         if "Unable to find" in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome"):
             print("Home app not installed on device. Installing now..")
-            device.install("apks/com.TrajectoryTheatre.SimuLaunchHome.apk")
+            device.install("apks/" + HOME_APP_APK)
 
         if HOME_APP_VERSION not in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome | grep versionName"):
             print("Installed Home app isn't the latest version. Updating now..")
-            device.install("apks/com.TrajectoryTheatre.SimuLaunchHome.apk")
+            device.install("apks/" + HOME_APP_APK)
 
         device.shell("am start -n com.TrajectoryTheatre.SimuLaunchHome/com.unity3d.player.UnityPlayerActivity")
         print("Launched home app!")

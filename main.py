@@ -29,7 +29,7 @@ from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from helpers import launch_app, save_file, process_devices, connect_actions
+from helpers import launch_app, save_file, process_devices, connect_actions, HOME_APP_APK
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon, crud_defaults
@@ -45,8 +45,6 @@ templates = Jinja2Templates(directory=location + 'templates')
 
 simu_application_name = ""
 global_volume = 10
-# HOME_APP_APK = "com.TrajectoryTheatre.SimuLaunchHome.apk"
-
 
 icons = ['3-bars', '2-bars', '1-bar', 'circle-fill', 'square-fill', 'plus-lg', 'heart-fill', 'triangle-fill']
 cols = ['red', 'pink', 'fuchsia', 'blue', 'green']
@@ -438,6 +436,11 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
         return {"success": False, "error": e.__str__()}
 
 
+def launch_home_app(device_id: str):
+    device = client.device(device_id)
+    outcome = launch_app(device, app_name=HOME_APP_APK, d_type=True, command="com.unity3d.player.UnityPlayerActivity", )
+    return outcome
+
 @app.post("/stop")
 async def stop(payload: Experience, db: Session = Depends(get_db)):
     """
@@ -470,7 +473,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
             print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
             device.shell(command)
-            # launch_app(device, app_name=HOME_APP_APK,d_type=True,command="com.unity3d.player.UnityPlayerActivity",)
+            launch_home_app(device.serial)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
@@ -618,11 +621,41 @@ async def disconnect(payload: Devices):
         device: Device
         for device in client_list:
             print("Disconnecting device " + device.serial + " from server!")
-            working = device.reboot()
+            working = client.remote_disconnect(device.serial)
             if not working:
                 return {
                     "success": False,
                     "error": "Encountered an error disconnecting device with ID/IP: "
+                             + device.serial,
+                }
+
+        return {"success": True}
+    except RuntimeError as e:
+        return {"success": False, "error_log": e.__str__()}
+
+
+@app.post("/restart")
+async def restart(payload: Devices):
+    """
+        Restarts devices
+
+    :devices: a list of devices to restart
+    :return: a dictionary containing the success flag of the operation and any errors
+    """
+
+    global BASE_PORT
+
+    client_list = process_devices(client, payload)
+
+    try:
+        device: Device
+        for device in client_list:
+            print("Restarting device " + device.serial + " from server!")
+            working = device.reboot()
+            if not working:
+                return {
+                    "success": False,
+                    "error": "Encountered an error restarting device with ID/IP: "
                              + device.serial,
                 }
 
@@ -884,6 +917,7 @@ async def device_command(request: Request, command: str, device_serial: str, db:
     elif command == 'stop':
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
+        launch_home_app(device.serial)
         return {'success': True}
     elif command == 'copy-details':
         info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
@@ -902,9 +936,12 @@ async def device_command(request: Request, command: str, device_serial: str, db:
 
     elif command == 'stop-some-experience':
         current_app = await get_running_app(device)
+        print(current_app,33333)
         if current_app == 'com.oculus.shellenv':
+            launch_home_app(device.serial)
             return {'success': True, 'outcome': 'No app to stop!'}
         outcome = await device.shell(f"am force-stop {current_app}")
+        launch_home_app(device.serial)
         return {'success': True, 'outcome': 'Successfully stopped!'}
 
     ########### devices experiences menu
@@ -916,6 +953,7 @@ async def device_command(request: Request, command: str, device_serial: str, db:
             d: DeviceAsync = await client_async.device(d)
             print(experience)
             outcome = await d.shell(f"am force-stop {experience}")
+            launch_home_app(device.serial)
         return {'success': True, 'message': outcome}
 
     elif command == 'devices_experiences__start_experience_some':
