@@ -1,42 +1,40 @@
 import asyncio
 import base64
 import datetime
-import json
 import multiprocessing
 import os
-import socket
-from functools import partial, wraps
+import platform
 import time
+from collections import Counter
+from functools import partial, wraps
+from multiprocessing import Process, Pool, cpu_count
+
 import cv2
 import numpy as np
+from fastapi import FastAPI, UploadFile, File, Form, Depends
 from fastapi.encoders import jsonable_encoder
+from fastapi_cache import FastAPICache
 from fastapi_cache.backends.inmemory import InMemoryBackend
+from fastapi_cache.decorator import cache
+from fastapi_utils.tasks import repeat_every
+from ppadb import InstallError
 from ppadb.client import Client as AdbClient
 from ppadb.client_async import ClientAsync as AdbClientAsync
 from ppadb.device import Device
 from ppadb.device_async import DeviceAsync
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from multiprocessing import Process, Pool, cpu_count
-from fastapi import FastAPI, UploadFile, File, Form, Depends
-from collections import Counter
-
-from ppadb import InstallError
 from starlette.background import BackgroundTasks
-from fastapi_utils.tasks import repeat_every
-
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
+
 from helpers import launch_app, save_file, process_devices, connect_actions
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon, crud_defaults
 from sql_app.database import engine, SessionLocal
 from sql_app.schemas import APKDetailsCreate, APKDetailsBase
-import platform
-from fastapi_cache import FastAPICache
-from fastapi_cache.decorator import cache
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -115,6 +113,12 @@ async def scan_devices():
 
 # below should really be stored in redis as storing it as below limits us to one thread
 my_devices = []
+
+
+@app.on_event("startup")
+async def startup():
+    # startup adb
+    client.devices()
 
 
 @app.on_event("startup")
