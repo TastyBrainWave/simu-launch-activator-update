@@ -542,7 +542,7 @@ var devices_manager = function () {
             })
             .then(function (json) {
                 if (json['success']) {
-                    remove_card(device_id);
+                    showStatus(json['message']);
                 } else {
                     showStatus(json['error']);
                 }

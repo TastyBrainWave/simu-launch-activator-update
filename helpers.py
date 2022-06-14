@@ -9,6 +9,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 HOME_APP_VERSION = "0.1"
 HOME_APP_APK = "com.TrajectoryTheatre.SimuLaunchHome.apk"
 
+
 def process_devices(client: AdbClient, payload: Devices):
     if payload.devices:
         return [Device(client, device) for device in payload.devices]
@@ -47,7 +48,12 @@ def save_file(filename, data):
     with open("apks/" + filename, 'wb') as f:
         f.write(data)
 
-def connect_actions(device: Device = None, volume: int = None,):
+
+def home_app_installed(device: Device):
+    return "Unable to find" in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome")
+
+
+def connect_actions(device: Device = None, volume: int = None, ):
     """
         Applies any actions defined here to a device on initial connection.
 
@@ -69,11 +75,12 @@ def connect_actions(device: Device = None, volume: int = None,):
         device.shell(f'settings put system screen_off_timeout {timeout}')
         print(f'Device screen timout set to {timeout_hours} hours!')
 
-        if "Unable to find" in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome"):
+        if home_app_installed(device):
             print("Home app not installed on device. Installing now..")
             device.install("apks/" + HOME_APP_APK)
 
-        if HOME_APP_VERSION not in device.shell("dumpsys package com.TrajectoryTheatre.SimuLaunchHome | grep versionName"):
+        if HOME_APP_VERSION not in device.shell(
+                "dumpsys package com.TrajectoryTheatre.SimuLaunchHome | grep versionName"):
             print("Installed Home app isn't the latest version. Updating now..")
             device.install("apks/" + HOME_APP_APK)
 
@@ -82,4 +89,3 @@ def connect_actions(device: Device = None, volume: int = None,):
         print(f"Connect actions complete for {device.serial}")
     except RuntimeError as e:
         return {"success": False, "error": "An error occured: " + e.__str__()}
-

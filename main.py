@@ -29,7 +29,7 @@ from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from helpers import launch_app, save_file, process_devices, connect_actions, HOME_APP_APK
+from helpers import launch_app, save_file, process_devices, connect_actions, HOME_APP_APK, home_app_installed
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
 from sql_app.crud import get_all_apk_details, get_apk_details, set_device_icon, get_device_icon, crud_defaults
@@ -549,6 +549,7 @@ async def connect(request: Request, device_serial: str, background_tasks: Backgr
     remote_address = ""
 
     device: Device = client.device(device_serial)
+    home_app_already_installed = home_app_installed(device)
 
     print("json ", json)
     print("address ", remote_address)
@@ -586,15 +587,19 @@ async def connect(request: Request, device_serial: str, background_tasks: Backgr
 
         if not p.is_alive():
             connected_device = Device(client, device_ip)
-            background_tasks.add_task(connect_actions, connected_device, global_volume, )
 
+            background_tasks.add_task(connect_actions, connected_device, global_volume, )
             connected = await wait_host_port(device_ip, BASE_PORT, duration=5, delay=2)
+
             if connected:
                 print(
                     "Established connection with client " + device_ip + ":" + str(BASE_PORT)
                 )
-
-                return {"success": True, "serial": device_ip}
+                message = f'successfully added device {device_ip}.'
+                if not home_app_already_installed:
+                    message += f' Please note that the home app needed to be installed, so your device wont ' \
+                               f'appear for a few moments'
+                return {"success": True, "serial": device_ip, 'message': message}
             else:
                 return {"success": False, "error": "Your device is on a different wifi network"}
 
