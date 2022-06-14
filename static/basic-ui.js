@@ -1,6 +1,9 @@
+var current_devices = []
+var masterList = ["app.lawnchair"]
 class DeviceTable extends HTMLElement {
     constructor(deviceList) {
         super();
+        this.deviceList = deviceList;
         this.attachShadow({ mode: 'open' });
         var bootstrapStyles = document.createElement('link')
         bootstrapStyles.rel = 'stylesheet'
@@ -9,6 +12,7 @@ class DeviceTable extends HTMLElement {
         this.tableGenerator(deviceList);
         this.classList.add("w-100");
         this.classList.add("p-0");
+
 
     }
     connectedCallback() {
@@ -26,7 +30,6 @@ class DeviceTable extends HTMLElement {
         let row = document.querySelector("#device-list-item").content.cloneNode(true)
         row.querySelector("tr").setAttribute("id", device.id)
         if (device.icon) {
-            //row.querySelector("#icon").appendChild(document.createElement("img")).setAttribute("src", "static/" + device.icon.icon)
 
             var col = device.icon.col
             var icon = device.icon.icon
@@ -70,7 +73,7 @@ class DeviceTable extends HTMLElement {
 
             }
             this.shadowRoot.getElementById(id).querySelector("#batteryPercent").innerHTML = data + "%";
-            console.log(data)
+
         })
     }
     getCurrentExperience(id) {
@@ -78,11 +81,73 @@ class DeviceTable extends HTMLElement {
             return response.json()
         }).then(data => {
             this.shadowRoot.getElementById(id).querySelector("#deviceCurrentExperience").innerHTML = data.current_app;
-            console.log(data)
+
         })
     }
-}
+    checkLoadedExperiences(id) {
+        fetch("/loaded-experiences/" + id).then(response => {
+            return response.json()
+        }).then(data => {
+            //this.shadowRoot.getElementById(id).querySelector("#deviceLoadedExperiences").innerHTML = data.length;
+            let package_list = []
+            data.forEach(experience => {
+                let expid = experience.package
+                package_list.push(expid)
+            })
+            let includesall = masterList.every(element => package_list.indexOf(element) > -1);
+            if (includesall) {
+                this.shadowRoot.getElementById(id).querySelector("#deviceExperiencesStatus").classList.add("text-success")
+                this.shadowRoot.getElementById(id).querySelector("#deviceExperiencesStatus").classList.remove("text-danger")
+                this.shadowRoot.getElementById(id).querySelector("#deviceExperiencesStatus").innerHTML = "Loaded"
+            } else {
+                this.shadowRoot.getElementById(id).querySelector("#deviceExperiencesStatus").innerHTML = "Not Loaded"
+                this.shadowRoot.getElementById(id).querySelector("#deviceExperiencesStatus").classList.add("text-danger")
+                this.shadowRoot.getElementById(id).querySelector("#deviceExperiencesStatus").classList.remove("text-success")
+            }
 
+        })
+    }
+    updateStatus(list) {
+        list.forEach(device => {
+            this.getCurrentExperience(device.id);
+            this.getBatteryPercentage(device.id);
+            this.checkLoadedExperiences(device.id);
+        })
+    }
+    getSelected() {
+        let selected = []
+        this.shadowRoot.querySelector("#body-container").querySelectorAll("input").forEach(check => {
+            if (check.checked) {
+                selected.push(check.parentElement.parentElement.id)
+            }
+        })
+        return selected
+    }
+    selectAll() {
+        this.shadowRoot.querySelector("#body-container").querySelectorAll("input").forEach(check => {
+            check.checked = true
+        })
+    }
+    deselectAll() {
+        this.shadowRoot.querySelector("#body-container").querySelectorAll("input").forEach(check => {
+            check.checked = false
+        })
+    }
+    overrideSelected() {
+        if (this.shadowRoot.querySelector("#selectControl").checked === true) {
+            this.selectAll()
+        }
+        else {
+            this.deselectAll()
+        }
+    }
+    updateSelected(el) {
+
+        if (el.checked === false) {
+            this.shadowRoot.querySelector("#selectControl").checked = false
+        }
+    }
+}
 customElements.define('device-table', DeviceTable);
 
 
@@ -99,19 +164,27 @@ function get_devices() {
         })
         .then(function (json) {
             var devices_count = json['devices'].length;
-            if (devices_count > 0) {
-                var found = document.getElementById('no-devices');
-                if (found) found.remove();
+
+
+            if (JSON.stringify(json['devices']) != JSON.stringify(current_devices)) {
+                document.getElementById("main-container").innerHTML = "";
+                var devicetable = new DeviceTable(json['devices'])
+                document.getElementById("main-container").appendChild(devicetable);
+
+                current_devices = json['devices'];
+                devicetable.updateStatus(devicetable.deviceList);
+            }
+            document.querySelector("device-table").updateStatus(document.querySelector("device-table").deviceList);
+            if (devices_count == 0) {
+                document.getElementById("main-container").innerHTML = `<h2 class="w-100 text-center p-3" id="no-devices">No Devices Connected.</h2>`
+
             }
 
-
-            document.getElementById("main-container").innerHTML = "";
-            document.getElementById("main-container").appendChild(new DeviceTable(json['devices']));
-            console.log(json['devices'])
         })
         .catch(function (error) {
             console.log(error);
         })
+
 }
 function set_icon(el) {
     var icon_modal = $('#setIconModal');
@@ -152,4 +225,4 @@ function set_icon(el) {
     $('.icon-set').on("click", icon_modal_helper);
 }
 get_devices();
-//setInterval(get_devices, 8000);
+setInterval(get_devices, 1000);

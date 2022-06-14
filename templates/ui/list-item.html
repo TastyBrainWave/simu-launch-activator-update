@@ -1,7 +1,7 @@
 <template id="device-list-item">
 
     <tr>
-        <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox"></th>
+        <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox" onclick="document.querySelector('device-table').updateSelected(this)"></th>
         <td id="icon">
             <span id="setIcon" class="badge btn text-secondary" onclick="set_icon(this.parentElement.parentElement)">
                 {% include "icons/paintbrush.html" %}
@@ -22,7 +22,7 @@
     <table id="devices-table" class="table">
         <thead>
             <tr>
-                <th scope="col"><input class="form-check-input" type="checkbox"></th>
+                <th scope="col"><input class="form-check-input" type="checkbox" id="selectControl" onclick='document.querySelector("device-table").overrideSelected()'></th>
                 <th scope="col">Headset</th>
                 <th scope="col">Connection</th>
                 <th scope="col">Battery</th>

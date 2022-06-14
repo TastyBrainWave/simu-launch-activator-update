@@ -891,6 +891,14 @@ async def _experiences(device_serial: str = None, device: Device = None) -> []:
     return experiences
 
 
+@app.get("/loaded-experiences/{device_serial}")
+async def loaded_experiences(request: Request, device_serial: str):
+    device: Device = client.device(device_serial)
+    # https://stackoverflow.com/a/53634311/960471
+
+    return await _experiences(device_serial)
+
+
 @app.get("/device-experiences/{device_serial}")
 async def device_experiences(request: Request, device_serial: str):
     device: Device = client.device(device_serial)
