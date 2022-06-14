@@ -1,5 +1,7 @@
 var current_devices = []
 var masterList = ["app.lawnchair"]
+var status_global = document.getElementById("status");
+var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
 class DeviceTable extends HTMLElement {
     constructor(deviceList) {
         super();
@@ -223,6 +225,89 @@ function set_icon(el) {
     }
 
     $('.icon-set').on("click", icon_modal_helper);
+}
+
+function startExperience() {
+
+    var devices = document.querySelector("device-table").getSelected();
+
+    var body = { "devices": devices, "experience": document.getElementById("set_choices_dropdown").value }
+    send({
+        body: body,
+        start: function () {
+            document.getElementById("startButton").classList.add("disabled");
+        },
+        url: '/start',
+        success: function (data) {
+            showStatus("Experience has started on " + data["device_count"] + " devices!");
+
+
+        },
+        problem: function (error) {
+            showStatus("Error starting experience: " + error);
+        },
+        finally: function () {
+            $('#setExperienceModal').modal('hide')
+            document.getElementById("startButton").classList.remove("disabled");
+        }
+    })
+
+
+}
+function send(params) {
+    var selected_devices = document.querySelector("device-table").getSelected();
+
+
+
+    if (!params['headers']) params['headers'] = {};
+    if (!params['headers']["Content-type"]) params['headers']["Content-type"] = "application/json";
+    if (!params['method']) params['method'] = 'POST';
+
+    if (!params['body']) {
+        if (params['method'].toLowerCase() === 'post') {
+            params['body'] = {}
+        }
+    }
+    if (!params['body']['devices']) {
+        params['body']['devices'] = selected_devices;
+    }
+
+    if (params['start']) params['start']();
+
+    fetch(params['url'], {
+        method: params['method'],
+        body: JSON.stringify(params['body']),
+        headers: params['headers']
+    }).then(function (response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        return response.json();
+    }).then((response) => {
+        if (response['success'] === false) {
+            throw Error(response['error']);
+        }
+        if (params['success']) params['success'](response);
+    }).catch(function (error) {
+        if (params['problem']) params['problem'](error);
+        showStatus(error, true);
+
+    }).finally(function () {
+        if (params['finally']) params['finally']();
+    });
+}
+var showStatus = (text = "The showStatus function was used incorrectly and status text was not defined", isError = false) => {
+    if (isError === true) {
+        document.getElementById("statusToast").classList.add("bg-danger");
+        document.getElementById("toastClose").classList.add("btn-close-white");
+        status_global.classList.add("text-white");
+    } else if (document.getElementById("statusToast").classList.contains("bg-danger")) {
+        document.getElementById("statusToast").classList.remove("bg-danger");
+        document.getElementById("toastClose").classList.remove("btn-close-white");
+        status_global.classList.remove("text-white");
+    }
+    status_global.innerHTML = text;
+    statusToast.show();
 }
 get_devices();
 setInterval(get_devices, 1000);
