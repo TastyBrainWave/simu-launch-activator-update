@@ -2,19 +2,37 @@
 
     <tr>
         <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox"></th>
-        <td>
-            <span id="setIcon" class="badge btn text-secondary" onclick="set_icon(this)">
+        <td id="icon">
+            <span id="setIcon" class="badge btn text-secondary" onclick="set_icon(this.parentElement.parentElement)">
                 {% include "icons/paintbrush.html" %}
             </span>
         </td>
-        <td id="itemConnection"></td>
+        <td id="itemConnection" class="text-success">Good</td>
         <td id="deviceBattery">
-            <span id="batteryBadge" class="badge text-bg-primary">
-                <span id="batteryPercent">Battery Unknown</span>
+            <span id="batteryBadge" class="badge text-bg-success">
+                <span id="batteryPercent">80%</span>
             </span>
         </td>
-        <td id="deviceExperiencesStatus"><span id="message"></span></td>
-        <td id="deviceCurrentExperience"></td>
+        <td id="deviceExperiencesStatus" class="text-success">Loaded</td>
+        <td id="deviceCurrentExperience">com.TrajectoryTheatre.SimuLaunchHome</td>
     </tr>
 
+</template>
+<template id="devices-table-template">
+    <table id="devices-table" class="table">
+        <thead>
+            <tr>
+                <th scope="col"><input class="form-check-input" type="checkbox"></th>
+                <th scope="col">Headset</th>
+                <th scope="col">Connection</th>
+                <th scope="col">Battery</th>
+                <th scope="col">Experiences</th>
+                <th scope="col">Currently Playing</th>
+            </tr>
+        </thead>
+        <tbody id="body-container">
+
+
+        </tbody>
+    </table>
 </template>
