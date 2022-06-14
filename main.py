@@ -160,12 +160,6 @@ def check_adb_running(func):
 
     return wrapper
 
-@check_adb_running
-@app.on_event("startup")
-async def startup():
-    # startup adb
-    pass
-
 
 @app.post("/settings")
 async def settings(screen_updates: int = Form(...),
@@ -735,7 +729,7 @@ async def check_image(device_serial, refresh_ms, size):
     height = _image.shape[0]
     width = _image.shape[1]
 
-    if height < width: # assume Quest so cut screen in half
+    if height < width:  # assume Quest so cut screen in half
         _image = _image[0:height, 0: int(width * .5)]
 
     height = _image.shape[0]
