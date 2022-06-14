@@ -43,6 +43,11 @@ class DeviceTable extends HTMLElement {
                 }
             });
         }
+        if (device.ip === false) {
+            row.querySelector("#deviceConnection").innerHTML = "Wired"
+            row.querySelector("#deviceConnection").classList.remove("text-success")
+            row.querySelector("#deviceConnection").classList.add("text-warning")
+        }
         return row;
     }
     getBatteryPercentage(id) {
