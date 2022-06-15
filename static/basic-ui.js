@@ -1,5 +1,5 @@
 var current_devices = []
-var masterList = ["app.lawnchair"]
+var masterList = ["com.DefaultCompany.Kindred", "com.IndigoStorm.TheMuseumofImaginedFutures", "com.NoGhost.OffTheRecord", "com.SV.LifeCycles", "com.Shroomstudio.Promenade", "com.Visualise.GetPunked"]
 var status_global = document.getElementById("status");
 var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
 class DeviceTable extends HTMLElement {
@@ -310,4 +310,4 @@ var showStatus = (text = "The showStatus function was used incorrectly and statu
     statusToast.show();
 }
 get_devices();
-setInterval(get_devices, 1000);
+setInterval(get_devices, 8000);
