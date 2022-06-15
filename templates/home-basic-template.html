@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block menu %}
+{% include "ui/navbar-basic.html" %}
+{% endblock %}
+
+{% block content %}
+{% include "icons/set_icon_modal.html" %}
+<div id="main-container" class="row row-cols-auto">
+    <h2 class="w-100 text-center p-3 d-none" id="no-devices">No Devices Connected.</h2>
+    <table id="devices-table" class="table ">
+        <thead>
+            <tr>
+                <th scope="col"><input class="form-check-input" type="checkbox"></th>
+                <th scope="col">Headset</th>
+                <th scope="col">Connection</th>
+                <th scope="col">Battery</th>
+                <th scope="col">Experiences</th>
+                <th scope="col">Currently Playing</th>
+            </tr>
+        </thead>
+        <tbody id="device-table-body">
+            <tr>
+                <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox"></th>
+                <td>
+                    <span id="setIcon" class="badge btn text-danger" onclick="">
+                        {% include "icons/plus-lg.svg" %}
+                    </span>
+                </td>
+                <td id="itemConnection" class="text-success">Good</td>
+                <td id="deviceBattery">
+                    <span id="batteryBadge" class="badge text-bg-success">
+                        <span id="batteryPercent">80%</span>
+                    </span>
+                </td>
+                <td id="deviceExperiencesStatus" class="text-success">Loaded</td>
+                <td id="deviceCurrentExperience">com.TrajectoryTheatre.SimuLaunchHome</td>
+            </tr>
+            <tr>
+                <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox"></th>
+                <td>
+                    <span id="setIcon" class="badge btn text-danger" onclick="">
+                        {% include "icons/triangle-fill.svg" %}
+                    </span>
+                </td>
+                <td id="itemConnection" class="text-success">Good</td>
+                <td id="deviceBattery">
+                    <span id="batteryBadge" class="badge text-bg-warning">
+                        <span id="batteryPercent">56%</span>
+                    </span>
+                </td>
+                <td id="deviceExperiencesStatus"><span class="btn btn-danger">Click to load</span></td>
+                <td id="deviceCurrentExperience">com.TrajectoryTheatre.SimuLaunchHome</td>
+            </tr>
+            <tr>
+                <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox"></th>
+                <td>
+                    <span id="setIcon" class="badge btn text-primary" onclick="">
+                        {% include "icons/heart-fill.svg" %}
+                    </span>
+                </td>
+                <td id="itemConnection" class="text-success">Good</td>
+                <td id="deviceBattery">
+                    <span id="batteryBadge" class="badge text-bg-danger">
+                        <span id="batteryPercent">20%</span>
+                    </span>
+                </td>
+                <td id="deviceExperiencesStatus" class="text-success">Loaded</td>
+                <td id="deviceCurrentExperience">com.TrajectoryTheatre.SimuLaunchHome</td>
+            </tr>
+            <tr>
+                <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox"></th>
+                <td>
+                    <span id="setIcon" class="badge btn text-warning" onclick="">
+                        {% include "icons/square-fill.svg" %}
+                    </span>
+                </td>
+                <td id="itemConnection" class="text-danger">Disconnected</td>
+                <td id="deviceBattery">
+                    <span id="batteryBadge" class="badge text-bg-danger">
+                        <span id="batteryPercent">5%</span>
+                    </span>
+                    (at time of disconnection)
+                </td>
+                <td id="deviceExperiencesStatus" class="text-secondary">Unknown</td>
+                <td id="deviceCurrentExperience" class="text-secondary">Unknown</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+
+{% endblock %}
+
+{% block javascript %}
+
+{% endblock %}

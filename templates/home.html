@@ -30,8 +30,7 @@
 </div>
 <div class="row mt-2" id="volumeDiv">
   <div class="col-12 align-items-center justify-content-center border rounded p-4">
-    <label for="volume" class="form-label fs-3 text">Volume <span class="badge rounded-pill bg-secondary small"><span
-        class="volume-label">10</span>/15</span></label>
+    <label for="volume" class="form-label fs-3 text">Volume <span class="badge rounded-pill bg-secondary small"><span class="volume-label">10</span>/15</span></label>
     <input type="range" class="form-range" min="0" value="10" max="15" step="1" id="volume">
   </div>
 </div>
@@ -40,4 +39,5 @@
 {% endblock %}
 
 {% block javascript %}
+<script defer src="/static/main.js"></script>
 {% endblock %}

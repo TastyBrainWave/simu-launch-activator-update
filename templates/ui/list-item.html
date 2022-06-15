@@ -1,0 +1,38 @@
+<template id="device-list-item">
+
+    <tr>
+        <th scope="row" id="itemSelect"><input class="form-check-input" type="checkbox" onclick="document.querySelector('device-table').updateSelected(this)"></th>
+        <td id="icon">
+            <span id="setIcon" class="badge btn text-secondary" onclick="set_icon(this.parentElement.parentElement)">
+                {% include "icons/paintbrush.html" %}
+            </span>
+        </td>
+        <td id="deviceConnection" class="text-success">Good</td>
+        <td id="deviceBattery">
+            <span id="batteryBadge" class="badge text-bg-success">
+                <span id="batteryPercent">80%</span>
+            </span>
+        </td>
+        <td id="deviceExperiencesStatus" class="text-success">Loaded</td>
+        <td id="deviceCurrentExperience">com.TrajectoryTheatre.SimuLaunchHome</td>
+    </tr>
+
+</template>
+<template id="devices-table-template">
+    <table id="devices-table" class="table">
+        <thead>
+            <tr>
+                <th scope="col"><input class="form-check-input" type="checkbox" id="selectControl" onclick='document.querySelector("device-table").overrideSelected()'></th>
+                <th scope="col">Headset</th>
+                <th scope="col">Connection</th>
+                <th scope="col">Battery</th>
+                <th scope="col">Experiences</th>
+                <th scope="col">Currently Playing</th>
+            </tr>
+        </thead>
+        <tbody id="body-container">
+
+
+        </tbody>
+    </table>
+</template>
