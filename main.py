@@ -29,7 +29,14 @@ from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
-from helpers import launch_app, save_file, process_devices, connect_actions, HOME_APP_APK, home_app_installed
+from helpers import (
+    launch_app,
+    save_file,
+    process_devices,
+    connect_actions,
+    HOME_APP_APK,
+    home_app_installed,
+)
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
 from sql_app.crud import (
@@ -208,7 +215,7 @@ async def devices(db: Session = Depends(get_db)):
             serial = str(device.serial)
             device_info["id"] = serial
             device_info["icon"] = my_device_icon
-            device_info["ip"] = len(".".split(serial)) >= 2
+            device_info["ip"] = len(serial.split(".")) >= 2
 
         except RuntimeError as e:
             errs.append(str(e))
@@ -485,8 +492,14 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
 
 def launch_home_app(device_id: str):
     device = client.device(device_id)
-    outcome = launch_app(device, app_name=HOME_APP_APK, d_type=True, command="com.unity3d.player.UnityPlayerActivity", )
+    outcome = launch_app(
+        device,
+        app_name=HOME_APP_APK,
+        d_type=True,
+        command="com.unity3d.player.UnityPlayerActivity",
+    )
     return outcome
+
 
 @app.post("/stop")
 async def stop(payload: Experience, db: Session = Depends(get_db)):
@@ -531,12 +544,12 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
 @app.get("/connect")
 async def connect_raw(request: Request):
     """
-           Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
-           the USB.
+        Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
+        the USB.
 
-       :param request: The Request parameter which is used to receive the device data.
-       :return: a dictionary containing the success flag of the operation and any errors
-       """
+    :param request: The Request parameter which is used to receive the device data.
+    :return: a dictionary containing the success flag of the operation and any errors
+    """
 
     global BASE_PORT
 
@@ -556,14 +569,19 @@ async def connect_raw(request: Request):
         if not remote_address:
             os.system("adb -s" + device_ip + " tcpip " + str(BASE_PORT))
 
-        p = multiprocessing.Process(target=client.remote_connect, args=(device_ip, BASE_PORT))
+        p = multiprocessing.Process(
+            target=client.remote_connect, args=(device_ip, BASE_PORT)
+        )
         p.start()
 
         p.join(5)
 
         if not p.is_alive():
             connected_device = Device(client, device_ip)
-            connect_actions(connected_device, global_volume, )
+            connect_actions(
+                connected_device,
+                global_volume,
+            )
 
             print(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
@@ -573,13 +591,16 @@ async def connect_raw(request: Request):
 
         print("alive")
         raise RuntimeError(
-            "Could not connect device. Make sure the device is connected on the same router as the server!")
+            "Could not connect device. Make sure the device is connected on the same router as the server!"
+        )
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
 
 @app.get("/connect/{device_serial}")
-async def connect(request: Request, device_serial: str, background_tasks: BackgroundTasks):
+async def connect(
+    request: Request, device_serial: str, background_tasks: BackgroundTasks
+):
     """
         Connects a device wirelessly to the server on port 5555. After the device is connected, it can be unplugged from
         the USB.
@@ -646,7 +667,11 @@ async def connect(request: Request, device_serial: str, background_tasks: Backgr
                 global_volume,
             )
 
-            background_tasks.add_task(connect_actions, connected_device, global_volume, )
+            background_tasks.add_task(
+                connect_actions,
+                connected_device,
+                global_volume,
+            )
             connected = await wait_host_port(device_ip, BASE_PORT, duration=5, delay=2)
             print(connected, 22)
             if connected:
@@ -656,11 +681,13 @@ async def connect(request: Request, device_serial: str, background_tasks: Backgr
                     + ":"
                     + str(BASE_PORT)
                 )
-                message = f'successfully added device {device_ip}.'
+                message = f"successfully added device {device_ip}."
                 if not home_app_already_installed:
-                    message += f' Please note that the home app needed to be installed, so your device wont ' \
-                               f'appear for a few moments'
-                return {"success": True, "serial": device_ip, 'message': message}
+                    message += (
+                        f" Please note that the home app needed to be installed, so your device wont "
+                        f"appear for a few moments"
+                    )
+                return {"success": True, "serial": device_ip, "message": message}
             else:
                 return {
                     "success": False,
@@ -726,7 +753,7 @@ async def restart(payload: Devices):
                 return {
                     "success": False,
                     "error": "Encountered an error restarting device with ID/IP: "
-                             + device.serial,
+                    + device.serial,
                 }
 
         return {"success": True}
@@ -1000,11 +1027,13 @@ async def device_command(
         # https://stackoverflow.com/a/56078766/960471
         await device.shell(f"am force-stop {experience}")
         launch_home_app(device.serial)
-        return {'success': True}
-    elif command == 'copy-details':
-        info: str = await device.shell(f'dumpsys package | grep {experience} | grep Activity')
-        info = info.strip().split('\n')[0]
-        info = info.split(' ')[1]
+        return {"success": True}
+    elif command == "copy-details":
+        info: str = await device.shell(
+            f"dumpsys package | grep {experience} | grep Activity"
+        )
+        info = info.strip().split("\n")[0]
+        info = info.split(" ")[1]
         item = APKDetailsBase(
             apk_name=info,
             device_type=2,
@@ -1039,7 +1068,7 @@ async def device_command(
             print(experience)
             outcome = await d.shell(f"am force-stop {experience}")
             launch_home_app(device.serial)
-        return {'success': True, 'message': outcome}
+        return {"success": True, "message": outcome}
 
     elif command == "devices_experiences__start_experience_some":
         my_devices = (
@@ -1078,11 +1107,13 @@ async def device_icon(
     request: Request, device_serial: str, db: Session = Depends(get_db)
 ):
     json = await request.json()
-    col = json['col']
-    icon = json['icon']
-    text = json['text']
+    col = json["col"]
+    icon = json["icon"]
+    text = json["text"]
     set_device_icon(db=db, device_id=device_serial, icon=icon, col=col, text=text)
-    return {'success': True}
+    return {"success": True}
+
+
 @app.get("/current-experience/{device_serial}")
 async def current_experience(request: Request, device_serial: str):
     device = await client_async.device(device_serial)
