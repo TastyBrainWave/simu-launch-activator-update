@@ -1,5 +1,5 @@
 var current_devices = []
-var masterList = ["com.DefaultCompany.Kindred", "com.IndigoStorm.TheMuseumofImaginedFutures", "com.NoGhost.OffTheRecord", "com.SV.LifeCycles", "com.Shroomstudio.Promenade", "com.Visualise.GetPunked"]
+var masterList = ["com.DefaultCompany.Kindred", "com.IndigoStorm.TheMuseumofImaginedFutures", "com.NoGhost.OffTheRecord", "com.SV.LifeCycles", "com.Shroomstudio.Promenade", "com.Visualise.GetPunked", "com.epicgames.Storyfutures"]
 var status_global = document.getElementById("status");
 var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
 class DeviceTable extends HTMLElement {
@@ -31,8 +31,13 @@ class DeviceTable extends HTMLElement {
     itemGenerator(device) {
         let row = document.querySelector("#device-list-item").content.cloneNode(true)
         row.querySelector("tr").setAttribute("id", device.id)
-        row.querySelector("tr").setAttribute("name", device.icon.text)
-        console.log(device)
+        if (device.icon) {
+            row.querySelector("tr").setAttribute("name", device.icon.text)
+        }
+        else {
+            row.querySelector("tr").setAttribute("name", device.id)
+        }
+
         if (device.icon) {
 
             var col = device.icon.col
@@ -51,10 +56,12 @@ class DeviceTable extends HTMLElement {
             });
         }
         if (device.ip === false) {
+
             row.querySelector("#deviceConnection").innerHTML = "Wired"
             row.querySelector("#deviceConnection").classList.remove("text-success")
             row.querySelector("#deviceConnection").classList.add("text-warning")
         }
+        this.checkLoadedExperiences(device.id);
         return row;
     }
     getBatteryPercentage(id) {
@@ -115,7 +122,7 @@ class DeviceTable extends HTMLElement {
         list.forEach(device => {
             this.getCurrentExperience(device.id);
             this.getBatteryPercentage(device.id);
-            this.checkLoadedExperiences(device.id);
+
         })
     }
     getSelected() {
@@ -156,7 +163,7 @@ customElements.define('device-table', DeviceTable);
 
 
 function get_devices() {
-    console.log('polling for new devices')
+    console.log('Polling for new devices')
     fetch('devices', {
         method: 'GET',
     })
@@ -171,6 +178,7 @@ function get_devices() {
 
 
             if (JSON.stringify(json['devices']) != JSON.stringify(current_devices)) {
+                console.log('Found changes')
                 document.getElementById("main-container").innerHTML = "";
                 var devicetable = new DeviceTable(json['devices'])
                 document.getElementById("main-container").appendChild(devicetable);
