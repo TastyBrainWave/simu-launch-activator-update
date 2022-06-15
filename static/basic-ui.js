@@ -31,6 +31,7 @@ class DeviceTable extends HTMLElement {
     itemGenerator(device) {
         let row = document.querySelector("#device-list-item").content.cloneNode(true)
         row.querySelector("tr").setAttribute("id", device.id)
+        console.log(device)
         if (device.icon) {
 
             var col = device.icon.col
@@ -202,11 +203,12 @@ function set_icon(el) {
             var icon = $(selected[0]).data('icon');
             var cloned_icon = $(selected.parent().find('svg')[0]).clone();
             cloned_icon.css('color', col);
-
+            var el_text = $('#setIconModalLabel').val();
+            if (el_text.length < 3) el_text += 'name too short'
 
             fetch('set-device-icon/' + device_id, {
                 method: 'POST',
-                body: JSON.stringify({ 'col': col, 'icon': icon }),
+                body: JSON.stringify({ 'col': col, 'icon': icon, 'text': el_text }),
                 headers: { "Content-type": "application/json" }
             }).then(function (response) {
                 if (!response.ok) {
