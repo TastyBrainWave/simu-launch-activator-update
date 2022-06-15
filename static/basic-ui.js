@@ -1,5 +1,5 @@
 var current_devices = []
-var masterList = ["com.DefaultCompany.Kindred", "com.IndigoStorm.TheMuseumofImaginedFutures", "com.NoGhost.OffTheRecord", "com.SV.LifeCycles", "com.Shroomstudio.Promenade", "com.Visualise.GetPunked"]
+var masterList = ["com.DefaultCompany.Kindred", "com.IndigoStorm.TheMuseumofImaginedFutures", "com.NoGhost.OffTheRecord", "com.SV.LifeCycles", "com.Shroomstudio.Promenade", "com.Visualise.GetPunked", "com.epicgames.Storyfutures"]
 var status_global = document.getElementById("status");
 var statusToast = new bootstrap.Toast(document.getElementById('statusToast'));
 class DeviceTable extends HTMLElement {
