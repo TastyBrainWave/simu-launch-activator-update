@@ -362,6 +362,7 @@ class DeviceCard extends HTMLElement {
         this.device_icon = device['icon'];
         this.selected = selected;
         this.updateMessage(device['message']);
+        this.updated = undefined;
         var checkbox = this.shadowRoot.getElementById("cardSelect");
 
         checkbox.addEventListener('change', () => {
@@ -415,6 +416,17 @@ class DeviceCard extends HTMLElement {
 
     kill() {
         clearInterval(this.batteryInterval);
+    }
+
+    updated_recently(){
+        var difference = (new Date().getTime() - this.updated) / 1000;
+        var grace_period_after_headset_dies_s = 1;
+        console.log(difference,333)
+        return difference < grace_period_after_headset_dies_s;
+    }
+
+    just_updated() {
+        this.updated = new Date().getTime();
     }
 
     update_icon(icon, text) {
@@ -479,7 +491,7 @@ class DeviceCard extends HTMLElement {
     }
 
     updateImage64(image64) {
-
+        this.just_updated();
         this.shadowRoot.querySelector("img").src = "data:image/png;base64, " + image64;
     }
 
@@ -521,6 +533,8 @@ var devices_manager = function () {
 
     var image_height = defaults.screen_height;
     var rate = defaults.screen_updates * 1000;
+
+    api.card_map = card_map;
 
     api.refresh_devices = function () {
         location.reload();
@@ -626,8 +640,14 @@ var devices_manager = function () {
     }
 
     function remove_card(card_id) {
-        screengrab_polling(card_id, false);
         var card = card_map[card_id];
+        if(card.updated_recently()){
+            console.log('buffer keeping card alive for a short while: ' + card_id);
+            return
+        }
+        //
+        screengrab_polling(card_id, false);
+
         card.kill();
         delete card_map[card_id];
         var i = cardList.indexOf(card_id);
@@ -665,12 +685,14 @@ var devices_manager = function () {
                         card_map[device_id] = card
                         screengrab_polling(device_id, true);
                     } else {
-                        card_map[device_id].updateMessage(device['message']);
+                        var card = card_map[device_id];
+                        card.updateMessage(device['message']);
+                        card.just_updated();
                         devices_so_far.splice(found_at, 1);
                     }
                 }
                 for (var d_missing of devices_so_far) {
-                    remove_card(d_missing)
+                    remove_card(d_missing);
                 }
 
             })
