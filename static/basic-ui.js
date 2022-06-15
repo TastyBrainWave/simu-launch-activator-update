@@ -31,6 +31,7 @@ class DeviceTable extends HTMLElement {
     itemGenerator(device) {
         let row = document.querySelector("#device-list-item").content.cloneNode(true)
         row.querySelector("tr").setAttribute("id", device.id)
+        row.querySelector("tr").setAttribute("name", device.icon.text)
         console.log(device)
         if (device.icon) {
 
@@ -192,6 +193,8 @@ function get_devices() {
 function set_icon(el) {
     var icon_modal = $('#setIconModal');
     var device_id = el.getAttribute('id');
+    var el_name = el.getAttribute('name');
+    $('#setIconModalLabel').val(el_name);
     $(icon_modal).modal('show');
 
     function icon_modal_helper() {
