@@ -38,6 +38,7 @@ note that systemd approach failed to work on pi4
 Save below contents above line 'exit 0' (via Control+s then Control-q to quit). Note ending '&' critical elsewise you cant access your pi again!
 
 ```
+cd /home/simu-launch
 sudo /home/simu-launch/venv/bin/uvicorn main:app --port 8000 --host "0.0.0.0" --app-dir /home/simu-launch &
 ```
 
