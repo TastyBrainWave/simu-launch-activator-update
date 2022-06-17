@@ -46,3 +46,12 @@ then
 ```
 sudo reboot
 ```
+note if you are debugging and need to close a port, you can use:
+```
+lsof -i:8000
+```
+closing the offending service via its PID via:
+```
+kill <PID>
+```
+
