@@ -75,16 +75,19 @@ def connect_actions(device: Device = None, volume: int = None, ):
         device.shell(f'settings put system screen_off_timeout {timeout}')
         print(f'Device screen timout set to {timeout_hours} hours!')
 
-        if home_app_installed(device):
-            print("Home app not installed on device. Installing now..")
-            device.install("apks/" + HOME_APP_APK)
+        device.shell(f'settings put global captive_portal_detection_enabled 0')
+        print(f'Disabling captive_portal_detection_enabled ')
 
-        if HOME_APP_VERSION not in device.shell(
-                "dumpsys package com.TrajectoryTheatre.SimuLaunchHome | grep versionName"):
-            print("Installed Home app isn't the latest version. Updating now..")
-            device.install("apks/" + HOME_APP_APK)
-
-        device.shell("am start -n com.TrajectoryTheatre.SimuLaunchHome/com.unity3d.player.UnityPlayerActivity")
+        # if not home_app_installed(device):
+        #     print("Home app not installed on device. Installing now..")
+        #     device.install("apks/" + HOME_APP_APK)
+        #
+        # if HOME_APP_VERSION not in device.shell(
+        #         "dumpsys package com.TrajectoryTheatre.SimuLaunchHome | grep versionName"):
+        #     print("Installed Home app isn't the latest version. Updating now..")
+        #     device.install("apks/" + HOME_APP_APK)
+        #
+        # device.shell("am start -n com.TrajectoryTheatre.SimuLaunchHome/com.unity3d.player.UnityPlayerActivity")
         print("Launched home app!")
         print(f"Connect actions complete for {device.serial}")
     except RuntimeError as e:

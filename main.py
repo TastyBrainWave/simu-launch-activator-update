@@ -2,6 +2,7 @@ import asyncio
 import base64
 import datetime
 import multiprocessing
+import subprocess
 import os
 import platform
 import time
@@ -43,7 +44,7 @@ from sql_app.crud import (
     get_all_apk_details,
     get_apk_details,
     set_device_icon,
-    get_device_icon,
+    get_device_decorations,
     crud_defaults,
 )
 from sql_app.database import engine, SessionLocal
@@ -128,39 +129,23 @@ async def wait_host_port(host, port, duration=10, delay=2):
                 await asyncio.sleep(delay)
     return False
 
+@app.on_event("startup")
+@repeat_every(seconds=60*1)
+async def wake():
+    print('check screens awake')
+    for device in client.devices():
+        print(f'waking screen on device {device.serial}')
+        screen_state_off = len(device.shell('dumpsys power | grep "Display Power: state=OFF"')) > 0
+
+        if screen_state_off:
+            print('wake up')
+            device.shell('input keyevent 26')
+
 
 async def scan_devices():
-    return my_devices
-
-
-# below should really be stored in redis as storing it as below limits us to one thread
-my_devices = []
-
-
-@app.on_event("startup")
-@repeat_every(seconds=check_for_new_devices_poll_s)
-async def _scan_devices():
-    global my_devices
-    my_devices.clear()
-    device: Device
-    for device in client.devices():
-        device_serial = str(device.serial)
-
-        if "." not in device_serial:
-            my_devices.append(device)
-        else:
-            try:
-                ip_port = device_serial.split(":")
-                ip = ip_port[0]
-                port = int(ip_port[1])
-                is_open = await wait_host_port(host=ip, port=port, duration=1, delay=1)
-
-                if is_open:
-                    my_devices.append(device)
-
-            except RuntimeError as e:
-                err = e.__str__()
-                print("issue disconnecting disconnected wifi device (caution): " + err)
+    outcome = subprocess.run(["adb", "devices"], stdout=subprocess.PIPE).stdout.decode('ascii')
+    alive = [serial.split('\t')[0] for serial in outcome.splitlines()[1:] if 'offline' not in serial and serial]
+    my_devices = [client.device(serial) for serial in alive]
     return my_devices
 
 
@@ -210,9 +195,10 @@ async def devices(db: Session = Depends(get_db)):
             "id": "",
             "icon": "",
         }
+
         try:
-            my_device_icon = get_device_icon(db, device.serial)
             serial = str(device.serial)
+            my_device_icon = get_device_decorations(db, serial)
             device_info["id"] = serial
             device_info["icon"] = my_device_icon
             device_info["ip"] = len(serial.split(".")) >= 2
@@ -673,7 +659,7 @@ async def connect(
                 global_volume,
             )
             connected = await wait_host_port(device_ip, BASE_PORT, duration=5, delay=2)
-            print(connected, 22)
+
             if connected:
                 print(
                     "Established connection with client "
@@ -950,7 +936,7 @@ async def devices_experiences(request: Request):
 
     for device in await scan_devices():
         experiences = await _experiences(device=device)
-        print(experiences, 222)
+
         experiences_map = {el["package"]: el["name"] for el in experiences}
         counter.update(experiences_map.keys())
         devices_lookup[device.serial] = experiences_map
