@@ -35,7 +35,7 @@ def set_device_icon(db: Session, device_id: str, col: str, icon: str, text: str)
     db.commit()
 
 
-def get_device_icon(db: Session, device_id: str):
+def get_device_decorations(db: Session, device_id: str):
     instance = db.query(models.DeviceInfo).filter_by(device_id=device_id).first()
     if not instance:
         return None

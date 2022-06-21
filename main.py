@@ -2,6 +2,7 @@ import asyncio
 import base64
 import datetime
 import multiprocessing
+import subprocess
 import os
 import platform
 import time
@@ -43,7 +44,7 @@ from sql_app.crud import (
     get_all_apk_details,
     get_apk_details,
     set_device_icon,
-    get_device_icon,
+    get_device_decorations,
     crud_defaults,
 )
 from sql_app.database import engine, SessionLocal
@@ -128,6 +129,24 @@ async def wait_host_port(host, port, duration=10, delay=2):
                 await asyncio.sleep(delay)
     return False
 
+@app.on_event("startup")
+@repeat_every(seconds=60*1)
+async def wake():
+    print('check screens awake')
+    for device in client.devices():
+        print(f'waking screen on device {device.serial}')
+        screen_state_off = len(device.shell('dumpsys power | grep "Display Power: state=OFF"')) > 0
+
+        if screen_state_off:
+            print('wake up')
+            device.shell('input keyevent 26')
+
+
+async def scan_devices():
+    outcome = subprocess.run(["adb", "devices"], stdout=subprocess.PIPE).stdout.decode('ascii')
+    alive = [serial.split('\t')[0] for serial in outcome.splitlines()[1:] if 'offline' not in serial and serial]
+    my_devices = [client.device(serial) for serial in alive]
+    return my_devices
 
 async def check_alive(device):
     device_serial = device.serial
@@ -147,23 +166,6 @@ async def check_alive(device):
         print("issue disconnecting disconnected wifi device (caution): " + err)
 
     return False
-
-@app.on_event("startup")
-@repeat_every(seconds=check_for_new_devices_poll_s)
-async def _scan_devices():
-    device: Device
-    for device in client.devices():
-        await check_alive(device)
-        device_serial = device.serial
-        if "." not in device_serial:
-            continue
-        #device.shell('input keyevent 26')
-        print('wakeup', device.serial, device.shell('input keyevent KEYCODE_WAKEUP'))
-        #device.shell('settings put global mStayOn true')
-        #print(device.shell('settings get global mStayOn'),333)
-        #print(device.shell('dumpsys power'))
-
-
 
 def check_adb_running(func):
     @wraps(func)
@@ -205,18 +207,15 @@ async def devices(db: Session = Depends(get_db)):
     errs = []
 
     device: Device
-
-    for device in client.devices():
-        if not await check_alive(device):
-            continue
+    for device in await scan_devices():
         device_info = {
             "message": "",
             "id": "",
             "icon": "",
         }
         try:
-            my_device_icon = get_device_icon(db, device.serial)
             serial = str(device.serial)
+            my_device_icon = get_device_decorations(db, serial)
             device_info["id"] = serial
             device_info["icon"] = my_device_icon
             device_info["ip"] = len(serial.split(".")) >= 2
@@ -627,6 +626,7 @@ async def connect(
     remote_address = ""
 
     device: Device = client.device(device_serial)
+    home_app_already_installed = home_app_installed(device)
 
     print("json ", json)
     print("address ", remote_address)
@@ -682,7 +682,7 @@ async def connect(
                 global_volume,
             )
             connected = await wait_host_port(device_ip, BASE_PORT, duration=5, delay=2)
-            print(connected, 22)
+
             if connected:
                 print(
                     "Established connection with client "
@@ -796,7 +796,7 @@ async def screen_grab():
     :return: a dictionary containing the success flag
     """
 
-    my_devices = await client.devices()
+    my_devices = await scan_devices()
 
     screen_caps_folder = "screenshots/"
 
@@ -807,11 +807,10 @@ async def screen_grab():
         os.makedirs(folder)
         i = 0
         for device in my_devices:
-            if await check_alive(device):
-                result = device.screencap()
-                with open(folder + "screen" + str(i) + ".png", "wb") as fp:
-                    fp.write(result)
-                i += 1
+            result = device.screencap()
+            with open(folder + "screen" + str(i) + ".png", "wb") as fp:
+                fp.write(result)
+            i += 1
     except RuntimeError as e:
         return {"success": False, "errors": e.__str__()}
 
@@ -900,8 +899,8 @@ async def devicescreen(
 async def battery(device_serial: str):
     try:
         device: Device = client.device(device_serial)
-        if not await check_alive(device):
-            return "..."
+        if not device:
+            return "Device does not exist"
         battery_level = device.get_battery_level()
         if str(battery_level) == "null":
             return "?"
@@ -958,12 +957,9 @@ async def devices_experiences(request: Request):
     devices_lookup = {}
     counter = Counter()
 
-    for device in client.devices():
-        is_alive = await check_alive(device)
-        if not is_alive:
-            continue
+    for device in await scan_devices():
         experiences = await _experiences(device=device)
-        print(experiences, 222)
+
         experiences_map = {el["package"]: el["name"] for el in experiences}
         counter.update(experiences_map.keys())
         devices_lookup[device.serial] = experiences_map
@@ -1130,10 +1126,5 @@ async def device_icon(
 @app.get("/current-experience/{device_serial}")
 async def current_experience(request: Request, device_serial: str):
     device = await client_async.device(device_serial)
-    if await check_alive(device):
-        current_app = await get_running_app(device)
-        if current_app == 'com.oculus.shellenv':
-            current_app = ''
-    else:
-        current_app = 'please wait'
+    current_app = await get_running_app(device)
     return {"current_app": current_app}
