@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import datetime
+import json
 import multiprocessing
 import subprocess
 import os
@@ -129,17 +130,24 @@ async def wait_host_port(host, port, duration=10, delay=2):
                 await asyncio.sleep(delay)
     return False
 
-@app.on_event("startup")
-@repeat_every(seconds=60*1)
-async def wake():
-    print('check screens awake')
-    for device in client.devices():
-        print(f'waking screen on device {device.serial}')
-        screen_state_off = len(device.shell('dumpsys power | grep "Display Power: state=OFF"')) > 0
 
+@app.on_event("startup")
+@repeat_every(seconds=30*1)
+async def wake():
+    print(f'check screens awake {time.strftime("%H:%M:%S", time.localtime())}')
+
+    my_devices = await scan_devices()
+    count = 0
+    devices_count = len(my_devices)
+    for device in my_devices:
+        count += 1
+        screen_state = device.shell('dumpsys power | grep "Display Power: state=OFF"')
+        screen_state_off = len(screen_state) > 0
         if screen_state_off:
-            print('wake up')
+            print(f'{count}/{devices_count} Waking screen on device {device.serial}')
             device.shell('input keyevent 26')
+        else:
+            print(f'{count}/{devices_count} Screen already on with device {device.serial}')
 
 
 async def scan_devices():
@@ -156,7 +164,7 @@ async def check_alive(device):
         ip_port = device_serial.split(":")
         ip = ip_port[0]
         port = int(ip_port[1])
-        is_open = await wait_host_port(host=ip, port=port, duration=1, delay=1)
+        is_open = await wait_host_port(host=ip, port=port, duration=2, delay=1)
 
         if is_open:
             return True
@@ -1014,8 +1022,8 @@ async def device_command(
     if device_serial != "ALL":
         device = await client_async.device(device_serial)
 
-    json = await request.json()
-    experience = json["experience"]
+    my_json = await request.json()
+    experience = my_json["experience"]
 
     async def get_exp_info(_d: Device):
         my_info: str = await _d.shell(
@@ -1063,25 +1071,18 @@ async def device_command(
 
     ########### devices experiences menu
     elif command == "devices_experiences__stop_experience_some":
-        my_devices = (
-            json["devices"]
-            .replace("[", "")
-            .replace("]", "")
-            .replace("'", "")
-            .replace(" ", "")
-        )
-        devices_list = [x for x in my_devices.split(",") if len(x) > 0]
+        my_devices = json.loads(my_json["devices"].replace("'", '"'))
+
         outcome = ""
-        for d in devices_list:
-            d: DeviceAsync = await client_async.device(d)
-            print(experience)
-            outcome = await d.shell(f"am force-stop {experience}")
+        for device_serial in my_devices:
+            device: DeviceAsync = await client_async.device(device_serial)
+            outcome = await device.shell(f"am force-stop {experience}")
             launch_home_app(device.serial)
         return {"success": True, "message": outcome}
 
     elif command == "devices_experiences__start_experience_some":
         my_devices = (
-            json["devices"]
+            my_json["devices"]
             .replace("[", "")
             .replace("]", "")
             .replace("'", "")
@@ -1091,12 +1092,12 @@ async def device_command(
 
         info = await get_exp_info(await client_async.device(devices_list[0]))
         errs = []
-        for d in devices_list:
-            d: DeviceAsync = await client_async.device(d)
-            outcome = await d.shell(f"am start -n {info}")
+        for device in devices_list:
+            device: DeviceAsync = await client_async.device(device)
+            outcome = await device.shell(f"am start -n {info}")
 
             if "Exception" in outcome:
-                errs.append(f"An error occurred at device {d.serial}: \n" + outcome)
+                errs.append(f"An error occurred at device {device.serial}: \n" + outcome)
         if errs:
             return {
                 "success": False,
