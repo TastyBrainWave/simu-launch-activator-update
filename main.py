@@ -131,8 +131,13 @@ async def wait_host_port(host, port, duration=10, delay=2):
     return False
 
 
+def shell_command(device_id: str, command_arr):
+    outcome = subprocess.run(["adb", "-s", "device_id", *command_arr], stdout=subprocess.PIPE).stdout.decode('ascii')
+    return outcome
+
+
 @app.on_event("startup")
-@repeat_every(seconds=30*1)
+@repeat_every(seconds=30*1, raise_exceptions=True)
 async def wake():
     print(f'check screens awake {time.strftime("%H:%M:%S", time.localtime())}')
 
@@ -141,7 +146,7 @@ async def wake():
     devices_count = len(my_devices)
     for device in my_devices:
         count += 1
-        screen_state = device.shell('dumpsys power | grep "Display Power: state=OFF"')
+        screen_state: str = shell_command(device.serial, 'dumpsys power | grep "Display Power: state=OFF"')
         screen_state_off = len(screen_state) > 0
         if screen_state_off:
             print(f'{count}/{devices_count} Waking screen on device {device.serial}')
