@@ -130,9 +130,11 @@ async def wait_host_port(host, port, duration=10, delay=2):
                 await asyncio.sleep(delay)
     return False
 
+def is_wireless(serial):
+    return '.' in serial
 
-def shell_command(device_id: str, command_arr):
-    outcome = subprocess.run(["adb", "-s", "device_id", *command_arr], stdout=subprocess.PIPE).stdout.decode('ascii')
+def shell_command(device_id: str, command):
+    outcome = subprocess.run([f"adb", '-s', f"{device_id } '{command}'"], stdout=subprocess.PIPE).stdout.decode('ascii')
     return outcome
 
 
@@ -142,15 +144,20 @@ async def wake():
     print(f'check screens awake {time.strftime("%H:%M:%S", time.localtime())}')
 
     my_devices = await scan_devices()
+    my_devices = [device for device in my_devices if is_wireless(device.serial)]
     count = 0
     devices_count = len(my_devices)
     for device in my_devices:
         count += 1
-        screen_state: str = shell_command(device.serial, 'dumpsys power | grep "Display Power: state=OFF"')
+        screen_state = subprocess.run([f"adb", '-s', device.serial, "shell", "dumpsys",
+                                  "power", "|", 'grep', "\'Display Power: state=OFF\'"],
+                                 stdout=subprocess.PIPE).stdout.decode('ascii')
+
         screen_state_off = len(screen_state) > 0
         if screen_state_off:
             print(f'{count}/{devices_count} Waking screen on device {device.serial}')
-            device.shell('input keyevent 26')
+            outcome = subprocess.run([f"adb", '-s', device.serial, "shell", "input", "keyevent", "26"],
+                                     stdout=subprocess.PIPE).stdout.decode('ascii')
         else:
             print(f'{count}/{devices_count} Screen already on with device {device.serial}')
 
@@ -864,6 +871,9 @@ devices_info = {}
 async def check_image(device_serial, refresh_ms, size):
     device: DeviceAsync = await client_async.device(device_serial)
     if device is None:
+        return None
+
+    if not check_alive(device):
         return None
 
     im = await device.screencap()
