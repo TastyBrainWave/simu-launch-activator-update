@@ -321,7 +321,7 @@ ScriptsOnlyBuild:
     className: MarkerTrack
   - hash:
       serializedVersion: 2
-      Hash: 71bb6a6b6c8f052f948db64c7dd3ca4f
+      Hash: afc5b93a7b192de2dcb3832fe35a5c7e
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: KeepInfront
@@ -598,4 +598,4 @@ ScriptsOnlyBuild:
   platform: 13
   scenePathNames:
   - Assets/Scenes/SampleScene.unity
-  playerPath: E:/TrajectoryProjects/Community/Simu-Launch/home.apk
+  playerPath: E:/TrajectoryProjects/Community/Simu-Launch/simu-launch/HomeApp.apk

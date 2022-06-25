@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{2DE122F7-F70B-877E-6606-F2A72530BEA1}</ProjectGuid>
+    <ProjectGuid>{B5BA10EC-33AE-BE37-DAD8-D7447F0EDC65}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -685,91 +685,91 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Unity.VSCode.Editor.csproj">
-      <Project>{9FC41E30-FCEE-E54F-016E-2BB84688DDC7}</Project>
+      <Project>{19107BB4-6C36-BBF7-3FBD-C5ED89835572}</Project>
       <Name>Unity.VSCode.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.TextMeshPro.Editor.csproj">
-      <Project>{C6F716C2-A09F-D93B-73E7-C506956A10FF}</Project>
+      <Project>{BEFAF78D-9314-093F-A0BD-25FE31A63031}</Project>
       <Name>Unity.TextMeshPro.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.VisualStudio.Editor.csproj">
-      <Project>{9D69FDB9-8FE8-F097-936F-11D7F37ECF90}</Project>
+      <Project>{B1182185-F363-B312-3F99-A5BB262388F6}</Project>
       <Name>Unity.VisualStudio.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.XR.Management.Editor.csproj">
-      <Project>{8E6EBCC7-ECFF-2DB7-C6FC-D64B5F447CD9}</Project>
+      <Project>{22DF4F20-6844-AE6A-7635-F00945945066}</Project>
       <Name>Unity.XR.Management.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Timeline.csproj">
-      <Project>{13B6F347-7720-4CAB-9216-3ACF74ABC584}</Project>
+      <Project>{7A218BEE-86A8-D576-65A9-E3F5DE4156E7}</Project>
       <Name>Unity.Timeline</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.TextMeshPro.csproj">
-      <Project>{4F31B6A3-1E98-2952-67D8-47EEE42A6CBF}</Project>
+      <Project>{A65EF117-BE79-8CCB-3613-2D412437180D}</Project>
       <Name>Unity.TextMeshPro</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Subsystem.Registration.csproj">
-      <Project>{5FFACB55-CADA-4494-E4BF-CD803873171B}</Project>
+      <Project>{79EBEC6F-E0D4-FD79-3729-C5B114B2B248}</Project>
       <Name>Unity.Subsystem.Registration</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
-      <Project>{5673B47C-A206-C7E9-1973-86970939DD28}</Project>
+      <Project>{5979360E-1D77-074C-042D-F0D2182056B0}</Project>
       <Name>UnityEditor.UI</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.PlasticSCM.Editor.csproj">
-      <Project>{5BCB6056-C2D0-FBF2-62D3-ECB8C2F01DCF}</Project>
+      <Project>{4B1AC088-03FC-4083-D179-480AE497F1A2}</Project>
       <Name>Unity.PlasticSCM.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Rider.Editor.csproj">
-      <Project>{7FC32BC8-6229-8FD2-833C-8590F7D4A771}</Project>
+      <Project>{B4979F6C-1C5A-7BB1-832A-6562F985DC91}</Project>
       <Name>Unity.Rider.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.SpatialTracking.csproj">
-      <Project>{DE664EC5-54DA-BA89-D22A-400236848F23}</Project>
+      <Project>{7599AEB4-B5EC-A90A-2055-A069F35AE65C}</Project>
       <Name>UnityEngine.SpatialTracking</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.UI.csproj">
-      <Project>{594A3631-C49F-BBC0-C4F8-070F99E6434D}</Project>
+      <Project>{9A1256EC-2C6E-8E1F-DEA8-00A6AC5107A9}</Project>
       <Name>UnityEngine.UI</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Services.Core.csproj">
-      <Project>{9ECB95D9-E275-492F-BBF3-7CBD4286E05C}</Project>
+      <Project>{FCC20411-9F63-C2FA-FD07-899FA32CC2C6}</Project>
       <Name>Unity.Services.Core</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Services.Core.Analytics.csproj">
-      <Project>{AD25731D-9C43-F216-9AD6-E768DD800927}</Project>
+      <Project>{05D4D5D4-322F-8918-AACD-BB2600DE6432}</Project>
       <Name>Unity.Services.Core.Analytics</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.XR.LegacyInputHelpers.csproj">
-      <Project>{6B5D3C1F-58FD-AE34-A309-2CE3FAA48D5F}</Project>
+      <Project>{73EA2B09-E02D-5BE3-EB1F-6577A7F50AA7}</Project>
       <Name>UnityEngine.XR.LegacyInputHelpers</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Services.Core.Environments.csproj">
-      <Project>{5E1C5CAB-4A50-B096-2224-69D78FE40D60}</Project>
+      <Project>{23641619-B814-B1F2-04A2-A9ED720ABFFC}</Project>
       <Name>Unity.Services.Core.Environments</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Timeline.Editor.csproj">
-      <Project>{443D66DB-0C9C-16E7-9051-4C9D05876666}</Project>
+      <Project>{DA7BA0C3-8C90-9EDA-0103-F5F7BC92ED0C}</Project>
       <Name>Unity.Timeline.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.XR.LegacyInputHelpers.csproj">
-      <Project>{C6B8256C-29B5-ECE3-305E-8D3C4ADF3D44}</Project>
+      <Project>{46CEED6E-0D3B-39E2-17C0-CD8077B30570}</Project>
       <Name>UnityEditor.XR.LegacyInputHelpers</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.XR.Management.csproj">
-      <Project>{18F12540-1896-7B61-3863-1530744EDFE9}</Project>
+      <Project>{F1BC4EF0-FB02-DFA9-FA06-67BE6D487C33}</Project>
       <Name>Unity.XR.Management</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.XR.Oculus.Editor.csproj">
-      <Project>{7F5B5628-2FC3-98D1-38F1-29CA29BB517D}</Project>
+      <Project>{C17ACA0E-9ED6-971F-4AB2-4772DA4309D2}</Project>
       <Name>Unity.XR.Oculus.Editor</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.XR.Oculus.csproj">
-      <Project>{EF370FCB-49AA-E852-9C14-D44C8E97A85C}</Project>
+      <Project>{CF2C6C7E-5ED8-A7F6-7A6D-CEAF9AAAE823}</Project>
       <Name>Unity.XR.Oculus</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.SpatialTracking.csproj">
-      <Project>{C9420C06-4B7B-C56E-FF59-E19F25430416}</Project>
+      <Project>{EDDFA673-61FA-D5A7-91DD-F7B1A73644F5}</Project>
       <Name>UnityEditor.SpatialTracking</Name>
     </ProjectReference>
   </ItemGroup>

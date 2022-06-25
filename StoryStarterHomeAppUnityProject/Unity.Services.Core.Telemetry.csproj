@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{E7236543-F904-3A3B-922B-02636DAD1AFE}</ProjectGuid>
+    <ProjectGuid>{2CC2B608-C31B-088E-11E8-F2754106728F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Unity.Services.Core.Telemetry</AssemblyName>
@@ -727,19 +727,19 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Unity.Services.Core.csproj">
-      <Project>{9ECB95D9-E275-492F-BBF3-7CBD4286E05C}</Project>
+      <Project>{FCC20411-9F63-C2FA-FD07-899FA32CC2C6}</Project>
       <Name>Unity.Services.Core</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Services.Core.Internal.csproj">
-      <Project>{48D210A7-4383-2748-0310-FB482CD8BD60}</Project>
+      <Project>{7B382220-E208-BB81-AEFC-7EB03C1C5785}</Project>
       <Name>Unity.Services.Core.Internal</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEditor.UI.csproj">
-      <Project>{5673B47C-A206-C7E9-1973-86970939DD28}</Project>
+      <Project>{5979360E-1D77-074C-042D-F0D2182056B0}</Project>
       <Name>UnityEditor.UI</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.UI.csproj">
-      <Project>{594A3631-C49F-BBC0-C4F8-070F99E6434D}</Project>
+      <Project>{9A1256EC-2C6E-8E1F-DEA8-00A6AC5107A9}</Project>
       <Name>UnityEngine.UI</Name>
     </ProjectReference>
   </ItemGroup>

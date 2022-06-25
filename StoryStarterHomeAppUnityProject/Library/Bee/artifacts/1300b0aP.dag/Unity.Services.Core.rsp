@@ -294,7 +294,7 @@
 -r:"C:/Program Files/Unity/Hub/Editor/2021.3.3f1/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Managed/UnityEngine.VRModule.dll"
 -r:"C:/Program Files/Unity/Hub/Editor/2021.3.3f1/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Managed/UnityEngine.WindModule.dll"
 -r:"C:/Program Files/Unity/Hub/Editor/2021.3.3f1/Editor/Data/PlaybackEngines/AndroidPlayer/Variations/mono/Managed/UnityEngine.XRModule.dll"
--r:"E:/TrajectoryProjects/Community/Simu-Launch/SimuLaunchHome/Library/PackageCache/com.unity.nuget.newtonsoft-json@3.0.2/Runtime/AOT/Newtonsoft.Json.dll"
+-r:"E:/TrajectoryProjects/Community/Simu-Launch/simu-launch/StoryStarterHomeAppUnityProject/Library/PackageCache/com.unity.nuget.newtonsoft-json@3.0.2/Runtime/AOT/Newtonsoft.Json.dll"
 -r:"Library/Bee/artifacts/1300b0aP.dag/UnityEngine.UI.ref.dll"
 "Library/PackageCache/com.unity.services.core@1.3.1/Runtime/Core/AssemblyInfo.cs"
 "Library/PackageCache/com.unity.services.core@1.3.1/Runtime/Core/CommonErrorCodes.cs"

@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{6D4B580B-8198-035D-22C4-DAED8007B32E}</ProjectGuid>
+    <ProjectGuid>{CCDA40D9-BAB0-7129-A35A-C6E3089163C5}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -634,47 +634,47 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Unity.Timeline.Player.csproj">
-      <Project>{EBC0BFD1-528A-0B30-E6DC-CAE19D2DAC7D}</Project>
+      <Project>{A5A75A34-B1F8-AC40-9AC6-E95742EB39F0}</Project>
       <Name>Unity.Timeline.Player</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.TextMeshPro.Player.csproj">
-      <Project>{E81B0700-0A33-45B0-D581-AB497340545A}</Project>
+      <Project>{745CAB6A-24C4-AED0-8BD8-5E260206C190}</Project>
       <Name>Unity.TextMeshPro.Player</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Subsystem.Registration.Player.csproj">
-      <Project>{12D6BD14-861A-452D-4111-FD9027DD2399}</Project>
+      <Project>{6377F4BD-0AE9-6273-6FB4-2BB67D528E7E}</Project>
       <Name>Unity.Subsystem.Registration.Player</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.SpatialTracking.Player.csproj">
-      <Project>{6B154B50-1738-E174-50DC-E4BB2ED3B3DD}</Project>
+      <Project>{4A91766D-3317-8642-F12E-4AC802EFCFDD}</Project>
       <Name>UnityEngine.SpatialTracking.Player</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.UI.Player.csproj">
-      <Project>{B488F317-CB73-79C4-0C12-B728A6035255}</Project>
+      <Project>{BDDAD394-8A47-0D4C-7C09-2FF071C7B202}</Project>
       <Name>UnityEngine.UI.Player</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Services.Core.Player.csproj">
-      <Project>{B02357A8-20B4-3A57-0C47-D62791A74AA2}</Project>
+      <Project>{7A7B83CA-8649-8A32-BA26-B1AAF8331F5E}</Project>
       <Name>Unity.Services.Core.Player</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Services.Core.Analytics.Player.csproj">
-      <Project>{0E473D0D-2AAC-8276-65EB-4B983C7A9FD2}</Project>
+      <Project>{2A0A4EF2-678C-27AB-1454-491CEA6286E2}</Project>
       <Name>Unity.Services.Core.Analytics.Player</Name>
     </ProjectReference>
     <ProjectReference Include="UnityEngine.XR.LegacyInputHelpers.Player.csproj">
-      <Project>{D2DF1EFD-802D-3361-BBCF-3DDEB1F927FF}</Project>
+      <Project>{D4F929C6-2A2C-399C-D379-ADC518D0E6E0}</Project>
       <Name>UnityEngine.XR.LegacyInputHelpers.Player</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.Services.Core.Environments.Player.csproj">
-      <Project>{64F87398-DC77-076C-1EFC-E11ADF8165FC}</Project>
+      <Project>{4D02C898-AF8F-8159-8F57-CF1C04ABC5E6}</Project>
       <Name>Unity.Services.Core.Environments.Player</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.XR.Management.Player.csproj">
-      <Project>{EEAB0B9B-26E9-BB8C-2D7B-9D63AFE40042}</Project>
+      <Project>{AF993408-BF89-A808-9676-086D5716FF80}</Project>
       <Name>Unity.XR.Management.Player</Name>
     </ProjectReference>
     <ProjectReference Include="Unity.XR.Oculus.Player.csproj">
-      <Project>{B3E226D8-6DDF-21C4-FE7C-A2618D820B22}</Project>
+      <Project>{6E35E2C5-A5A0-746C-6241-B9F06C50AFFC}</Project>
       <Name>Unity.XR.Oculus.Player</Name>
     </ProjectReference>
   </ItemGroup>
