@@ -55,3 +55,5 @@ closing the offending service via its PID via:
 kill <PID>
 ```
 
+#StoryLinker
+Either burn the existing image or build it from scratch. In terms of the latter, follow this guide to ensure you can USB ssh into your fresh copy of DEBIAN BUSTER (Raspberry PI OS Legacy -- I had issues SSHing into Debian Bullseye, but maybe this works fine) https://www.thepolyglotdeveloper.com/2016/06/connect-raspberry-pi-zero-usb-cable-ssh/. Follow this guide to launch a script at startup (note, important to add '&' at the end of your bash script so you can in the future SSH into your pi) https://www.instructables.com/Raspberry-Pi-Launch-Python-script-on-startup/
