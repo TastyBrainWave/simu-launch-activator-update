@@ -647,7 +647,6 @@ async def connect(
     remote_address = ""
 
     device: Device = client.device(device_serial)
-    home_app_already_installed = home_app_installed(device)
 
     print("json ", json)
     print("address ", remote_address)
