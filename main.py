@@ -31,6 +31,7 @@ from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
 
+from adb_layer import adb_image
 from helpers import (
     launch_app,
     save_file,
@@ -869,27 +870,22 @@ devices_info = {}
 
 
 async def check_image(device_serial, refresh_ms, size):
-    device: DeviceAsync = await client_async.device(device_serial)
-    if device is None:
-        return None
+    img = adb_image(device_serial)
 
-    if not await check_alive(device):
-        return None
+    if img and len(img) > 5 and img[5] == 0x0d:
+        img = img.replace(b'\r\n', b'\n')
 
-    im = await device.screencap()
-    if im is None:
-        return None
 
     _image = None
     try:
-        _image = cv2.imdecode(np.frombuffer(im, np.uint8), cv2.IMREAD_COLOR)
+        _image = cv2.imdecode(np.frombuffer(img, np.uint8), cv2.IMREAD_COLOR)
     except cv2.error:
         return None
 
     if _image is None:
         return None
 
-    _image = _image[0 : _image.shape[0], 0 : int(_image.shape[1] * 0.5)]
+    _image = _image[0: _image.shape[0], 0 : int(_image.shape[1] * 0.5)]
 
     height = _image.shape[0]
     width = int(_image.shape[1] / height * defaults["screen_height"])
