@@ -897,3 +897,65 @@ function experience_command(el, cmd, experience, devices, success_message, error
         }
     })
 }
+
+function test_many(){
+    var found = $('device-card').length - 1;
+
+    if(found<0) return
+    var i =Math.round(Math.random() * found);
+    var device_bit = $($('device-card')[i].shadowRoot);
+    $(device_bit).find('#checkExperiences').click();
+
+    setTimeout(function(){
+    $('#experiences-modal-close').click();
+    var exp_found = $('#experiences_modal_content').find('.bi-play-fill').length -1;
+    if(exp_found<0) return
+    i =Math.round(Math.random() * exp_found);
+    var el = $($('#experiences_modal_content').find('.bi-play-fill')[i]);
+
+    var cmd = 'start';
+
+    var experience = $(el).closest('li').data('experience');
+    var device = $(el).closest('.list-group').data('device');
+    console.log('starting experience', experience, device);
+    send({
+        body: { 'experience': experience},
+        start: function () {
+        },
+        url: '/command/' + cmd +'/' + device,
+        success: function (data) {
+            showStatus("Experience has " + cmd + "ed!");
+
+        },
+        problem: function (error) {
+            showStatus("Error " + cmd + "ing experience: " + error);
+        },
+        finally: function () {
+            setTimeout(function(){
+                console.log('stopping experience', experience, device);
+                send({
+                    body: { 'experience': '?' },
+                    start: function () {
+                    },
+                    url: '/command/stop-some-experience/' + device,
+                    success: function (data) {
+                        showStatus(data['outcome']);
+
+                    },
+                    problem: function (error) {
+                        showStatus("Error stopping experience: " + error);
+                    },
+                    finally: function () {
+                        setTimeout(function(){
+                            test_many();
+                        },5000);
+                    }
+                })
+            }, 5000)
+
+        }
+    }
+    )
+    }, 1000);
+}
+
