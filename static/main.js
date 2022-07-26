@@ -589,7 +589,7 @@ var devices_manager = function () {
     }
 
     function screengrab_polling(device, on) {
-        if(defaults.screenshots_enabled === false) return;
+        if(defaults.screenshots_enabled === 'False') return;
         if (on === undefined) on = true;
 
         // let's always remove existing polling
