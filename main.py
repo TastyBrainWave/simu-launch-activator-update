@@ -62,7 +62,7 @@ templates = Jinja2Templates(directory=location + "templates")
 simu_application_name = ""
 global_volume = 10
 
-screenshots_enabled = False
+screenshots_enabled: int = 0
 
 icons = [
     "3-bars",
