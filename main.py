@@ -62,6 +62,8 @@ templates = Jinja2Templates(directory=location + "templates")
 simu_application_name = ""
 global_volume = 10
 
+screenshots_enabled = False
+
 icons = [
     "3-bars",
     "2-bars",
@@ -79,6 +81,7 @@ defaults = {
     "screen_width": 192,
     "screen_height": 108,
     "check_for_new_devices_poll": check_for_new_devices_poll_s * 1000,
+    "screenshots_enabled": screenshots_enabled,
 }
 crud_defaults(SessionLocal(), defaults)
 
@@ -131,8 +134,10 @@ async def wait_host_port(host, port, duration=10, delay=2):
                 await asyncio.sleep(delay)
     return False
 
+
 def is_wireless(serial):
     return '.' in serial
+
 
 def shell_command(device_id: str, command):
     outcome = subprocess.run([f"adb", '-s', f"{device_id } '{command}'"], stdout=subprocess.PIPE).stdout.decode('ascii')
@@ -148,6 +153,7 @@ async def wake():
     my_devices = [device for device in my_devices if is_wireless(device.serial)]
     count = 0
     devices_count = len(my_devices)
+
     for device in my_devices:
         count += 1
         screen_state = subprocess.run([f"adb", '-s', device.serial, "shell", "dumpsys",
@@ -169,6 +175,7 @@ async def scan_devices():
     my_devices = [client.device(serial) for serial in alive]
     return my_devices
 
+
 async def check_alive(device):
     device_serial = device.serial
     if "." not in device_serial:
@@ -187,6 +194,7 @@ async def check_alive(device):
         print("issue disconnecting disconnected wifi device (caution): " + err)
 
     return False
+
 
 def check_adb_running(func):
     @wraps(func)
