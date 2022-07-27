@@ -38,7 +38,7 @@ from helpers import (
     process_devices,
     connect_actions,
     HOME_APP_APK,
-    home_app_installed, HOME_APP_ENABLED, check_alive,
+    home_app_installed, HOME_APP_ENABLED, check_alive, wait_host_port,
 )
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
@@ -123,7 +123,7 @@ async def wake():
 
     for device in my_devices:
         count += 1
-        if not check_alive(device, client):
+        if not await check_alive(device, client):
             continue
         screen_state = subprocess.run([f"adb", '-s', device.serial, "shell", "dumpsys",
                                   "power", "|", 'grep', "\'Display Power: state=OFF\'"],
@@ -200,7 +200,7 @@ async def devices(db: Session = Depends(get_db)):
         except RuntimeError as e:
             errs.append(str(e))
         try:
-            if check_alive(device, client):
+            if await check_alive(device, client):
                 device.get_state()
             else:
                 device_info["message"] = "Disconnected"
@@ -521,7 +521,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
         for device in client_list:
             print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
-            if check_alive(device, client):
+            if await check_alive(device, client):
                 device.shell(command)
                 launch_home_app(device.serial)
     except RuntimeError as e:
@@ -991,7 +991,7 @@ async def device_command(
     device = None
     if device_serial != "ALL":
         device = await client_async.device(device_serial)
-        if not check_alive(device, client):
+        if not await check_alive(device, client):
             return {"success": False, "message": "Connected problem with the device"}
 
     my_json = await request.json()
@@ -1048,7 +1048,7 @@ async def device_command(
         outcome = ""
         for device_serial in my_devices:
             device: DeviceAsync = await client_async.device(device_serial)
-            if check_alive(device, client):
+            if await check_alive(device, client):
                 outcome = await device.shell(f"am force-stop {experience}")
                 launch_home_app(device.serial)
             else:
@@ -1069,7 +1069,7 @@ async def device_command(
         errs = []
         for device in devices_list:
             device: DeviceAsync = await client_async.device(device)
-            if check_alive(device, client):
+            if await check_alive(device, client):
                 outcome = await device.shell(f"am start -n {info}")
 
                 if "Exception" in outcome:
@@ -1105,7 +1105,7 @@ async def device_icon(
 @app.get("/current-experience/{device_serial}")
 async def current_experience(request: Request, device_serial: str):
     device = await client_async.device(device_serial)
-    if not check_alive(device, client):
+    if not await check_alive(device, client):
         return {'current_app': 'DISCONNECTED'}
     current_app = await get_running_app(device)
     return {"current_app": current_app}

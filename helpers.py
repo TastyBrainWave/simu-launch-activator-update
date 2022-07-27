@@ -17,7 +17,7 @@ attempts_before_removing_dead_device = 3
 
 
 
-def wait_host_port(host, port, duration=10, delay=2):
+async def wait_host_port(host, port, duration=10, delay=2):
     """Repeatedly try if a port on a host is open until duration seconds passed
 
     Parameters
@@ -133,7 +133,7 @@ def connect_actions(device: Device = None, volume: int = None, ):
         return {"success": False, "error": "An error occured: " + e.__str__()}
 
 
-def check_alive(device, client: AdbClient):
+async def check_alive(device, client: AdbClient):
     device_serial = device.serial
     if "." not in device_serial:
         return True
@@ -141,7 +141,7 @@ def check_alive(device, client: AdbClient):
         ip_port = device_serial.split(":")
         ip = ip_port[0]
         port = int(ip_port[1])
-        is_open = wait_host_port(host=ip, port=port, duration=2, delay=1)
+        is_open = await wait_host_port(host=ip, port=port, duration=2, delay=1)
 
         if is_open:
             return True
