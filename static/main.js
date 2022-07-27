@@ -28,10 +28,14 @@ function add_devices(obj) {
 
 function send(params) {
     var selected_devices = [];
-    selectedCards().forEach(element => {
-        selected_devices.push(element.deviceId)
-    });
-
+    if(params['devices']){
+        selected_devices = params['devices']
+    }
+    else {
+        selectedCards().forEach(element => {
+            selected_devices.push(element.deviceId)
+        });
+    }
 
     if (!params['headers']) params['headers'] = {};
     if (!params['headers']["Content-type"]) params['headers']["Content-type"] = "application/json";
@@ -255,7 +259,25 @@ function stopExperience() {
 }
 
 function disconnectSingleDevice(id){
-
+    send({
+        url: '/disconnect',
+        start: function () {
+            document.getElementById("disconnectButton").classList.add("disabled");
+        },
+        success: function () {
+            showStatus("Device(s) have been disconnected");
+            setTimeout(function () {
+                location.reload();
+            }, 3000);
+        },
+        devices: [id],
+        problem: function (error) {
+            showStatus("Error disconnecting devices: " + error);
+        },
+        finally: function () {
+            document.getElementById("disconnectButton").classList.remove("disabled");
+        }
+    })
 }
 
 function disconnectDevice() {
