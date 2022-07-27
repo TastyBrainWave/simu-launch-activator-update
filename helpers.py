@@ -133,7 +133,7 @@ def connect_actions(device: Device = None, volume: int = None, ):
         return {"success": False, "error": "An error occured: " + e.__str__()}
 
 
-async def check_alive(device, client: AdbClient):
+def check_alive(device, client: AdbClient):
     device_serial = device.serial
     if "." not in device_serial:
         return True
