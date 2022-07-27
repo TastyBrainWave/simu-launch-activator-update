@@ -102,39 +102,6 @@ client: AdbClient = AdbClient(host="127.0.0.1", port=5037)
 client_async: AdbClientAsync = AdbClientAsync(host="127.0.0.1", port=5037)
 
 
-async def wait_host_port(host, port, duration=10, delay=2):
-    """Repeatedly try if a port on a host is open until duration seconds passed
-
-    Parameters
-    ----------
-    host : str
-        host ip address or hostname
-    port : int
-        port number
-    duration : int, optional
-        Total duration in seconds to wait, by default 10
-    delay : int, optional
-        delay in seconds between each try, by default 2
-
-    Returns
-    -------
-    awaitable bool
-    """
-    tmax = time.time() + duration
-    while time.time() < tmax:
-        try:
-            _reader, writer = await asyncio.wait_for(
-                asyncio.open_connection(host, port), timeout=5
-            )
-            writer.close()
-            await writer.wait_closed()
-            return True
-        except:
-            if delay:
-                await asyncio.sleep(delay)
-    return False
-
-
 def is_wireless(serial):
     return '.' in serial
 
@@ -156,7 +123,7 @@ async def wake():
 
     for device in my_devices:
         count += 1
-        if not check_alive(device):
+        if not check_alive(device, client):
             continue
         screen_state = subprocess.run([f"adb", '-s', device.serial, "shell", "dumpsys",
                                   "power", "|", 'grep', "\'Display Power: state=OFF\'"],
@@ -176,11 +143,6 @@ async def scan_devices():
     alive = [serial.split('\t')[0] for serial in outcome.splitlines()[1:] if 'offline' not in serial and serial]
     my_devices = [client.device(serial) for serial in alive]
     return my_devices
-
-
-device_maybe_dead = {}
-attempts_before_removing_dead_device = 3
-
 
 def check_adb_running(func):
     @wraps(func)
@@ -238,7 +200,7 @@ async def devices(db: Session = Depends(get_db)):
         except RuntimeError as e:
             errs.append(str(e))
         try:
-            if check_alive(device):
+            if check_alive(device, client):
                 device.get_state()
             else:
                 device_info["message"] = "Disconnected"
@@ -445,7 +407,7 @@ async def load(payload: Experience):
     errs = []
     try:
         for device in client_list:
-            if not await check_alive(device):
+            if not await check_alive(device, client):
                 errs.append(f'Problem installing on this device: {device.serial}. Temporarily unavailable')
                 continue
             print("Installing " + apk_path + " on " + device.serial)
@@ -559,7 +521,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
         for device in client_list:
             print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
-            if check_alive(device):
+            if check_alive(device, client):
                 device.shell(command)
                 launch_home_app(device.serial)
     except RuntimeError as e:
@@ -1029,7 +991,7 @@ async def device_command(
     device = None
     if device_serial != "ALL":
         device = await client_async.device(device_serial)
-        if not check_alive(device):
+        if not check_alive(device, client):
             return {"success": False, "message": "Connected problem with the device"}
 
     my_json = await request.json()
@@ -1086,7 +1048,7 @@ async def device_command(
         outcome = ""
         for device_serial in my_devices:
             device: DeviceAsync = await client_async.device(device_serial)
-            if check_alive(device):
+            if check_alive(device, client):
                 outcome = await device.shell(f"am force-stop {experience}")
                 launch_home_app(device.serial)
             else:
@@ -1107,7 +1069,7 @@ async def device_command(
         errs = []
         for device in devices_list:
             device: DeviceAsync = await client_async.device(device)
-            if check_alive(device):
+            if check_alive(device, client):
                 outcome = await device.shell(f"am start -n {info}")
 
                 if "Exception" in outcome:
@@ -1143,7 +1105,7 @@ async def device_icon(
 @app.get("/current-experience/{device_serial}")
 async def current_experience(request: Request, device_serial: str):
     device = await client_async.device(device_serial)
-    if not check_alive(device):
+    if not check_alive(device, client):
         return {'current_app': 'DISCONNECTED'}
     current_app = await get_running_app(device)
     return {"current_app": current_app}

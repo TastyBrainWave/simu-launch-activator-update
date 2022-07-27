@@ -1,15 +1,54 @@
+import asyncio
 import os
+import time
 
 from ppadb.client import Client as AdbClient
 from ppadb.device import Device
 
-from main import wait_host_port, device_maybe_dead, attempts_before_removing_dead_device, client
 from models_pydantic import Devices
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 HOME_APP_VERSION = "0.1"
 HOME_APP_APK = "com.TrajectoryTheatre.SimuLaunchHome.apk"
 HOME_APP_ENABLED = False
+
+device_maybe_dead = {}
+attempts_before_removing_dead_device = 3
+
+
+
+async def wait_host_port(host, port, duration=10, delay=2):
+    """Repeatedly try if a port on a host is open until duration seconds passed
+
+    Parameters
+    ----------
+    host : str
+        host ip address or hostname
+    port : int
+        port number
+    duration : int, optional
+        Total duration in seconds to wait, by default 10
+    delay : int, optional
+        delay in seconds between each try, by default 2
+
+    Returns
+    -------
+    awaitable bool
+    """
+    tmax = time.time() + duration
+    while time.time() < tmax:
+        try:
+            _reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port), timeout=5
+            )
+            writer.close()
+            await writer.wait_closed()
+            return True
+        except:
+            if delay:
+                await asyncio.sleep(delay)
+    return False
+
 
 def process_devices(client: AdbClient, payload: Devices):
     if payload.devices:
@@ -94,7 +133,7 @@ def connect_actions(device: Device = None, volume: int = None, ):
         return {"success": False, "error": "An error occured: " + e.__str__()}
 
 
-async def check_alive(device):
+async def check_alive(device, client: AdbClient):
     device_serial = device.serial
     if "." not in device_serial:
         return True
