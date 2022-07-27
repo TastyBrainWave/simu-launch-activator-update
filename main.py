@@ -203,7 +203,9 @@ async def devices(db: Session = Depends(get_db)):
             if await check_alive(device, client):
                 device.get_state()
             else:
-                device_info["message"] = "Disconnected"
+                device_info["message"] = f"<small>Wifi issue! Please <button class='btn btn-outline-info' " \
+                                         f"onclick='disconnectSingleDevice(\"{device.serial}\")'>remove" \
+                                         f"device</button> the device or try and fix this issue.</small>"
         except RuntimeError as e:
             if "unauthorized" in str(e):
                 device_info["message"] = "Unauthorised"

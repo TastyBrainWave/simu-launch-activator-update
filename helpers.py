@@ -148,16 +148,6 @@ async def check_alive(device, client: AdbClient):
         err = e.__str__()
         print("issue disconnecting disconnected wifi device (caution): " + err)
 
-    if device_serial not in device_maybe_dead:
-        device_maybe_dead[device_serial] = 0
-    device_maybe_dead[device_serial] += 1
-
-    print(f'Device {device_serial} has failed to be pinged x {device_maybe_dead[device_serial]}')
-    if device_maybe_dead[device_serial] > attempts_before_removing_dead_device:
-        print(f'Device {device_serial} has failed to be pinged many times and so it has been disconnected')
-        client.remote_disconnect(device.serial)
-        device_maybe_dead.pop(device_serial, None)
-    else:
-        print(f'Device {device_serial} has failed to be pinged x {device_maybe_dead[device_serial]}')
+    print(f'Device {device_serial} has failed to be pinged')
 
     return False

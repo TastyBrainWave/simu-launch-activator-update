@@ -254,6 +254,9 @@ function stopExperience() {
     }
 }
 
+function disconnectSingleDevice(id){
+
+}
 
 function disconnectDevice() {
 
