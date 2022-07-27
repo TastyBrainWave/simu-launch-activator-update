@@ -579,7 +579,6 @@ async def connect_raw(request: Request):
 
             return {"success": True, "serial": device_ip}
 
-        print("alive")
         raise RuntimeError(
             "Could not connect device. Make sure the device is connected on the same router as the server!"
         )
@@ -651,10 +650,6 @@ async def connect(
 
         if not p.is_alive():
             connected_device = Device(client, device_ip)
-            connect_actions(
-                connected_device,
-                global_volume,
-            )
 
             background_tasks.add_task(
                 connect_actions,

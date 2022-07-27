@@ -142,10 +142,8 @@ async def check_alive(device, client: AdbClient):
         ip = ip_port[0]
         port = int(ip_port[1])
         is_open = await wait_host_port(host=ip, port=port, duration=2, delay=1)
-
         if is_open:
             return True
-
     except RuntimeError as e:
         err = e.__str__()
         print("issue disconnecting disconnected wifi device (caution): " + err)
