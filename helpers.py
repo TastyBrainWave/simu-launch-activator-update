@@ -156,6 +156,7 @@ async def check_alive(device, client: AdbClient):
     if device_maybe_dead[device_serial] > attempts_before_removing_dead_device:
         print(f'Device {device_serial} has failed to be pinged many times and so it has been disconnected')
         client.remote_disconnect(device.serial)
+        device_maybe_dead.pop(device_serial, None)
     else:
         print(f'Device {device_serial} has failed to be pinged x {device_maybe_dead[device_serial]}')
 
