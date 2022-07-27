@@ -38,7 +38,7 @@ from helpers import (
     process_devices,
     connect_actions,
     HOME_APP_APK,
-    home_app_installed, HOME_APP_ENABLED,
+    home_app_installed, HOME_APP_ENABLED, check_alive,
 )
 from models_pydantic import Volume, Devices, Experience, NewExperience, StartExperience
 from sql_app import models, crud
@@ -156,6 +156,8 @@ async def wake():
 
     for device in my_devices:
         count += 1
+        if not check_alive(device):
+            continue
         screen_state = subprocess.run([f"adb", '-s', device.serial, "shell", "dumpsys",
                                   "power", "|", 'grep', "\'Display Power: state=OFF\'"],
                                  stdout=subprocess.PIPE).stdout.decode('ascii')
@@ -176,24 +178,8 @@ async def scan_devices():
     return my_devices
 
 
-async def check_alive(device):
-    device_serial = device.serial
-    if "." not in device_serial:
-        return True
-    try:
-        ip_port = device_serial.split(":")
-        ip = ip_port[0]
-        port = int(ip_port[1])
-        is_open = await wait_host_port(host=ip, port=port, duration=2, delay=1)
-
-        if is_open:
-            return True
-
-    except RuntimeError as e:
-        err = e.__str__()
-        print("issue disconnecting disconnected wifi device (caution): " + err)
-
-    return False
+device_maybe_dead = {}
+attempts_before_removing_dead_device = 3
 
 
 def check_adb_running(func):
@@ -252,7 +238,10 @@ async def devices(db: Session = Depends(get_db)):
         except RuntimeError as e:
             errs.append(str(e))
         try:
-            device.get_state()
+            if check_alive(device):
+                device.get_state()
+            else:
+                device_info["message"] = "Disconnected"
         except RuntimeError as e:
             if "unauthorized" in str(e):
                 device_info["message"] = "Unauthorised"
@@ -570,8 +559,9 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
         for device in client_list:
             print("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
-            device.shell(command)
-            launch_home_app(device.serial)
+            if check_alive(device):
+                device.shell(command)
+                launch_home_app(device.serial)
     except RuntimeError as e:
         return {"success": False, "error": e.__str__()}
 
@@ -1039,6 +1029,8 @@ async def device_command(
     device = None
     if device_serial != "ALL":
         device = await client_async.device(device_serial)
+        if not check_alive(device):
+            return {"success": False, "message": "Connected problem with the device"}
 
     my_json = await request.json()
     experience = my_json["experience"]
@@ -1094,8 +1086,11 @@ async def device_command(
         outcome = ""
         for device_serial in my_devices:
             device: DeviceAsync = await client_async.device(device_serial)
-            outcome = await device.shell(f"am force-stop {experience}")
-            launch_home_app(device.serial)
+            if check_alive(device):
+                outcome = await device.shell(f"am force-stop {experience}")
+                launch_home_app(device.serial)
+            else:
+                outcome = 'device(s) has a wifi connection issue'
         return {"success": True, "message": outcome}
 
     elif command == "devices_experiences__start_experience_some":
@@ -1112,10 +1107,13 @@ async def device_command(
         errs = []
         for device in devices_list:
             device: DeviceAsync = await client_async.device(device)
-            outcome = await device.shell(f"am start -n {info}")
+            if check_alive(device):
+                outcome = await device.shell(f"am start -n {info}")
 
-            if "Exception" in outcome:
-                errs.append(f"An error occurred at device {device.serial}: \n" + outcome)
+                if "Exception" in outcome:
+                    errs.append(f"An error occurred at device {device.serial}: \n" + outcome)
+            else:
+                errs.append('a device has a wifi connection issue')
         if errs:
             return {
                 "success": False,
@@ -1145,5 +1143,7 @@ async def device_icon(
 @app.get("/current-experience/{device_serial}")
 async def current_experience(request: Request, device_serial: str):
     device = await client_async.device(device_serial)
+    if not check_alive(device):
+        return {'current_app': 'DISCONNECTED'}
     current_app = await get_running_app(device)
     return {"current_app": current_app}
