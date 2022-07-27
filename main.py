@@ -620,7 +620,8 @@ async def connect(
             return {
                 "success": False,
                 "error": "Via a popup box within the headset you have not specified that this "
-                "device can have permission to access the headset.",
+                "device can have permission to access the headset. You may need to enable 'USB connect dialogue' via"
+                         "developer options in settings.",
             }
         device_ip = device_ip[device_ip.find("inet ") :]
         device_ip = device_ip[: device_ip.find("/")]
