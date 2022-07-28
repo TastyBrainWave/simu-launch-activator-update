@@ -9,10 +9,12 @@ import platform
 import time
 from collections import Counter
 from functools import partial, wraps
+from logging.handlers import RotatingFileHandler
 from multiprocessing import Process, Pool, cpu_count
 
 import cv2
 import numpy as np
+import logging
 from fastapi import FastAPI, UploadFile, File, Form, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi_cache import FastAPICache
@@ -30,6 +32,22 @@ from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.staticfiles import StaticFiles
 from starlette.templating import Jinja2Templates
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+
+fh = RotatingFileHandler("api.log",mode="a",maxBytes = 100*1024, backupCount = 3)
+formatter = logging.Formatter(
+    "%(asctime)s - %(module)s - %(funcName)s - line:%(lineno)d - %(levelname)s - %(message)s"
+)
+
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+logger.addHandler(ch) #Exporting logs to the screen
+logger.addHandler(fh) #Exporting logs to a file
+
+
 
 from adb_layer import adb_image
 from helpers import (
@@ -114,7 +132,7 @@ def shell_command(device_id: str, command):
 @app.on_event("startup")
 @repeat_every(seconds=30*1, raise_exceptions=True)
 async def wake():
-    print(f'check screens awake {time.strftime("%H:%M:%S", time.localtime())}')
+    logging.info(f'check screens awake {time.strftime("%H:%M:%S", time.localtime())}')
 
     my_devices = await scan_devices()
     my_devices = [device for device in my_devices if is_wireless(device.serial)]
@@ -131,11 +149,11 @@ async def wake():
 
         screen_state_off = len(screen_state) > 0
         if screen_state_off:
-            print(f'{count}/{devices_count} Waking screen on device {device.serial}')
+            logging.info(f'{count}/{devices_count} Waking screen on device {device.serial}')
             outcome = subprocess.run([f"adb", '-s', device.serial, "shell", "input", "keyevent", "26"],
                                      stdout=subprocess.PIPE).stdout.decode('ascii')
         else:
-            print(f'{count}/{devices_count} Screen already on with device {device.serial}')
+            logging.info(f'{count}/{devices_count} Screen already on with device {device.serial}')
 
 
 async def scan_devices():
@@ -154,11 +172,11 @@ def check_adb_running(func):
         except RuntimeError as e:
             err = e.__str__()
             if "no such device" in err:
-                print("issue disconnecting disconnected wifi device (caution)")
+                logging.info("issue disconnecting disconnected wifi device (caution)")
             elif e.__str__().find("Is adb running on your computer?"):
-                print("ADB Server not running, starting it now!")
+                logging.info("ADB Server not running, starting it now!")
                 command = os.system("adb start-server")
-                print(command)
+                logging.info(command)
         return await func(*args, **kwargs)
 
     return wrapper
@@ -318,7 +336,7 @@ async def start(payload: StartExperience, db: Session = Depends(get_db)):
                 "error": "Could not start experience. Are you sure you selected one?",
             }
 
-        print(
+        logging.info(
             "Starting experience "
             + simu_application_name
             + " on "
@@ -412,7 +430,7 @@ async def load(payload: Experience):
             if not await check_alive(device, client):
                 errs.append(f'Problem installing on this device: {device.serial}. Temporarily unavailable')
                 continue
-            print("Installing " + apk_path + " on " + device.serial)
+            logging.info("Installing " + apk_path + " on " + device.serial)
             p = Process(target=device.install, args=(apk_path,))
             p.start()
     except InstallError as e:
@@ -473,7 +491,7 @@ async def add_remote_experience(payload: NewExperience, db: Session = Depends(ge
             db=db, item=APKDetailsCreate.parse_obj(item.dict())
         )
 
-        print("Remote experience added!")
+        logging.info("Remote experience added!")
 
         return {"success": True}
     except SQLAlchemyError as e:
@@ -521,7 +539,7 @@ async def stop(payload: Experience, db: Session = Depends(get_db)):
 
     try:
         for device in client_list:
-            print("Stopped experience on device " + device.serial)
+            logging.info("Stopped experience on device " + device.serial)
             command = "am force-stop " + app_name
             if await check_alive(device, client):
                 device.shell(command)
@@ -549,8 +567,8 @@ async def connect_raw(request: Request):
 
     remote_address = json["remote_address"] if "remote_address" in json else ""
 
-    print("json ", json)
-    print("address ", remote_address)
+    logging.info("json ", json)
+    logging.info("address ", remote_address)
 
     if not remote_address:
         device_ip = request.client.host
@@ -575,7 +593,7 @@ async def connect_raw(request: Request):
                 global_volume,
             )
 
-            print(
+            logging.info(
                 "Established connection with client " + device_ip + ":" + str(BASE_PORT)
             )
 
@@ -609,9 +627,9 @@ async def connect(
 
     device: Device = client.device(device_serial)
 
-    print("json ", json)
-    print("address ", remote_address)
-    print("device ", device_serial, device)
+    logging.info("json ", json)
+    logging.info("address ", remote_address)
+    logging.info("device ", device_serial, device)
 
     if not remote_address:
         try:
@@ -662,7 +680,7 @@ async def connect(
             connected = await wait_host_port(device_ip, BASE_PORT, duration=5, delay=2)
 
             if connected:
-                print(
+                logging.info(
                     "Established connection with client "
                     + device_ip
                     + ":"
@@ -705,7 +723,7 @@ async def disconnect(payload: Devices):
     try:
         device: Device
         for device in client_list:
-            print("Disconnecting device " + device.serial + " from server!")
+            logging.info("Disconnecting device " + device.serial + " from server!")
             working = client.remote_disconnect(device.serial)
             if not working:
                 return {
@@ -735,7 +753,7 @@ async def restart(payload: Devices):
     try:
         device: Device
         for device in client_list:
-            print("Restarting device " + device.serial + " from server!")
+            logging.info("Restarting device " + device.serial + " from server!")
             working = device.reboot()
             if not working:
                 return {

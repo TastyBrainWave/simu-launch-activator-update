@@ -16,7 +16,6 @@ device_maybe_dead = {}
 attempts_before_removing_dead_device = 3
 
 
-
 async def wait_host_port(host, port, duration=10, delay=2):
     """Repeatedly try if a port on a host is open until duration seconds passed
 
@@ -105,30 +104,31 @@ def connect_actions(device: Device = None, volume: int = None, ):
         if device is None:
             raise RuntimeError("No device present!")
 
-        print("Performing initial connection setup..")
+        from main import logging
+        logging.info("Performing initial connection setup..")
 
         device.shell(f'cmd media_session volume --stream 3 --set {str(volume)}')
 
-        print(f'Device volume set to {volume}!')
+        logging.info(f'Device volume set to {volume}!')
 
         timeout_hours = 4
         timeout = 60000 * 60 * timeout_hours  # 4 hours
         device.shell(f'settings put system screen_off_timeout {timeout}')
-        print(f'Device screen timout set to {timeout_hours} hours!')
+        logging.info(f'Device screen timout set to {timeout_hours} hours!')
 
         if HOME_APP_ENABLED:
             if not home_app_installed(device):
-                print("Home app not installed on device. Installing now..")
+                logging.info("Home app not installed on device. Installing now..")
                 device.install("apks/" + HOME_APP_APK)
 
             if HOME_APP_VERSION not in device.shell(
                     "dumpsys package com.TrajectoryTheatre.SimuLaunchHome | grep versionName"):
-                print("Installed Home app isn't the latest version. Updating now..")
+                logging.info("Installed Home app isn't the latest version. Updating now..")
                 device.install("apks/" + HOME_APP_APK)
 
             device.shell("am start -n com.TrajectoryTheatre.SimuLaunchHome/com.unity3d.player.UnityPlayerActivity")
-            print("Launched home app!")
-            print(f"Connect actions complete for {device.serial}")
+            logging.info("Launched home app!")
+            logging.info(f"Connect actions complete for {device.serial}")
     except RuntimeError as e:
         return {"success": False, "error": "An error occured: " + e.__str__()}
 
@@ -146,8 +146,10 @@ async def check_alive(device, client: AdbClient):
             return True
     except RuntimeError as e:
         err = e.__str__()
-        print("issue disconnecting disconnected wifi device (caution): " + err)
+        from main import logging
+        logging.info("issue disconnecting disconnected wifi device (caution): " + err)
 
-    print(f'Device {device_serial} has failed to be pinged')
+    from main import logging
+    logging.info(f'Device {device_serial} has failed to be pinged')
 
     return False

@@ -390,7 +390,6 @@ class DeviceCard extends HTMLElement {
         this.updated = undefined;
         var checkbox = this.shadowRoot.getElementById("cardSelect");
 
-
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
                 this.updateSelected(true)
