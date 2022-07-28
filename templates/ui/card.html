@@ -4,11 +4,11 @@
     <div class="card mb-2" style="max-width: 18rem; min-width: 16.25rem;">
       <div>
         <input class="form-check-input position-absolute ms-1" type="checkbox" id="cardSelect">
-        <div class=" position-absolute translate-middle top-50 start-50 text-danger fw-bold text-wrap bg-white p-0
+        <div class="position-absolute translate-middle top-50 start-50 text-danger fw-bold text-wrap bg-white p-0
         rounded border border-danger border-5" style='max-height: 150px; width:90%; overflow: scroll;' id="message"></div>
         <btn class="btn btn-secondary btn-sm position-absolute translate-middle start-50" onclick="devices_manager.wifi_connect(this)" id="wifi-connect">wifi connect</btn>
         <img src="/static/images/placeholder.jpg" id="device-image" class="card-img-top">
-        <btn class="btn btn-light btn-small position-absolute m-1 end-0 text-info" id="refresh-screen" onclick="devices_manager.refresh_image(this)">
+        <btn hidden class="btn btn-light btn-small position-absolute m-1 end-0 text-info" id="refresh-screen" onclick="devices_manager.refresh_image(this)">
           <img src="/static/icons_set/image.svg" alt="refresh screen" class="img-fluid" width="16" height="16">
         </btn>
       </div>

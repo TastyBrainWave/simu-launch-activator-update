@@ -47,8 +47,6 @@ fh.setFormatter(formatter)
 logger.addHandler(ch) #Exporting logs to the screen
 logger.addHandler(fh) #Exporting logs to a file
 
-
-
 from adb_layer import adb_image
 from helpers import (
     launch_app,
@@ -81,6 +79,7 @@ simu_application_name = ""
 global_volume = 10
 
 screenshots_enabled: int = 0
+manual_screenshots_enabled: int = 0
 
 icons = [
     "3-bars",
@@ -100,11 +99,11 @@ defaults = {
     "screen_height": 108,
     "check_for_new_devices_poll": check_for_new_devices_poll_s * 1000,
     "screenshots_enabled": screenshots_enabled,
+    "manual_screenshots_enabled": manual_screenshots_enabled,
 }
 crud_defaults(SessionLocal(), defaults)
 
 FastAPICache.init(InMemoryBackend())
-
 
 def get_db():
     db = SessionLocal()

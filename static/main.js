@@ -390,6 +390,11 @@ class DeviceCard extends HTMLElement {
         this.updated = undefined;
         var checkbox = this.shadowRoot.getElementById("cardSelect");
 
+        if(defaults.manual_screenshots_enabled){
+            var refresh_screen = this.shadowRoot.getElementById('refresh-screen');
+            refresh_screen.hidden = false;
+        }
+
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
                 this.updateSelected(true)
