@@ -390,6 +390,7 @@ class DeviceCard extends HTMLElement {
         this.updated = undefined;
         var checkbox = this.shadowRoot.getElementById("cardSelect");
 
+
         checkbox.addEventListener('change', () => {
             if (checkbox.checked) {
                 this.updateSelected(true)
@@ -515,7 +516,19 @@ class DeviceCard extends HTMLElement {
         el.innerHTML = str;
     }
 
+    check_screenshots_enabled_and_now_remove_image() {
+
+        if(defaults.screenshots_enabled) return false;
+        if(this.image !==''){
+            this.shadowRoot.querySelector("img").src = '';
+            this.image = '';
+            return true;
+        }
+        return false;
+    }
+
     updateImage64(image64) {
+        this.image = image64;
         this.just_updated();
         this.shadowRoot.querySelector("img").src = "data:image/png;base64, " + image64;
     }
@@ -597,6 +610,8 @@ var devices_manager = function () {
 
     api.refresh_image = function (el) {
         var device = el.getAttribute('device_id');
+        if (card_map[device].check_screenshots_enabled_and_now_remove_image() === true) return;
+
         fetch("device-screen/" + rate + "/" + image_height + "/" + device)
             .then(function (response) {
                 return response.json()
@@ -701,16 +716,19 @@ var devices_manager = function () {
 
                 for (var device of json['devices']) {
                     var device_id = device['id'];
-                    var found_at = devices_so_far.indexOf(device_id)
+                    var found_at = devices_so_far.indexOf(device_id);
+                    var card;
                     if (found_at === -1) {
-                        var card = new DeviceCard("/static/images/placeholder.jpg", device, false);
+                        var placeholder = "/static/images/placeholder.jpg";
+                        if(!defaults.screenshots_enabled) placeholder =  '';
+                        card = new DeviceCard(placeholder, device, false);
                         card.classList.add('col')
                         cardList.push(card);
                         document.querySelector("#main-container").prepend(card);
                         card_map[device_id] = card
                         screengrab_polling(device_id, true);
                     } else {
-                        var card = card_map[device_id];
+                        card = card_map[device_id];
                         card.updateMessage(device['message']);
                         card.just_updated();
                         devices_so_far.splice(found_at, 1);
