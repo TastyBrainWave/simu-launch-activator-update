@@ -785,10 +785,11 @@ async def screen_grab():
         os.makedirs(folder)
         i = 0
         for device in my_devices:
-            result = device.screencap()
-            with open(folder + "screen" + str(i) + ".png", "wb") as fp:
-                fp.write(result)
-            i += 1
+            if await check_alive(device, client):
+                result = device.screencap()
+                with open(folder + "screen" + str(i) + ".png", "wb") as fp:
+                    fp.write(result)
+                i += 1
     except RuntimeError as e:
         return {"success": False, "errors": e.__str__()}
 
@@ -811,11 +812,12 @@ async def volume(payload: Volume):
 
     fails = []
     for device in client_list:
-        try:
-            device.shell(f"cmd media_session volume --stream 3 --set {payload.volume}")
-            device.shell(f"media volume --stream 3 --set {payload.volume}")
-        except RuntimeError as e:
-            fails.append(e)
+        if await check_alive(device, client):
+            try:
+                device.shell(f"cmd media_session volume --stream 3 --set {payload.volume}")
+                device.shell(f"media volume --stream 3 --set {payload.volume}")
+            except RuntimeError as e:
+                fails.append(e)
 
     if fails:
         return {"success": False, "fails": str(fails)}
@@ -827,6 +829,8 @@ devices_info = {}
 
 
 async def check_image(device_serial, refresh_ms, size):
+    if await check_alive(client.device(device_serial), client):
+        pass
     img = adb_image(device_serial)
 
     if img and len(img) > 5 and img[5] == 0x0d:
