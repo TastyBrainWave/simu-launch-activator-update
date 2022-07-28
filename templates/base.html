@@ -29,9 +29,9 @@
 
   {% endblock %}
 
-  <div class="container align-self-center mt-4">
+  <div class="container align-self-center mt-4" style="z-index: 1000000">
     <!--    please leave below as position-fixed. Elsewise cannot see Toast when scrolled down screen-->
-    <div class="position-fixed end-0 me-2" style="z-index: 11">
+    <div class="position-fixed end-0 me-2">
       <div id="statusToast" style='z-index: 20000;' class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
           <div id="status" class="toast-body fs-5 text"></div>
@@ -42,6 +42,7 @@
     {% block content %}
     {% endblock %}
   </div>
+
 
   {% block javascript %}
 
